@@ -132,7 +132,53 @@ async function activateTerminal(): Promise<void> {
   }
 }
 
+/**
+ * Focus an iTerm2 session directly by its unique ID (non-tmux).
+ */
+async function focusItermSession(itermId: string): Promise<{ ok: boolean; error?: string }> {
+  // Sanitize: iTerm2 unique IDs are alphanumeric with hyphens/dots
+  const safeId = itermId.replace(/[^a-zA-Z0-9\-_.]/g, '');
+  if (!safeId || safeId !== itermId) {
+    return { ok: false, error: `Invalid iTerm session ID: ${itermId}` };
+  }
+
+  const script = `
+    tell application "iTerm2"
+      repeat with w in windows
+        repeat with t in tabs of w
+          repeat with s in sessions of t
+            if unique ID of s is "${safeId}" then
+              select t
+              set index of w to 1
+              return "found"
+            end if
+          end repeat
+        end repeat
+      end repeat
+      return "not_found"
+    end tell
+  `;
+
+  try {
+    const { stdout } = await execFileAsync('osascript', ['-e', script], { timeout: 5000 });
+    if (stdout.trim() === 'found') {
+      await bringITermToFront();
+      return { ok: true };
+    }
+    return { ok: false, error: 'iTerm2 session not found' };
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    return { ok: false, error: message };
+  }
+}
+
 export async function focusPane(paneId: string): Promise<{ ok: boolean; error?: string }> {
+  // Route iTerm2 native sessions (non-tmux)
+  if (paneId.startsWith('iterm:')) {
+    const itermId = paneId.slice('iterm:'.length);
+    return focusItermSession(itermId);
+  }
+
   if (!PANE_ID_REGEX.test(paneId)) {
     return { ok: false, error: `Invalid pane ID format: ${paneId}` };
   }

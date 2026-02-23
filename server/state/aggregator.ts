@@ -62,7 +62,7 @@ export class Aggregator extends EventEmitter {
   private config: ConductorConfig;
   private staleTimer: ReturnType<typeof setInterval> | null = null;
   private discoveryTimer: ReturnType<typeof setInterval> | null = null;
-  private paneMapping: ClaudePaneMapping = { byTasksDir: new Map(), byPid: new Map(), bySessionId: new Map(), byPaneTitle: new Map(), panePrompts: new Map() };
+  private paneMapping: ClaudePaneMapping = { byTasksDir: new Map(), byPid: new Map(), bySessionId: new Map(), byPaneTitle: new Map(), panePrompts: new Map(), byItermSession: new Map() };
 
   constructor(config: ConductorConfig) {
     super();
@@ -453,7 +453,7 @@ export class Aggregator extends EventEmitter {
 
       // Greedy assignment: each session and pane can only be assigned once
       const assignedSessionIds = new Set<string>();
-      for (const { sessionId, paneId, score } of candidates) {
+      for (const { sessionId, paneId } of candidates) {
         if (assignedSessionIds.has(sessionId) || assignedPaneIds.has(paneId)) continue;
         const session = this.state.sessions.find((s) => s.id === sessionId);
         if (!session) continue;
@@ -462,6 +462,97 @@ export class Aggregator extends EventEmitter {
         assignedPaneIds.add(paneId);
         assignedSessionIds.add(sessionId);
         changed = true;
+      }
+    }
+
+    // Pass 3.5: iTerm2 native session matching for unmatched sessions
+    // For claude processes in plain iTerm2 tabs (no tmux), match by iTerm2 session name vs session prompts
+    if (this.paneMapping.byItermSession.size > 0) {
+      const itermEntries = [...this.paneMapping.byItermSession.entries()];
+      const matchedItermPids = new Set<number>();
+
+      // Mark iTerm PIDs that are already assigned via lsof (passes 1)
+      for (const [pid, info] of itermEntries) {
+        const itermPaneId = `iterm:${info.itermId}`;
+        if (assignedPaneIds.has(itermPaneId)) {
+          matchedItermPids.add(pid);
+        }
+      }
+
+      const remainingIterm = itermEntries.filter(([pid]) => !matchedItermPids.has(pid));
+
+      if (remainingIterm.length > 0) {
+        // Content matching: compare session prompts against iTerm2 session names
+        for (const session of sortedSessions) {
+          if (session.paneId || teamPaneSessionIds.has(session.id) || session.isSubagent) continue;
+          if (!hasLikelyPane(session)) continue;
+
+          const textParts: string[] = [];
+          if (session.initialPrompt) textParts.push(session.initialPrompt);
+          if (session.latestPrompt) textParts.push(session.latestPrompt);
+          if (session.slug) textParts.push(session.slug.replace(/-/g, ' '));
+          if (textParts.length === 0) continue;
+
+          const sessionText = textParts.join(' ').toLowerCase();
+          const sessionWords = sessionText.split(/\s+/).filter((w) => w.length > 2);
+          if (sessionWords.length === 0) continue;
+
+          let bestPid: number | undefined;
+          let bestScore = 0;
+
+          for (const [pid, info] of remainingIterm) {
+            if (matchedItermPids.has(pid)) continue;
+            if (!info.name) continue;
+
+            const nameLower = info.name.toLowerCase();
+            const nameWords = nameLower.split(/\s+/).filter((w) => w.length > 2);
+
+            // Full substring match
+            if (sessionText.includes(nameLower) || nameLower.includes(sessionText)) {
+              const score = nameLower.length + 100;
+              if (score > bestScore) {
+                bestScore = score;
+                bestPid = pid;
+              }
+            }
+            // Word overlap
+            else if (nameWords.length > 0) {
+              const overlap = nameWords.filter((nw) =>
+                sessionWords.some((sw) => sw.includes(nw) || nw.includes(sw))
+              ).length;
+              const ratio = overlap / nameWords.length;
+              if (overlap >= 1 && ratio > 0.5 && overlap > bestScore) {
+                bestScore = overlap;
+                bestPid = pid;
+              }
+            }
+          }
+
+          if (bestPid !== undefined) {
+            const info = this.paneMapping.byItermSession.get(bestPid)!;
+            const itermPaneId = `iterm:${info.itermId}`;
+            session.paneId = itermPaneId;
+            assignedPaneIds.add(itermPaneId);
+            matchedItermPids.add(bestPid);
+            changed = true;
+          }
+        }
+
+        // Singleton fallback: one unmatched session + one unmatched iTerm2 session → match directly
+        const unmatchedSessions = sortedSessions.filter(
+          (s) => !s.paneId && !teamPaneSessionIds.has(s.id) && !s.isSubagent && hasLikelyPane(s)
+        );
+        const unmatchedIterm = remainingIterm.filter(([pid]) => !matchedItermPids.has(pid));
+
+        if (unmatchedSessions.length === 1 && unmatchedIterm.length === 1) {
+          const [session] = unmatchedSessions;
+          const [[pid, info]] = unmatchedIterm;
+          const itermPaneId = `iterm:${info.itermId}`;
+          session.paneId = itermPaneId;
+          assignedPaneIds.add(itermPaneId);
+          matchedItermPids.add(pid);
+          changed = true;
+        }
       }
     }
 
