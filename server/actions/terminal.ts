@@ -152,20 +152,133 @@ async function activateITermTab(tmuxClientTty: string): Promise<void> {
 }
 
 /**
- * Bring Warp to foreground. No tab selection possible (Warp has no AppleScript API).
+ * Bring Warp to foreground and optionally switch to a specific tab.
+ *
+ * Warp has no AppleScript dictionary, so we use CGEvents to send Cmd+N keystrokes.
+ * Tab order is determined by sorting each tab's login shell PID start time.
  */
-async function activateWarp(): Promise<void> {
+async function activateWarp(tabIndex?: number): Promise<void> {
+  // macOS keycodes for digits 1-9
+  const DIGIT_KEYCODES: Record<number, number> = {
+    1: 18, 2: 19, 3: 20, 4: 21, 5: 23, 6: 22, 7: 26, 8: 28, 9: 25,
+  };
+
+  const keycode = tabIndex ? DIGIT_KEYCODES[tabIndex] : undefined;
+
   try {
-    await execFileAsync('osascript', ['-l', 'JavaScript', '-e', `
-      ObjC.import('AppKit');
-      var apps = $.NSRunningApplication.runningApplicationsWithBundleIdentifier('dev.warp.Warp-Stable');
-      if (apps.count > 0) {
-        apps.objectAtIndex(0).activateWithOptions(3);
+    if (keycode) {
+      // Activate Warp + send Cmd+N keystroke to switch tab
+      await execFileAsync('osascript', ['-l', 'JavaScript', '-e', `
+        ObjC.import('AppKit');
+        ObjC.import('CoreGraphics');
+        var apps = $.NSRunningApplication.runningApplicationsWithBundleIdentifier('dev.warp.Warp-Stable');
+        if (apps.count > 0) {
+          apps.objectAtIndex(0).activateWithOptions(3);
+        }
+        delay(0.3);
+        var src = $.CGEventSourceCreate($.kCGEventSourceStateHIDSystemState);
+        var keyDown = $.CGEventCreateKeyboardEvent(src, ${keycode}, true);
+        $.CGEventSetFlags(keyDown, $.kCGEventFlagMaskCommand);
+        var keyUp = $.CGEventCreateKeyboardEvent(src, ${keycode}, false);
+        $.CGEventSetFlags(keyUp, $.kCGEventFlagMaskCommand);
+        $.CGEventPost($.kCGHIDEventTap, keyDown);
+        $.CGEventPost($.kCGHIDEventTap, keyUp);
         'ok';
-      }
-    `]);
+      `], { timeout: 5000 });
+    } else {
+      // Just bring Warp to front without tab switching
+      await execFileAsync('osascript', ['-l', 'JavaScript', '-e', `
+        ObjC.import('AppKit');
+        var apps = $.NSRunningApplication.runningApplicationsWithBundleIdentifier('dev.warp.Warp-Stable');
+        if (apps.count > 0) {
+          apps.objectAtIndex(0).activateWithOptions(3);
+          'ok';
+        }
+      `]);
+    }
   } catch {
     // Best effort
+  }
+}
+
+/**
+ * Find which Warp tab a given PID belongs to by mapping TTYs to tab order.
+ *
+ * Returns a 1-based tab index (1-9), or undefined if we can't determine it.
+ */
+async function findWarpTabIndex(targetPid: number): Promise<number | undefined> {
+  try {
+    // 1. Get the target process's TTY
+    const { stdout: ttyOut } = await execFileAsync('ps', ['-o', 'tty=', '-p', String(targetPid)]);
+    const targetTty = ttyOut.trim();
+    if (!targetTty || targetTty === '??') return undefined;
+
+    // 2. Build process tree to find all TTYs owned by Warp
+    const { stdout: allProcs } = await execFileAsync('ps', ['-axo', 'pid=,ppid=,tty=,lstart=,comm=']);
+    const procs = new Map<number, { ppid: number; tty: string; lstart: string; comm: string }>();
+    for (const line of allProcs.trim().split('\n')) {
+      // Format: PID PPID TTY LSTART(5 fields) COMM
+      const m = line.trim().match(/^\s*(\d+)\s+(\d+)\s+(\S+)\s+(\w+\s+\d+\s+\w+\s+[\d:]+\s+\d+)\s+(.+)$/);
+      if (m) {
+        procs.set(parseInt(m[1]), {
+          ppid: parseInt(m[2]),
+          tty: m[3],
+          lstart: m[4],
+          comm: m[5].trim(),
+        });
+      }
+    }
+
+    // 3. Find Warp's main PID (the process named "stable" under Warp.app)
+    let warpPid: number | undefined;
+    for (const [pid, info] of procs) {
+      if (info.comm.includes('Warp.app') && info.comm.includes('/stable')) {
+        // Pick the one whose parent is NOT another Warp process
+        const parent = procs.get(info.ppid);
+        if (!parent || !parent.comm.includes('Warp.app')) {
+          warpPid = pid;
+          break;
+        }
+      }
+    }
+    if (!warpPid) return undefined;
+
+    // 4. Find all login shells descended from Warp — these are one per tab
+    //    Walk ancestors of each process with a real TTY to check if Warp is in the chain
+    const ttyToStartTime = new Map<string, number>();
+    for (const [pid, info] of procs) {
+      if (info.tty === '??' || ttyToStartTime.has(info.tty)) continue;
+      // Only consider login shells (the first process in each tab)
+      if (!(info.comm === '-zsh' || info.comm === '-bash' || info.comm === '-fish' || info.comm === 'login')) continue;
+
+      // Check if this process descends from Warp
+      let current = info.ppid;
+      const visited = new Set<number>();
+      let isWarpChild = false;
+      while (current > 1 && !visited.has(current)) {
+        visited.add(current);
+        if (current === warpPid) { isWarpChild = true; break; }
+        const p = procs.get(current);
+        if (!p) break;
+        current = p.ppid;
+      }
+
+      if (isWarpChild) {
+        ttyToStartTime.set(info.tty, pid); // Use PID as proxy for creation order (lower PID = earlier)
+      }
+    }
+
+    if (!ttyToStartTime.has(targetTty)) return undefined;
+
+    // 5. Sort TTYs by their login shell PID (ascending = creation order = tab order)
+    const sortedTtys = [...ttyToStartTime.entries()]
+      .sort((a, b) => a[1] - b[1])
+      .map(e => e[0]);
+
+    const tabIndex = sortedTtys.indexOf(targetTty) + 1; // 1-based
+    return (tabIndex >= 1 && tabIndex <= 9) ? tabIndex : undefined;
+  } catch {
+    return undefined;
   }
 }
 
@@ -234,9 +347,11 @@ export async function focusPane(paneId: string): Promise<{ ok: boolean; error?: 
     return focusItermSession(itermId);
   }
 
-  // Route Warp native sessions — best-effort bring to front (no tab selection)
+  // Route Warp native sessions — activate and switch to the correct tab
   if (paneId.startsWith('warp:')) {
-    await activateWarp();
+    const pid = parseInt(paneId.slice('warp:'.length), 10);
+    const tabIndex = isNaN(pid) ? undefined : await findWarpTabIndex(pid);
+    await activateWarp(tabIndex);
     return { ok: true };
   }
 
@@ -296,9 +411,18 @@ export async function focusPane(paneId: string): Promise<{ ok: boolean; error?: 
         case 'iterm2':
           await activateITermTab(clientTty);
           break;
-        case 'warp':
-          await activateWarp();
+        case 'warp': {
+          // For tmux+Warp, find the tab by looking up processes on the client TTY
+          const { stdout: clientPidOut } = await execFileAsync('ps', ['-t', clientTty.replace('/dev/', ''), '-o', 'pid=']);
+          const clientPids = clientPidOut.trim().split('\n').map(s => parseInt(s.trim())).filter(n => !isNaN(n));
+          let warpTabIdx: number | undefined;
+          for (const cp of clientPids) {
+            warpTabIdx = await findWarpTabIndex(cp);
+            if (warpTabIdx) break;
+          }
+          await activateWarp(warpTabIdx);
           break;
+        }
         case 'terminal':
           await activateTerminalApp();
           break;

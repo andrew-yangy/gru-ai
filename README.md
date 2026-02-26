@@ -122,8 +122,8 @@ Click a session card to jump to its terminal. Works with tmux and native termina
 |-------------|-------|------------|-------|
 | **macOS + iTerm2 + tmux** | Full | Yes | Switches to correct iTerm2 tab and tmux pane |
 | **macOS + iTerm2 (native)** | Full | Yes | Switches to correct iTerm2 tab via AppleScript |
-| **macOS + Warp + tmux** | Partial | Yes (via tmux) | Brings Warp to front, switches tmux pane |
-| **macOS + Warp (native)** | Partial | No | Brings Warp to front (no tab API available) |
+| **macOS + Warp + tmux** | Full | Yes (via tmux) | Switches to correct Warp tab and tmux pane |
+| **macOS + Warp (native)** | Full | No | Switches to correct Warp tab via CGEvents |
 | **macOS + Terminal.app + tmux** | Partial | Yes (via tmux) | Brings Terminal.app to front, switches tmux pane |
 | **Linux + any terminal + tmux** | Not yet | Not yet | Needs `xdotool`/`wmctrl` for window focus |
 
