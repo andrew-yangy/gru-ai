@@ -506,11 +506,11 @@ function processEntry(state: SessionFileState, entry: RawEntry): void {
         break;
       }
 
-      // Check if last text ends with question mark
+      // Check if last text block looks like it's waiting for user input
       const content = entry.message?.content;
       if (Array.isArray(content)) {
         const lastText = [...content].reverse().find((c) => c.type === 'text' && c.text);
-        if (lastText?.text?.trimEnd().endsWith('?')) {
+        if (lastText?.text && looksLikeWaitingForInput(lastText.text)) {
           state.machineState = 'needs_input';
           break;
         }
@@ -528,8 +528,8 @@ function processEntry(state: SessionFileState, entry: RawEntry): void {
     }
 
     case 'TURN_END':
-      // Turn is over — check for pending input tools (safety)
-      if (state.pendingInputTool) {
+      // Turn is over — preserve needs_input if already detected (e.g. question in text)
+      if (state.pendingInputTool || state.machineState === 'needs_input') {
         state.machineState = 'needs_input';
         break;
       }
@@ -589,6 +589,63 @@ function readNewEntries(
     }
     return null;
   }
+}
+
+/**
+ * Detect if assistant text looks like it's waiting for user input.
+ *
+ * Uses multiple heuristics beyond just trailing '?':
+ * 1. Last sentence/paragraph ends with '?' (anywhere, not just very end)
+ * 2. Text contains explicit choice/question patterns
+ * 3. Text ends with a prompt-like pattern (colon after a question phrase)
+ */
+function looksLikeWaitingForInput(text: string): boolean {
+  const trimmed = text.trimEnd();
+  if (!trimmed) return false;
+
+  // 1. Check if there's a question mark near the end of the text.
+  //    Look at the last 500 chars to find the final sentence boundary.
+  const tail = trimmed.slice(-500);
+
+  // Find the last question mark, ignoring those inside code blocks or URLs
+  const lastQ = tail.lastIndexOf('?');
+  if (lastQ !== -1) {
+    // Make sure there's no substantial content AFTER the '?' that would
+    // indicate the question was rhetorical or mid-paragraph.
+    const afterQ = tail.slice(lastQ + 1).trim();
+    // Allow trailing markdown, whitespace, closing parens/brackets, or short annotations
+    if (afterQ.length <= 2 || /^[)\]}>*_`~\s]+$/.test(afterQ)) {
+      return true;
+    }
+    // If the text after '?' is just a sources/attribution line, still a question
+    if (/^(\n\s*)+sources?:/i.test(afterQ)) {
+      return true;
+    }
+  }
+
+  // 2. Explicit choice/input patterns at end of text
+  const lastLines = tail.split('\n').filter(l => l.trim()).slice(-3).join(' ').toLowerCase();
+  const waitingPatterns = [
+    /\bwould you (?:like|prefer|want)\b/,
+    /\bshould (?:i|we)\b/,
+    /\bdo you (?:want|prefer|need)\b/,
+    /\bplease (?:choose|select|pick|confirm|specify|provide|let me know)\b/,
+    /\blet me know\b/,
+    /\bwhat (?:do you|would you|should)\b/,
+    /\bwhich (?:one|option|approach)\b/,
+    /\bchoose (?:one|an option|from)\b/,
+    /\bselect (?:one|an option|from)\b/,
+    /\bhow (?:would you like|should|do you want)\b/,
+    /\bready to (?:proceed|continue|start)\b/,
+    /\bshall (?:i|we)\b/,
+    /\bcan you (?:confirm|clarify|provide|specify)\b/,
+  ];
+
+  for (const pattern of waitingPatterns) {
+    if (pattern.test(lastLines)) return true;
+  }
+
+  return false;
 }
 
 /**

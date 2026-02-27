@@ -40,6 +40,8 @@ function formatDefaultMessage(type: string | undefined): string {
       return 'Agent needs permission';
     case 'idle_prompt':
       return 'Agent needs input';
+    case 'elicitation_dialog':
+      return 'Agent needs input';
     case 'error':
       return 'Agent encountered an error';
     default:

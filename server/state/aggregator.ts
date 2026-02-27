@@ -938,6 +938,7 @@ export class Aggregator extends EventEmitter {
       case 'permission_prompt':
         return 'waiting-approval';
       case 'idle_prompt':
+      case 'elicitation_dialog':
         return 'waiting-input';
       case 'error':
         return 'error';
