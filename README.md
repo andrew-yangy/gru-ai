@@ -1,35 +1,44 @@
 # Agent Conductor
 
-A real-time dashboard for monitoring [Claude Code](https://docs.anthropic.com/en/docs/claude-code) sessions. See all your sessions across every project, track agent teams, approve prompts from the browser, and clean up stale resources.
+**The mission control for Claude Code power users.**
+
+If you're like me — running Claude Code like crazy, multitasking across 10+ terminal sessions, constantly tab-switching to check if an agent finished, peeking at team progress, approving prompts, and wishing you could just *click something* to jump straight to the right session — Agent Conductor is for you. It's a real-time dashboard that gives you full visibility and control over every Claude Code session, so you can stop juggling terminals and start shipping faster.
 
 ![Dashboard](https://img.shields.io/badge/status-alpha-orange) ![TypeScript](https://img.shields.io/badge/TypeScript-5.9-blue) ![React](https://img.shields.io/badge/React-19-blue) ![License](https://img.shields.io/badge/license-MIT-green)
 
 ![Demo](docs/demo.gif)
 
-## Why
-
-Claude Code stores session logs, team configs, and task lists under `~/.claude/` — but there's no built-in way to see what's happening across all your sessions. If you're running multiple projects, using agent teams, or just want to know which sessions are still active, you're left checking individual terminal tabs.
-
-Agent Conductor reads directly from `~/.claude/` and gives you a single dashboard with:
-
-- Every session across all projects, organized in a tree
-- Real-time activity (which tool is running, what file is being edited)
-- Agent team status and task progress
-- The ability to send input and approve prompts without switching windows
-
 ## Features
 
-- **Automatic session discovery** — scans `~/.claude/projects/` JSONL files on disk. No hooks or configuration required.
-- **Live activity** — see what each session is doing in real-time (editing files, running commands, thinking)
-- **Project tree view** — sessions grouped by project, subagents nested under their parent, with time and status filters
-- **Team monitoring** — track team members, task progress, and agent status
-- **Focus session** — click any session card to jump straight to its terminal tab/pane (iTerm2, Warp, Terminal.app, tmux)
-- **Send input** — approve/reject prompts and send text to agents directly from the dashboard (tmux and native iTerm2)
-- **Terminal type detection** — automatically identifies which terminal hosts each session and shows it on the card
-- **Insights** — usage analytics with daily message charts, model usage breakdown, and activity heatmaps
-- **Prompt history** — searchable history of all prompts across sessions, filterable by project
-- **Stale team cleanup** — delete old teams and task lists with one click
-- **macOS notifications** — native alerts when agents need attention (even when the browser is minimized)
+### Session Kanban Board
+See every Claude Code session at a glance — organized into columns by status: **Active**, **Waiting**, **Needs You**, and **Done**. Each card shows the model, git branch, working directory, elapsed time, and what the agent is doing *right now*. Filter by time range, search by project, and never lose track of a session again.
+
+### One-Click Session Focus
+Click any session card and instantly jump to its terminal tab/pane. No more hunting through 15 tmux panes or 8 iTerm tabs. Works with **tmux**, **iTerm2**, **Warp**, and **Terminal.app** — Conductor detects which terminal hosts each session and shows a badge on the card so you know at a glance.
+
+### Live Activity Tracking
+See what each agent is doing in real-time: which tool is running, what file is being edited, whether it's thinking. Active sessions pulse with a green dot. You'll know the moment something finishes or needs attention.
+
+### Agent Teams & Subagents
+Monitor entire agent teams from one view. See team members, their roles, current tasks, and progress bars. Subagents are nested under their parent session with their own status and activity. Track task completion across the whole team without switching terminals.
+
+### Quick Actions — Approve, Reject, Abort
+When a session is waiting for approval or input, action buttons appear right on the card. Approve, reject, or abort without leaving the dashboard. Send custom text input too. No more switching to a terminal just to type "y".
+
+### Prompt History
+Searchable history of every prompt across all sessions — 1000+ entries, filterable by project and date. Find that prompt you ran three days ago, see what you asked, and pick up where you left off.
+
+### Usage Insights
+Daily message charts, model usage breakdown, activity heatmaps, and session statistics. See how you're using Claude Code across projects and time periods.
+
+### Plans Viewer
+Browse all your Claude Code plans with rendered markdown previews. See which plans are running, done, or still in draft.
+
+### Notifications
+Native macOS alerts and browser notifications when agents need your attention — even when the dashboard is minimized. Never miss a permission prompt again.
+
+### Stale Team Cleanup
+Old teams cluttering your `~/.claude/teams/`? Delete them with one click from the dashboard.
 
 ## Quick Start
 
@@ -40,9 +49,9 @@ npm install
 npm run dev
 ```
 
-Open [http://localhost:5173](http://localhost:5173). The server runs on port 4444.
+Open [http://localhost:5173](http://localhost:5173). That's it.
 
-That's it. Agent Conductor automatically discovers your Claude Code sessions from `~/.claude/`.
+Agent Conductor automatically discovers all your Claude Code sessions from `~/.claude/` — no configuration, no hooks, no setup. Just run it and see everything.
 
 ## Architecture
 
@@ -57,47 +66,59 @@ That's it. Agent Conductor automatically discovers your Claude Code sessions fro
 │         agent-*.jsonl            │                      │  merges    │  │
 │                     │            │  ┌──────────────┐   │  sources   │  │
 │ teams/              │  read      │  │   Team &     │──>│  into      │  │
-│   {team}/config.json├──────────>│  │   Task       │   │  state     │  │
-│                     │            │  │   Parsers    │   │            │  │
+│   {team}/config.json├──────────>│  │   Task       │   │  unified   │  │
+│                     │            │  │   Parsers    │   │  state     │  │
 │ tasks/              │  read      │  └──────────────┘   └─────┬──────┘  │
 │   {team}/*.json   ──┼──────────>│                            │         │
-└─────────────────────┘            │                       WebSocket     │
-                                   │                            │         │
-  ┌─────────────┐                  │                     ┌──────▼──────┐  │
-  │ Hook events │   POST           │                     │   React     │  │
-  │ (optional)  ├──/api/events───>│  enrich status ────>│   Dashboard │  │
-  └─────────────┘                  │                     └─────────────┘  │
+│                     │            │  ┌──────────────┐         │         │
+│ history.jsonl     ──┼──read────>│  │   Process    │   WebSocket     │
+│ plans/*.md        ──┼──read────>│  │   Discovery  │─────────│         │
+│ stats-cache.json  ──┼──read────>│  │   (ps, lsof) │         │         │
+└─────────────────────┘            │  └──────────────┘   ┌─────▼───────┐ │
+                                   │                     │   React     │ │
+  ┌─────────────┐                  │                     │   Dashboard │ │
+  │ Hook events │   POST           │                     │             │ │
+  │ (optional)  ├──/api/events───>│  enrich status ────>│  Sessions   │ │
+  └─────────────┘                  │                     │  Teams      │ │
+                                   │  ┌──────────────┐   │  Insights   │ │
+  ┌─────────────┐                  │  │  Terminal    │   │  History    │ │
+  │ Click card  │   POST           │  │  Focus &    │   │  Plans      │ │
+  │ in browser  ├──/api/actions──>│  │  Send Input │   │  Settings   │ │
+  └─────────────┘                  │  └──────────────┘   └─────────────┘ │
                                    └──────────────────────────────────────┘
 ```
 
-**How data flows:**
+**How it works:**
 
-1. **Session Scanner** watches `~/.claude/projects/` for JSONL files. For active sessions (modified < 30s ago), it tail-reads the last 8KB to extract metadata (model, git branch, cwd, tools in use). Inactive sessions use file path info only — safe for directories with hundreds of sessions.
+1. **Session Scanner** watches `~/.claude/projects/` for JSONL session files. Active sessions (modified < 30s) get tail-read for live metadata — model, git branch, cwd, current tool, file being edited. Inactive sessions use file path info only, keeping things fast even with hundreds of sessions.
 
-2. **Team & Task Parsers** read team configs from `~/.claude/teams/` and task lists from `~/.claude/tasks/`. Subagent relationships are built from the file structure (`{uuid}/subagents/agent-{id}.jsonl`).
+2. **Process Discovery** maps running Claude processes to terminal panes using `ps` and `lsof`. It walks process trees to find tmux panes, iTerm2 tabs, and Warp windows. For sessions where Claude has exited (orphan tabs), it uses TTY + CWD matching to still connect the dots.
 
-3. **Aggregator** merges all sources into a single state object. Filesystem scanning is the primary source; hook events optionally enrich session status (waiting for approval, errors) within a 5-minute window.
+3. **Team & Task Parsers** read team configs and task lists from `~/.claude/teams/` and `~/.claude/tasks/`. Subagent relationships are built from the directory structure.
 
-4. **WebSocket** pushes state updates to the React dashboard in real-time. File watchers use debounced timers (500ms for activity, 1s for session refresh) to avoid overwhelming the client.
+4. **Aggregator** merges everything into a single state object, pushed to the dashboard via WebSocket in real-time.
 
-## Configuration
+## Supported Terminals
 
-Config lives at `~/.conductor/config.json` (auto-created on first run):
+Session discovery works on **any OS** where Claude Code runs — it just reads `~/.claude/` files.
 
-```json
-{
-  "claudeHome": "~/.claude",
-  "server": { "port": 4444 },
-  "notifications": {
-    "macOS": true,
-    "browser": true
-  }
-}
-```
+Terminal focus and send-input require OS-level integration. Current support:
 
-### Optional: Claude Code hooks
+| Environment | Focus | Send Input | How It Works |
+|-------------|:-----:|:----------:|--------------|
+| **iTerm2 + tmux** | Yes | Yes | AppleScript tab switching + tmux `select-pane` |
+| **iTerm2 (native)** | Yes | Yes | AppleScript with unique session ID |
+| **Warp + tmux** | Yes | Yes | CGEvents for Warp + tmux for pane |
+| **Warp (native)** | Yes | No | CGEvents tab navigation |
+| **Terminal.app + tmux** | Yes | Yes | Brings app to front + tmux pane switching |
 
-For richer status detection (waiting for approval, errors), add hooks to `~/.claude/settings.json`:
+Each session card shows a **terminal badge** (tmux, iTerm, Warp) so you know what's available at a glance.
+
+> **Coming soon:** Linux support via `xdotool`/`wmctrl`, Kitty/Alacritty IPC, Windows PowerShell-based activation.
+
+## Optional: Claude Code Hooks
+
+Agent Conductor works out of the box — no hooks required. But for **instant** status detection (permission prompts, idle states), you can add hooks to `~/.claude/settings.json`:
 
 ```json
 {
@@ -121,63 +142,44 @@ For richer status detection (waiting for approval, errors), add hooks to `~/.cla
 }
 ```
 
-Hooks are optional — session discovery works without them via filesystem scanning. When configured, they provide instant, reliable detection of permission prompts and idle states.
-
-## Supported Environments
-
-### Session Discovery (works everywhere)
-Session scanning reads `~/.claude/projects/` JSONL files — this works on any OS where Claude Code runs.
-
-### Focus Session (click to navigate)
-Click a session card to jump to its terminal. Works with tmux and native terminal sessions:
-
-| Environment | Focus | Send Input | Notes |
-|-------------|-------|------------|-------|
-| **macOS + iTerm2 + tmux** | Full | Yes | Switches to correct iTerm2 tab and tmux pane |
-| **macOS + iTerm2 (native)** | Full | Yes | Switches to correct iTerm2 tab via AppleScript |
-| **macOS + Warp + tmux** | Full | Yes (via tmux) | Switches to correct Warp tab and tmux pane |
-| **macOS + Warp (native)** | Full | No | Switches to correct Warp tab via CGEvents |
-| **macOS + Terminal.app + tmux** | Partial | Yes (via tmux) | Brings Terminal.app to front, switches tmux pane |
-| **Linux + any terminal + tmux** | Not yet | Not yet | Needs `xdotool`/`wmctrl` for window focus |
-
-Each session card shows a terminal type badge (tmux, iTerm, Warp) so you know what level of interaction is available at a glance.
-
-### TODO: Environment Support
-- [ ] **Linux window focus**: `xdotool`/`wmctrl` for window focus
-- [ ] **Terminal.app tab switching**: AppleScript for tab selection
-- [ ] **Kitty/Alacritty support**: `kitty @ focus-window` and Alacritty IPC
-- [ ] **Windows support**: PowerShell-based window activation
+Without hooks, Conductor detects status via filesystem scanning (slight delay). With hooks, status updates are instant.
 
 ## Tech Stack
 
-- **Server**: Node.js with raw `http.createServer` + `ws` WebSocket + SQLite (better-sqlite3) + chokidar file watching
-- **Frontend**: React 19 + Vite + Zustand + Tailwind v4 + shadcn/ui + Radix primitives
-- **Zero external services** — everything runs locally, reads from `~/.claude/`
+| Layer | Stack |
+|-------|-------|
+| **Server** | Node.js + `ws` WebSocket + SQLite (better-sqlite3) + chokidar |
+| **Frontend** | React 19 + Vite + Zustand + Tailwind v4 + shadcn/ui |
+| **Terminal** | AppleScript (iTerm2, Terminal.app) + CGEvents (Warp) + tmux CLI |
+| **Data** | Zero external services — everything reads from `~/.claude/` locally |
+
+## API Reference
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/api/state` | Full dashboard state |
+| `GET` | `/api/events` | Recent events |
+| `POST` | `/api/events` | Add hook event |
+| `POST` | `/api/actions/focus-session` | Focus a terminal pane |
+| `POST` | `/api/actions/send-input` | Send input to a session |
+| `DELETE` | `/api/teams/:name` | Delete a stale team |
+| `GET` | `/api/config` | Get notification settings |
+| `PATCH` | `/api/config` | Update notification settings |
+| `GET` | `/api/insights/stats` | Usage statistics |
+| `GET` | `/api/insights/history` | Prompt history |
+| `GET` | `/api/insights/plans` | Plan files |
+| `WS` | `ws://localhost:4444` | Real-time state stream |
 
 ## Scripts
 
 ```bash
-npm run dev          # Start server + client (concurrent)
+npm run dev          # Start server + client
 npm run dev:server   # Server only (port 4444)
-npm run dev:client   # Vite dev server only
+npm run dev:client   # Vite dev only
 npm run build        # Production build
 npm run type-check   # TypeScript check
 npm run lint         # ESLint
 ```
-
-## API
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/state` | Full dashboard state |
-| GET | `/api/events` | Recent events |
-| POST | `/api/events` | Add hook event |
-| POST | `/api/actions/focus-session` | Focus terminal pane (tmux, iTerm2, Warp) |
-| POST | `/api/actions/send-input` | Send input to agent (tmux + native iTerm2) |
-| DELETE | `/api/teams/:name` | Delete stale team |
-| GET | `/api/config` | Get config |
-| PATCH | `/api/config` | Update config |
-| WS | `ws://localhost:4444` | Real-time updates |
 
 ## License
 
