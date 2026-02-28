@@ -12,6 +12,13 @@ import { focusPane } from './actions/terminal.js';
 import { sendInput } from './actions/send-input.js';
 import { deleteTeam } from './actions/cleanup.js';
 import { Notifier } from './notifications/notifier.js';
+import {
+  buildAllowedOrigins,
+  setCorsHeaders,
+  setSecurityHeaders,
+  readBody,
+  serveStatic,
+} from './security.js';
 import type { WsMessage, WsMessageType, SendInputRequest } from './types.js';
 
 // --- Load config and initialize ---
@@ -55,12 +62,13 @@ sessionWatcher.start();
 let lastEventTimestamp: string | null = null;
 const serverStartTime = new Date().toISOString();
 
+// --- Security ---
+const ALLOWED_ORIGINS = buildAllowedOrigins(PORT);
+
 // --- HTTP Server ---
 const server = http.createServer((req, res) => {
-  // CORS headers for dev mode
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PATCH, DELETE, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  setCorsHeaders(req, res, ALLOWED_ORIGINS);
+  setSecurityHeaders(res);
 
   if (req.method === 'OPTIONS') {
     res.writeHead(204);
@@ -223,30 +231,20 @@ function handleGetState(res: http.ServerResponse): void {
 }
 
 function handlePostEvent(req: http.IncomingMessage, res: http.ServerResponse): void {
-  let body = '';
-  req.on('data', (chunk) => {
-    body += chunk;
-  });
-  req.on('end', () => {
-    try {
-      const parsed = JSON.parse(body);
-      const event = processEvent(parsed);
-      aggregator.addEvent(event);
+  readBody(req).then((body) => {
+    const parsed = JSON.parse(body);
+    const event = processEvent(parsed);
+    aggregator.addEvent(event);
 
-      lastEventTimestamp = event.timestamp;
+    lastEventTimestamp = event.timestamp;
 
-      res.writeHead(200, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ ok: true, eventId: event.id }));
-    } catch (err) {
-      console.error(`[api] Error processing event:`, err);
-      res.writeHead(400, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ error: 'Invalid event data' }));
-    }
-  });
-  req.on('error', (err) => {
-    console.error(`[api] Request error:`, err);
-    res.writeHead(500, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify({ error: 'Internal error' }));
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ ok: true, eventId: event.id }));
+  }).catch((err) => {
+    console.error(`[api] Error processing event:`, err);
+    const status = err instanceof Error && err.message === 'Request body too large' ? 413 : 400;
+    res.writeHead(status, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ error: status === 413 ? 'Request body too large' : 'Invalid event data' }));
   });
 }
 
@@ -277,88 +275,60 @@ function handleHealth(res: http.ServerResponse): void {
 }
 
 function handleFocusSession(req: http.IncomingMessage, res: http.ServerResponse): void {
-  let body = '';
-  req.on('data', (chunk) => {
-    body += chunk;
-  });
-  req.on('end', () => {
-    try {
-      const parsed = JSON.parse(body) as { paneId?: string };
-      if (!parsed.paneId || typeof parsed.paneId !== 'string') {
-        res.writeHead(400, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ error: 'Missing paneId' }));
-        return;
-      }
-
-      focusPane(parsed.paneId).then((result) => {
-        const status = result.ok ? 200 : 400;
-        res.writeHead(status, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify(result));
-      }).catch((err) => {
-        console.error(`[api] Focus pane error:`, err);
-        res.writeHead(500, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ error: 'Internal error' }));
-      });
-    } catch {
+  readBody(req).then(async (body) => {
+    const parsed = JSON.parse(body) as { paneId?: string };
+    if (!parsed.paneId || typeof parsed.paneId !== 'string') {
       res.writeHead(400, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ error: 'Invalid JSON' }));
+      res.end(JSON.stringify({ error: 'Missing paneId' }));
+      return;
     }
-  });
-  req.on('error', (err) => {
-    console.error(`[api] Request error:`, err);
-    res.writeHead(500, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify({ error: 'Internal error' }));
+
+    const result = await focusPane(parsed.paneId);
+    const status = result.ok ? 200 : 400;
+    res.writeHead(status, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify(result));
+  }).catch((err) => {
+    console.error(`[api] Focus pane error:`, err);
+    const status = err instanceof Error && err.message === 'Request body too large' ? 413 : 500;
+    res.writeHead(status, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ error: status === 413 ? 'Request body too large' : 'Internal error' }));
   });
 }
 
 function handleSendInput(req: http.IncomingMessage, res: http.ServerResponse): void {
-  let body = '';
-  req.on('data', (chunk) => {
-    body += chunk;
-  });
-  req.on('end', () => {
-    try {
-      const parsed = JSON.parse(body) as Partial<SendInputRequest>;
-      if (!parsed.paneId || typeof parsed.paneId !== 'string') {
-        res.writeHead(400, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ error: 'Missing paneId' }));
-        return;
-      }
-      if (!parsed.type || !['approve', 'reject', 'abort', 'text'].includes(parsed.type)) {
-        res.writeHead(400, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ error: 'Missing or invalid type' }));
-        return;
-      }
-      if (parsed.input === undefined || parsed.input === null || typeof parsed.input !== 'string') {
-        res.writeHead(400, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ error: 'Missing input' }));
-        return;
-      }
-
-      const request: SendInputRequest = {
-        paneId: parsed.paneId,
-        input: parsed.input,
-        type: parsed.type,
-      };
-
-      sendInput(request, aggregator).then((result) => {
-        const status = result.ok ? 200 : 400;
-        res.writeHead(status, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify(result));
-      }).catch((err) => {
-        console.error(`[api] Send input error:`, err);
-        res.writeHead(500, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ error: 'Internal error' }));
-      });
-    } catch {
+  readBody(req, 8192).then(async (body) => {
+    const parsed = JSON.parse(body) as Partial<SendInputRequest>;
+    if (!parsed.paneId || typeof parsed.paneId !== 'string') {
       res.writeHead(400, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ error: 'Invalid JSON' }));
+      res.end(JSON.stringify({ error: 'Missing paneId' }));
+      return;
     }
-  });
-  req.on('error', (err) => {
-    console.error(`[api] Request error:`, err);
-    res.writeHead(500, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify({ error: 'Internal error' }));
+    if (!parsed.type || !['approve', 'reject', 'abort', 'text'].includes(parsed.type)) {
+      res.writeHead(400, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: 'Missing or invalid type' }));
+      return;
+    }
+    if (parsed.input === undefined || parsed.input === null || typeof parsed.input !== 'string') {
+      res.writeHead(400, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: 'Missing input' }));
+      return;
+    }
+
+    const request: SendInputRequest = {
+      paneId: parsed.paneId,
+      input: parsed.input,
+      type: parsed.type,
+    };
+
+    const result = await sendInput(request, aggregator);
+    const status = result.ok ? 200 : 400;
+    res.writeHead(status, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify(result));
+  }).catch((err) => {
+    console.error(`[api] Send input error:`, err);
+    const status = err instanceof Error && err.message === 'Request body too large' ? 413 : 400;
+    res.writeHead(status, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ error: status === 413 ? 'Request body too large' : 'Invalid request' }));
   });
 }
 
@@ -387,73 +357,73 @@ function handleGetConfig(res: http.ServerResponse): void {
 }
 
 function handlePatchConfig(req: http.IncomingMessage, res: http.ServerResponse): void {
-  let body = '';
-  req.on('data', (chunk) => {
-    body += chunk;
-  });
-  req.on('end', () => {
-    try {
-      const parsed = JSON.parse(body) as Record<string, unknown>;
+  readBody(req, 8192).then((body) => {
+    const parsed = JSON.parse(body) as Record<string, unknown>;
 
-      // Only allow patching 'notifications' field
-      if (!parsed.notifications || typeof parsed.notifications !== 'object') {
-        res.writeHead(400, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ error: 'Missing or invalid notifications field' }));
-        return;
-      }
-
-      const incoming = parsed.notifications as Record<string, unknown>;
-
-      // Validate booleans if present
-      if ('macOS' in incoming && typeof incoming.macOS !== 'boolean') {
-        res.writeHead(400, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ error: 'notifications.macOS must be a boolean' }));
-        return;
-      }
-      if ('browser' in incoming && typeof incoming.browser !== 'boolean') {
-        res.writeHead(400, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ error: 'notifications.browser must be a boolean' }));
-        return;
-      }
-
-      // Merge into config.notifications
-      config.notifications = {
-        ...config.notifications,
-        ...('macOS' in incoming ? { macOS: incoming.macOS as boolean } : {}),
-        ...('browser' in incoming ? { browser: incoming.browser as boolean } : {}),
-      };
-
-      // Persist to disk
-      saveConfig(config);
-
-      // Update notifier
-      notifier.updateConfig(config.notifications);
-
-      // Broadcast config_updated via WebSocket
-      const message: WsMessage = {
-        version: 1,
-        type: 'config_updated',
-        payload: { notifications: config.notifications },
-      };
-      const data = JSON.stringify(message);
-      for (const client of wss.clients) {
-        if (client.readyState === WebSocket.OPEN) {
-          client.send(data);
-        }
-      }
-
-      res.writeHead(200, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ ok: true, notifications: config.notifications }));
-    } catch (err) {
-      console.error(`[api] Error patching config:`, err);
+    // Only allow patching 'notifications' field
+    if (!parsed.notifications || typeof parsed.notifications !== 'object') {
       res.writeHead(400, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ error: 'Invalid JSON' }));
+      res.end(JSON.stringify({ error: 'Missing or invalid notifications field' }));
+      return;
     }
-  });
-  req.on('error', (err) => {
-    console.error(`[api] Request error:`, err);
-    res.writeHead(500, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify({ error: 'Internal error' }));
+
+    const incoming = parsed.notifications as Record<string, unknown>;
+
+    // Reject unexpected keys
+    const allowedKeys = new Set(['macOS', 'browser']);
+    for (const key of Object.keys(incoming)) {
+      if (!allowedKeys.has(key)) {
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: `Unknown notification key: ${key}` }));
+        return;
+      }
+    }
+
+    // Validate booleans if present
+    if ('macOS' in incoming && typeof incoming.macOS !== 'boolean') {
+      res.writeHead(400, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: 'notifications.macOS must be a boolean' }));
+      return;
+    }
+    if ('browser' in incoming && typeof incoming.browser !== 'boolean') {
+      res.writeHead(400, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: 'notifications.browser must be a boolean' }));
+      return;
+    }
+
+    // Merge into config.notifications
+    config.notifications = {
+      ...config.notifications,
+      ...('macOS' in incoming ? { macOS: incoming.macOS as boolean } : {}),
+      ...('browser' in incoming ? { browser: incoming.browser as boolean } : {}),
+    };
+
+    // Persist to disk
+    saveConfig(config);
+
+    // Update notifier
+    notifier.updateConfig(config.notifications);
+
+    // Broadcast config_updated via WebSocket
+    const message: WsMessage = {
+      version: 1,
+      type: 'config_updated',
+      payload: { notifications: config.notifications },
+    };
+    const data = JSON.stringify(message);
+    for (const client of wss.clients) {
+      if (client.readyState === WebSocket.OPEN) {
+        client.send(data);
+      }
+    }
+
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ ok: true, notifications: config.notifications }));
+  }).catch((err) => {
+    console.error(`[api] Error patching config:`, err);
+    const status = err instanceof Error && err.message === 'Request body too large' ? 413 : 400;
+    res.writeHead(status, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ error: status === 413 ? 'Request body too large' : 'Invalid JSON' }));
   });
 }
 
@@ -518,43 +488,6 @@ function handleInsightsPlans(res: http.ServerResponse): void {
     res.writeHead(200, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify([]));
   }
-}
-
-// --- Static file serving ---
-
-const MIME_TYPES: Record<string, string> = {
-  '.html': 'text/html',
-  '.js': 'application/javascript',
-  '.css': 'text/css',
-  '.json': 'application/json',
-  '.png': 'image/png',
-  '.jpg': 'image/jpeg',
-  '.svg': 'image/svg+xml',
-  '.ico': 'image/x-icon',
-  '.woff': 'font/woff',
-  '.woff2': 'font/woff2',
-};
-
-function serveStatic(pathname: string, distDir: string, res: http.ServerResponse): void {
-  let filePath = path.join(distDir, pathname);
-
-  // Default to index.html for SPA routing
-  if (!fs.existsSync(filePath) || fs.statSync(filePath).isDirectory()) {
-    filePath = path.join(distDir, 'index.html');
-  }
-
-  if (!fs.existsSync(filePath)) {
-    res.writeHead(404, { 'Content-Type': 'text/plain' });
-    res.end('Not found');
-    return;
-  }
-
-  const ext = path.extname(filePath);
-  const contentType = MIME_TYPES[ext] ?? 'application/octet-stream';
-
-  const content = fs.readFileSync(filePath);
-  res.writeHead(200, { 'Content-Type': contentType });
-  res.end(content);
 }
 
 // --- Start Server ---

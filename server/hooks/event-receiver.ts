@@ -11,16 +11,44 @@ interface RawEventBody {
   metadata?: Record<string, unknown>;
 }
 
+const MAX_FIELD_LENGTH = 1024;
+const MAX_METADATA_SIZE = 8192;
+
+function truncate(str: string, max: number): string {
+  return str.length > max ? str.slice(0, max) : str;
+}
+
+/**
+ * Validate and sanitize event body fields without persisting.
+ * Exported for testability.
+ */
+export function sanitizeEventBody(body: RawEventBody): Omit<HookEvent, 'id'> {
+  const type = truncate(typeof body.type === 'string' ? body.type : 'unknown', 128);
+  const sessionId = truncate(typeof body.sessionId === 'string' ? body.sessionId : 'unknown', 256);
+  const message = truncate(
+    typeof body.message === 'string' ? body.message : formatDefaultMessage(body.type),
+    MAX_FIELD_LENGTH,
+  );
+  const project = typeof body.project === 'string' ? truncate(body.project, 256) : undefined;
+
+  // Validate timestamp format (ISO 8601) or use current time
+  let timestamp = new Date().toISOString();
+  if (typeof body.timestamp === 'string' && !isNaN(Date.parse(body.timestamp))) {
+    timestamp = body.timestamp;
+  }
+
+  // Limit metadata size
+  let metadata = body.metadata;
+  if (metadata && JSON.stringify(metadata).length > MAX_METADATA_SIZE) {
+    metadata = undefined;
+  }
+
+  return { type, sessionId, timestamp, message, project, metadata };
+}
+
 export function processEvent(body: RawEventBody): HookEvent {
-  const event: HookEvent = {
-    id: crypto.randomUUID(),
-    type: body.type ?? 'unknown',
-    sessionId: body.sessionId ?? 'unknown',
-    timestamp: body.timestamp ?? new Date().toISOString(),
-    message: body.message ?? formatDefaultMessage(body.type),
-    project: body.project,
-    metadata: body.metadata,
-  };
+  const sanitized = sanitizeEventBody(body);
+  const event: HookEvent = { id: crypto.randomUUID(), ...sanitized };
 
   // Persist to SQLite
   insertEvent(event);
