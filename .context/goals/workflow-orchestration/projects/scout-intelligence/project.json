@@ -1,0 +1,14 @@
+{
+  "id": "scout-intelligence",
+  "title": "External intelligence pipeline — /scout skill with 4 domain agents",
+  "goal_id": "workflow-orchestration",
+  "status": "completed",
+  "priority": "p0",
+  "description": "Built the /scout skill: 4 C-suite agents research their external domains in parallel, Morgan consolidates findings, CEO reviews proposals. Includes backlog trigger checking and cross-scout pattern detection.",
+  "source_directive": null,
+  "tags": [],
+  "tasks": [],
+  "created": "2026-03-02",
+  "updated": "2026-03-02",
+  "completed": "2026-03-02"
+}

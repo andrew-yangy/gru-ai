@@ -1,0 +1,14 @@
+{
+  "id": "mcp-server",
+  "title": "Agent-conductor as MCP server (5 tools for Claude Code integration)",
+  "goal_id": "workflow-orchestration",
+  "status": "completed",
+  "priority": "p1",
+  "description": "Exposed agent-conductor functionality as an MCP server with 5 tools for Claude Code integration, enabling programmatic directive launching and status queries.",
+  "source_directive": null,
+  "tags": [],
+  "tasks": [],
+  "created": "2026-03-02",
+  "updated": "2026-03-02",
+  "completed": "2026-03-02"
+}

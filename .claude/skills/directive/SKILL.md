@@ -1,6 +1,6 @@
 ---
 name: "directive"
-description: "Execute a CEO directive — evaluate, plan, cast agents, build, and report. Takes a directive name matching a file in .context/inbox/. Dynamic orchestration: Morgan evaluates complexity, designs the process, and casts the right agents per initiative."
+description: "Execute a CEO directive — evaluate, plan, cast agents, build, and report. Takes a directive name matching a file in .context/directives/. Dynamic orchestration: Morgan evaluates complexity, designs the process, and casts the right agents per initiative."
 ---
 
 # Execute Directive
@@ -68,7 +68,7 @@ Alex returns with one of:
 
 **Alex does this first.** Read the directive, then classify its weight. This determines how much process overhead is needed. Not everything needs the full 7-step pipeline.
 
-Read the directive file: `.context/inbox/$ARGUMENTS.md`
+Read the directive file: `.context/directives/$ARGUMENTS.md`
 Read `.context/vision.md` guardrails and `.context/preferences.md`.
 
 ### Classification Rules
@@ -119,7 +119,7 @@ Process: {what steps will be used}
 
 ### Lightweight Process
 
-1. Read context files (lessons.md, preferences.md — skip the full Step 2 context load)
+1. Read context files (lessons/ topic files, preferences.md — skip the full Step 2 context load)
 2. Scan the codebase yourself (or spawn one auditor agent if needed)
 3. Spawn engineer agent(s) to do the work
 4. Verify (type-check)
@@ -152,7 +152,7 @@ Same as heavyweight but with a brainstorm phase before Morgan plans. The team fi
    - `.context/vision.md` and `.context/preferences.md`
    - Instruction: "Propose an approach for this directive. Not endorse/challenge — actually propose HOW to solve this. Include: (1) your recommended approach in 3-5 sentences, (2) key trade-offs, (3) what you'd avoid and why. Output JSON: `{agent, approach, tradeoffs, avoid, confidence}`"
    - `model: "sonnet"` (cheap, fast — this is approach exploration, not code)
-3. **Synthesize** — collect all proposals, write synthesis to `.context/artifacts/{directive_name}/brainstorm.md`
+3. **Synthesize** — collect all proposals, write synthesis to `.context/goals/{goal}/projects/{project}/{directive_name}/brainstorm.md`
 4. **CEO clarification** — write 2-3 clarifying questions based on where agents disagreed or where scope is ambiguous. STOP and return to CEO: "This directive is strategic. The team brainstormed N approaches. Here are questions before we proceed: [questions]"
 5. **After CEO answers** — feed brainstorm synthesis + CEO answers into Morgan's prompt as additional context. Continue as heavyweight from Step 3 onward.
 
@@ -186,13 +186,13 @@ Full pipeline: Steps 0 → 1 → 2 → 2b → **Brainstorm** → 3 → 3b → 4 
 
 **Brainstorm phase (mandatory for heavyweight):** Before Morgan plans, spawn 2-3 relevant C-suite agents in parallel to explore approaches — same brainstorm process as strategic (see above). The difference: for heavyweight, the brainstorm focuses on implementation approach (not whether to do it), and CEO clarification questions are included in the plan-for-approval artifact rather than as a separate STOP gate. This ensures the team thinks through the approach before Morgan plans, without adding a separate round-trip to the CEO.
 
-For the CEO approval gate (Step 4): write the plan to `.context/artifacts/{directive_name}/plan-for-approval.md` and STOP. Return a summary asking the CEO to approve. Include brainstorm synthesis and any clarifying questions alongside Morgan's plan. The CEO spawns Alex again with the approval to continue.
+For the CEO approval gate (Step 4): write the plan to `.context/goals/{goal}/projects/{project}/{directive_name}/plan-for-approval.md` and STOP. Return a summary asking the CEO to approve. Include brainstorm synthesis and any clarifying questions alongside Morgan's plan. The CEO spawns Alex again with the approval to continue.
 
 ---
 
 ## Step 0: Check for Checkpoint
 
-Check if `.context/checkpoints/$ARGUMENTS.json` exists.
+Check if `.context/directives/checkpoints/$ARGUMENTS.json` exists.
 
 **If not found:** Proceed to Step 1 normally.
 
@@ -210,7 +210,7 @@ Resume from checkpoint or restart fresh?
 
 Ask the CEO using AskUserQuestion: **Resume** or **Restart**.
 
-**If Restart:** Delete the checkpoint file and its artifacts directory (`rm -rf .context/checkpoints/$ARGUMENTS.json .context/artifacts/$ARGUMENTS/`). Proceed to Step 1.
+**If Restart:** Delete the checkpoint file and its artifacts directory (`rm -rf .context/directives/checkpoints/$ARGUMENTS.json .context/goals/{goal}/projects/{project}/$ARGUMENTS/`). Proceed to Step 1.
 
 **If Resume:** Load checkpoint data and skip to the appropriate step:
 - `current_step` is `step-3` → Load `planning.morgan_plan`, skip to Step 4 (CEO approval)
@@ -223,13 +223,13 @@ For resumed Step 5: when restarting an in-progress initiative, read its artifact
 
 ## Step 1: Read the Directive
 
-Read `.context/inbox/$ARGUMENTS.md`. If not found, list what's in `inbox/` and ask the user which directive to run.
+Read `.context/directives/$ARGUMENTS.md`. If not found, list what's in `directives/` (filter by status: pending) and ask the user which directive to run.
 
 **Naming convention:** Directive filenames must be kebab-case (e.g., `improve-security.md`). The name is used in git branch names (`directive/$ARGUMENTS`) and file paths.
 
 ### Create directive.json (if not already present)
 
-After reading the directive .md, create `.context/inbox/$ARGUMENTS.json` alongside it if it doesn't already exist. This companion JSON provides structured metadata for the indexer and cross-reference system.
+After reading the directive .md, create `.context/directives/$ARGUMENTS.json` alongside it if it doesn't already exist. This companion JSON provides structured metadata for the indexer and cross-reference system.
 
 ```json
 {
@@ -256,19 +256,18 @@ Extract `goal_ids` from the directive .md content:
 Read ALL of these before spawning Morgan:
 - `.context/vision.md` — north star + guardrails (agents must respect guardrails)
 - `.context/preferences.md` — CEO standing orders (agents must follow these)
-- `.context/goals/_index.md` — current goals and priorities
-- `.context/lessons.md` — project gotchas and patterns
-- `.context/lessons.md` — framework lessons index (read this first, then load topic files as needed per agent role)
+- `.context/goals/*/goal.json` — current goals and priorities
+- `.context/lessons/*.md` — project gotchas and patterns (read topic files as needed per agent role)
 - `.context/lessons/orchestration.md` — for Morgan and Alex
 - `.context/lessons/agent-behavior.md` — for all agents
-- All `.context/goals/*/backlog.md` files — so Morgan doesn't plan work that's already queued
-- `.context/state/*.json` — structured state files (if they exist) for current work item counts and status
+- All `.context/goals/*/backlog.json` files — so Morgan doesn't plan work that's already queued
+- All `.context/goals/*/projects/*/project.json` — current project states and task status
 - The agent personality files Morgan may cast:
   - `.claude/agents/sarah-cto.md`
   - `.claude/agents/marcus-cpo.md`
   - `.claude/agents/priya-cmo.md`
 
-Also note the path to `okrs.md` if it exists (`.context/goals/{goal_folder}/okrs.md`) — this goes to the auditor in Step 3b, not Morgan.
+Also note the goal.json `okrs` field if populated — this goes to the auditor in Step 3b, not Morgan.
 
 ## Step 2b: C-Suite Challenge (Heavyweight Directives Only)
 
@@ -510,7 +509,7 @@ DEFINITION OF DONE RULES:
 ```
 
 **If this directive was classified as strategic**, also include in Morgan's prompt:
-- The brainstorm synthesis from `.context/artifacts/{directive_name}/brainstorm.md`
+- The brainstorm synthesis from `.context/goals/{goal}/projects/{project}/{directive_name}/brainstorm.md`
 - CEO's clarification answers
 - Additional instruction to Morgan: "The team has brainstormed approach options for this directive. Use the brainstorm synthesis and CEO's answers to inform your plan — you don't need to re-derive the approach from scratch. Focus on execution planning, not strategy."
 
@@ -529,10 +528,9 @@ After parsing Morgan's plan, spawn the auditor(s) to investigate the codebase.
 **Auditor's prompt must include:**
 - Their personality file (for named agents)
 - Morgan's initiatives (the ones assigned to this auditor)
-- Existing OKRs from `.context/goals/{goal_folder}/okrs.md` (if it exists) — so they avoid re-auditing solved problems
+- Existing OKRs from `.context/goals/{goal_folder}/goal.json` `okrs` field (if populated) — so they avoid re-auditing solved problems
 - `.context/vision.md` guardrails section — for risk classification reference
 - `.context/preferences.md` — CEO standing orders
-- `.context/lessons.md` — project gotchas
 - `.context/lessons/review-quality.md` — review lessons (for Sarah)
 - `.context/lessons/agent-behavior.md` — agent behavior lessons
 - These explicit instructions:
@@ -593,7 +591,7 @@ Your output must follow this schema:
 
 ## Step 4: Present Combined Plan to CEO
 
-**If running as Alex (background agent):** Do NOT present to the CEO directly. Write the full plan to `.context/artifacts/$ARGUMENTS/plan-for-approval.md` using the format below, write checkpoint, and return your summary. The CEO session handles approval.
+**If running as Alex (background agent):** Do NOT present to the CEO directly. Write the full plan to `.context/goals/{goal}/projects/{project}/$ARGUMENTS/plan-for-approval.md` using the format below, write checkpoint, and return your summary. The CEO session handles approval.
 
 **If running inline (CEO session):** Present as described below.
 
@@ -743,7 +741,7 @@ Write initial state to `~/.claude/directives/current.json`:
 
 At Step 7 (completion), update status to `"completed"` or `"failed"`.
 
-**Also ensure directive.json exists** at this point. If Step 1 didn't create it (e.g., lightweight process that skipped Step 1), create `.context/inbox/$ARGUMENTS.json` now with the schema from Step 1. Update its `status` to `"executing"` and set `weight` from the triage classification.
+**Also ensure directive.json exists** at this point. If Step 1 didn't create it (e.g., lightweight process that skipped Step 1), create `.context/directives/$ARGUMENTS.json` now with the schema from Step 1. Update its `status` to `"executing"` and set `weight` from the triage classification.
 
 **Checkpoint:** Write checkpoint with `current_step: "step-4c"`.
 
@@ -751,8 +749,8 @@ At Step 7 (completion), update status to `"completed"` or `"failed"`.
 
 Checkpoints allow a directive to pause mid-execution and resume after context exhaustion. A single JSON file is overwritten atomically at each transition point.
 
-**Checkpoint file:** `.context/checkpoints/{directive-name}.json`
-**Artifact files:** `.context/artifacts/{directive-name}/{initiative-id}/{phase}.md`
+**Checkpoint file:** `.context/directives/checkpoints/{directive-name}.json`
+**Artifact files:** Write to the project directory: `.context/goals/{goal}/projects/{project}/{phase}.md`
 
 **Schema:**
 
@@ -760,7 +758,7 @@ Checkpoints allow a directive to pause mid-execution and resume after context ex
 {
   "version": 1,
   "directive_name": "string",
-  "directive_path": ".context/inbox/{name}.md",
+  "directive_path": ".context/directives/{name}.md",
   "started_at": "ISO datetime",
   "updated_at": "ISO datetime",
   "current_step": "step-3 | step-4 | step-4b | step-4c | step-5 | step-6 | step-7",
@@ -791,7 +789,7 @@ Checkpoints allow a directive to pause mid-execution and resume after context ex
 
 **Write mechanism:** Use the Write tool to overwrite the entire checkpoint file. Always update `updated_at` to the current ISO timestamp. Create parent directories with `mkdir -p` on first write.
 
-**Artifact writes:** After each phase completes in Step 5, write the phase output (design doc, build report, review JSON) to `.context/artifacts/{directive-name}/{initiative-id}/{phase}.md`. These survive context exhaustion and allow resumed runs to provide context to downstream phases.
+**Artifact writes:** After each phase completes in Step 5, write the phase output (design doc, build report, review JSON) to the project directory (`.context/goals/{goal}/projects/{project}/{phase}.md`). These survive context exhaustion and allow resumed runs to provide context to downstream phases.
 
 ## Step 5: Execute Initiatives
 
@@ -816,40 +814,40 @@ For each initiative, execute its `phases` array in order. Each phase has specifi
 For each phase in the initiative's `phases` array, execute it according to these rules:
 
 **Phase: `research`**
-Spawn researcher agent (Priya or Sarah per cast) to investigate and produce findings. **Artifact:** `artifacts/{directive}/{initiative}/research.md`.
+Spawn researcher agent (Priya or Sarah per cast) to investigate and produce findings. **Artifact:** the project directory as `research.md`.
 
 **Phase: `product-spec`**
-Spawn Marcus to write product requirements + acceptance criteria. **Artifact:** `artifacts/{directive}/{initiative}/product-spec.md`.
+Spawn Marcus to write product requirements + acceptance criteria. **Artifact:** the project directory as `product-spec.md`.
 
 **Phase: `design`**
-Spawn designer agent (Sarah) to read the codebase and write a technical approach. Include any prior phase artifacts (research, product-spec) as context. **Artifact:** `artifacts/{directive}/{initiative}/design.md`.
+Spawn designer agent (Sarah) to read the codebase and write a technical approach. Include any prior phase artifacts (research, product-spec) as context. **Artifact:** the project directory as `design.md`.
 
 **Phase: `keyword-research`**
-Spawn Priya to research target keywords, search intent, competitor content gaps, and recommended topics. **Artifact:** `artifacts/{directive}/{initiative}/keyword-research.md`.
+Spawn Priya to research target keywords, search intent, competitor content gaps, and recommended topics. **Artifact:** the project directory as `keyword-research.md`.
 
 **Phase: `outline`**
-Spawn Priya to create a content outline -- structure, headings, target keywords per section, internal linking strategy. Include keyword research artifact as context. **Artifact:** `artifacts/{directive}/{initiative}/outline.md`.
+Spawn Priya to create a content outline -- structure, headings, target keywords per section, internal linking strategy. Include keyword research artifact as context. **Artifact:** the project directory as `outline.md`.
 
 **Phase: `clarification`**
-Pre-build Q&A stolen from ChatDev's dual-agent dehallucination pattern (40% error reduction). Spawn the engineer with all context (scope, design output, audit findings). Engineer outputs 3-5 specific clarifying questions about scope boundaries, edge cases, integration points, and ambiguous requirements. Spawn the designer/auditor from the previous phase to respond. **Artifact:** `artifacts/{directive}/{initiative}/clarification.md`.
+Pre-build Q&A stolen from ChatDev's dual-agent dehallucination pattern (40% error reduction). Spawn the engineer with all context (scope, design output, audit findings). Engineer outputs 3-5 specific clarifying questions about scope boundaries, edge cases, integration points, and ambiguous requirements. Spawn the designer/auditor from the previous phase to respond. **Artifact:** the project directory as `clarification.md`.
 
 **Phase: `build`**
-Spawn engineer agent(s) with initiative scope + all prior phase artifacts + audit findings + verify command. For migration initiatives (phases include research + design + build), the build is INCREMENTAL: engineer executes one step at a time, running verify between each step. **Artifact:** `artifacts/{directive}/{initiative}/build.md`.
+Spawn engineer agent(s) with initiative scope + all prior phase artifacts + audit findings + verify command. For migration initiatives (phases include research + design + build), the build is INCREMENTAL: engineer executes one step at a time, running verify between each step. **Artifact:** the project directory as `build.md`.
 
 **Phase: `draft`**
-Spawn engineer agent to write the actual content (MDX files, page components) following the outline artifact. **Artifact:** `artifacts/{directive}/{initiative}/draft.md`.
+Spawn engineer agent to write the actual content (MDX files, page components) following the outline artifact. **Artifact:** the project directory as `draft.md`.
 
 **Phase: `seo-review`**
-Spawn Priya to review the draft for SEO quality -- meta tags, keyword density, structured data, internal links, readability. **Artifact:** `artifacts/{directive}/{initiative}/seo-review.md`.
+Spawn Priya to review the draft for SEO quality -- meta tags, keyword density, structured data, internal links, readability. **Artifact:** the project directory as `seo-review.md`.
 
 **Phase: `review`**
-For each reviewer in the initiative's `cast.reviewers` array, spawn the reviewer agent to review the changes. Collect all review JSONs. If ANY reviewer returns "critical", trigger the retry logic. **Artifact:** `artifacts/{directive}/{initiative}/review.md`.
+For each reviewer in the initiative's `cast.reviewers` array, spawn the reviewer agent to review the changes. Collect all review JSONs. If ANY reviewer returns "critical", trigger the retry logic. **Artifact:** the project directory as `review.md`.
 
 **Phase: `tech-review`**
-Spawn Sarah to review code quality + architecture. **Artifact:** `artifacts/{directive}/{initiative}/tech-review.md`.
+Spawn Sarah to review code quality + architecture. **Artifact:** the project directory as `tech-review.md`.
 
 **Phase: `product-review`**
-Spawn Marcus to verify it meets the product spec. **Artifact:** `artifacts/{directive}/{initiative}/product-review.md`.
+Spawn Marcus to verify it meets the product spec. **Artifact:** the project directory as `product-review.md`.
 
 **After the last phase:** If any initiative phase produced UI changes, trigger UX verification (see "UX Verification Phase" below).
 
@@ -890,8 +888,7 @@ Use these clarifications to guide your implementation. If the answers revealed s
 - `model: "opus"`
 - `.context/preferences.md` — CEO standing orders
 - `.context/vision.md` guardrails section — hard constraints
-- `.context/lessons.md` — project gotchas and patterns
-- Topic-specific conductor lessons (load only what's relevant to the agent's role):
+- `.context/lessons/` topic files (load only what's relevant to the agent's role):
   - **Engineers**: `.context/lessons/agent-behavior.md` + `.context/lessons/skill-design.md`
   - **Sarah (auditor/reviewer)**: `.context/lessons/agent-behavior.md` + `.context/lessons/review-quality.md`
   - **Marcus (product reviewer)**: `.context/lessons/review-quality.md`
@@ -1009,7 +1006,7 @@ Check the audit findings for this initiative. If `active_files` is empty and fin
 - If an agent fails or reports a blocker: **skip remaining tasks in this initiative**, log the error, continue to next initiative
 - If a reviewer finds issues: **log them as non-fatal findings** (don't block). Include in digest.
 
-**Artifact:** Write the phase output to `.context/artifacts/{directive-name}/{initiative-id}/{phase}.md`.
+**Artifact:** Write the phase output to `.context/goals/{goal}/projects/{project}/{directive-name}/{initiative-id}/{phase}.md`.
 
 **Checkpoint:** Update the initiative's `phases_completed`, `current_phase`, and `artifact_paths` in the checkpoint. Set `current_step: "step-5"`.
 
@@ -1062,9 +1059,9 @@ This ensures bidirectional links: feature -> directive (via `source_directive`) 
 
 ## Step 6: Update Goal OKRs (if applicable)
 
-If `.context/goals/{goal_folder}/okrs.md` exists, update the "Last updated" date and assess any existing KR statuses based on initiative outcomes. Do NOT create new KRs from directive work — goal-level OKRs are managed separately at the quarterly level.
+If `.context/goals/{goal_folder}/goal.json` has `okrs`, assess any existing KR statuses based on initiative outcomes. Do NOT create new KRs from directive work — goal-level OKRs are managed separately at the quarterly level.
 
-If no okrs.md exists, skip this step.
+If goal.json has no `okrs` or it is empty, skip this step.
 
 ## Step 6b: Process Follow-Up Actions
 
@@ -1074,7 +1071,7 @@ Collect all `follow_ups` from the audit findings (Step 3b) across all initiative
 
 Spawn an engineer agent to execute all low-risk follow-ups in a single batch. The agent receives:
 - The list of low-risk follow-up actions with affected files
-- `.context/preferences.md` and `.context/lessons.md`
+- `.context/preferences.md` and `.context/lessons/*.md` topic files
 - Verify command: `npm run type-check`
 - Instruction: "Execute these cleanup actions. They've been classified as low-risk (safe to do without CEO approval). Run the verify command when done. Report what you changed."
 
@@ -1137,7 +1134,7 @@ Set `source_directive` to the current directive name so the backlog item is trac
 Write a digest to `.context/reports/$ARGUMENTS-{date}.md`.
 
 **After writing the digest**, update directive.json with the report link:
-- Read `.context/inbox/$ARGUMENTS.json` (or `.context/done/$ARGUMENTS.json` if already archived)
+- Read `.context/directives/$ARGUMENTS.json` (or `.context/directives/$ARGUMENTS.json` if already archived)
 - Set `report` to the report filename without extension (e.g., `"improve-security-2026-03-01"`)
 - Also update `produced_features` if any features were registered in the "After Each Initiative" step but the directive.json wasn't updated yet
 
@@ -1185,7 +1182,7 @@ Report file format:
 - {action} — {approved/rejected} — {result if executed}
 
 ### Backlogged (high risk — written to goal backlog)
-- {action} — Added to {goal}/backlog.md
+- {action} — Added to {goal}/backlog.json
 
 ## Agent-Proposed Improvements
 
@@ -1258,7 +1255,7 @@ If the directive produced new learnings, append them to the appropriate topic fi
 - State/checkpoint/dashboard lessons → `.context/lessons/state-management.md`
 - Review/quality lessons → `.context/lessons/review-quality.md`
 - Pipeline/skill/repo lessons → `.context/lessons/skill-design.md`
-- Project/codebase lessons → `.context/lessons.md`
+- Project/codebase lessons → `.context/lessons/{topic}.md`
 
 **Only add if:** something unexpected happened, a pattern emerged that prevents future mistakes, or a workaround was needed. Skip if the directive completed cleanly with no surprises.
 
@@ -1268,7 +1265,7 @@ Read existing topic files first to avoid duplicates.
 
 **Consolidation trigger:** After every 10th directive (count reports in `.context/reports/`), re-read all reports and consolidate recurring patterns into the topic files. Remove one-off entries that haven't recurred. This keeps lessons actionable, not bloated.
 
-**Personality evolution trigger:** On the same 10th-directive cycle, also update the `## Learned Patterns` section in each agent's personality file (`.claude/agents/*.md`). For each agent, extract lessons from `conductor/lessons.md` that are relevant to their role:
+**Personality evolution trigger:** On the same 10th-directive cycle, also update the `## Learned Patterns` section in each agent's personality file (`.claude/agents/*.md`). For each agent, extract lessons from `.context/lessons/` topic files that are relevant to their role:
 - **Morgan** — operational patterns (sequencing, scoping, casting, compression)
 - **Sarah** — technical patterns (audit accuracy, review findings, schema issues, build failures)
 - **Marcus** — product patterns (UX verification, user perspective, feature management)
@@ -1278,49 +1275,23 @@ Replace the contents between `## Learned Patterns` and the next `##` heading. Ke
 
 ## Step 6e: Re-index State
 
-After all code changes, re-run the state indexer so the dashboard reflects the latest work:
-
-```bash
-npx tsx scripts/index-state.ts
-```
-
-This reads the entire `.context/` tree and produces structured JSON files in `.context/state/`:
-- `goals.json` — goal hierarchy with active/done feature counts
-- `features.json` — all features with task progress
-- `backlogs.json` — all backlog items with structured fields
-- `conductor.json` — directives, reports, discussions
-- `index.json` — summary statistics
-
-The dashboard's chokidar watcher picks up changes automatically. If the state indexer fails, log the error but don't block the directive.
-
-**Copy state files** if working in a worktree: the dashboard watches `.context/state/` in the **main repo**, not the worktree. Copy with:
-```bash
-cp .context/state/*.json /path/to/main/repo/.context/state/
-```
+The dashboard reads source files directly via glob + chokidar. No indexer step needed. Changes to goal.json, project.json, directive.json, and backlog.json are picked up automatically.
 
 **Checkpoint:** Update `wrapup.digest_path` to the report path. Set `current_step: "step-7"`.
 
-**Cleanup:** Delete the checkpoint file (`rm .context/checkpoints/{directive-name}.json`). The directive is complete — the digest and artifacts serve as the permanent record.
+**Cleanup:** Delete the checkpoint file (`rm .context/directives/checkpoints/{directive-name}.json`). The directive is complete — the digest and artifacts serve as the permanent record.
 
-## Step 6f: Archive Directive
+## Step 6f: Complete Directive
 
-Move the directive file AND its companion JSON from inbox/ to done/:
+Update the directive JSON to mark completion:
 
-```bash
-mkdir -p .context/done
-mv .context/inbox/$ARGUMENTS.md .context/done/$ARGUMENTS.md
-mv .context/inbox/$ARGUMENTS.json .context/done/$ARGUMENTS.json
-```
-
-If the files don't exist in inbox/ (e.g., already moved or created directly in done/), skip silently.
-
-**Update directive.json on archive:**
-- Read `.context/done/$ARGUMENTS.json`
-- Set `status` to `"done"`
+- Read `.context/directives/$ARGUMENTS.json`
+- Set `status` to `"completed"`
 - Set `completed` to today's date (`YYYY-MM-DD`)
-- Ensure `produced_features` is populated with all feature IDs created by this directive
-- Ensure `report` is set to the digest filename
+- Set `report_summary` to the digest filename
 - Write the updated JSON back
+
+Directives stay in `directives/` — status is tracked in JSON, not by directory location.
 
 ## Step 7: Report to CEO
 
@@ -1378,7 +1349,7 @@ Show the CEO:
 - Include Morgan's inline challenge analysis in every plan — separate challengers for heavyweight/controversial only
 - Read preferences.md + vision.md guardrails before spawning any agent
 - Run technical audit before CEO approval to verify scope
-- Read lessons.md AND relevant conductor/lessons/ topic files before spawning any agent
+- Read .context/lessons/ topic files before spawning any agent
 - Include personality text in named agent prompts
 - Include preferences.md + guardrails in all agent prompts
 - Include audit findings in engineer prompts (active files, recommended approach)
@@ -1394,12 +1365,12 @@ Show the CEO:
 - Update lessons if the directive produced new learnings (Step 6d)
 - Log initiative status after each completes
 - Generate a digest even if everything fails
-- Re-index state after code changes (Step 6e) so dashboard is current
+- Dashboard reads source files directly — no re-indexing needed
 - Show the CEO what happened at the end
 - Write checkpoint after every phase transition (Step 3, 4, 4b, 4c, 5 phases, 6)
 - Write artifact files after every phase output in Step 5
 - Delete checkpoint file after digest is written (Step 6 cleanup)
-- Move directive from inbox/ to done/ after digest is written (Step 6f)
+- Update directive.json status to "completed" after digest is written (Step 6f)
 - Include clarification phase before build when initiative has design/research/product-spec phases (Morgan's phase list should already include it)
 - Include initiative's definition_of_done in every reviewer prompt
 - Include Standing Corrections check in every reviewer prompt

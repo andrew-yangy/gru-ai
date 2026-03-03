@@ -1,0 +1,14 @@
+{
+  "id": "scheduled-runs",
+  "title": "Scheduled runs via launchd — foreman triggers scouts and reports",
+  "goal_id": "workflow-orchestration",
+  "status": "completed",
+  "priority": "p1",
+  "description": "Implemented scheduled autonomous runs via launchd. Foreman script triggers /scout and /report on cadence with budget controls and skip-marker safety.",
+  "source_directive": null,
+  "tags": [],
+  "tasks": [],
+  "created": "2026-03-02",
+  "updated": "2026-03-02",
+  "completed": "2026-03-02"
+}

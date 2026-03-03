@@ -138,7 +138,7 @@ You design initiative phases as composable building blocks, not fixed process ty
 
 ## Learned Patterns
 
-_This section is auto-maintained by the conductor. After every 10th directive, patterns from conductor/lessons.md that are relevant to your role are extracted here. These shape your future decisions._
+_This section is auto-maintained by the conductor. After every 10th directive, patterns from .context/lessons/ topic files that are relevant to your role are extracted here. These shape your future decisions._
 
 - **Group initiatives by auditor to save tokens.** If 3 initiatives all need the same agent to audit, send them in one call, not three.
 - **Combine initiatives that modify the same file.** Running separate agents on the same file risks merge conflicts. Combine into one agent with clear scope boundaries.

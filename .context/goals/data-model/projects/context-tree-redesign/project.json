@@ -1,0 +1,70 @@
+{
+  "id": "context-tree-redesign",
+  "title": "Context Tree Redesign — Three-tier Goal > Project > Task hierarchy with clean-slate migration",
+  "goal_id": "data-model",
+  "status": "active",
+  "priority": "p0",
+  "description": "Complete redesign of the .context/ directory structure. Three-tier hierarchy (Goal > Project > Task), embedded tasks in project.json, flat directives with triage linking, kill state/indexer, co-locate context with entities. Definitive spec from 4 brainstorm rounds.",
+  "source_directive": "context-tree-redesign",
+  "tags": [],
+  "tasks": [
+    {
+      "id": "t1",
+      "title": "Create SPEC.md with definitive entity schemas and directory structure",
+      "status": "completed",
+      "phase": "design",
+      "agent": null,
+      "depends_on": [],
+      "output": "SPEC.md created with full schemas for Goal, Project, Task, Directive, Backlog",
+      "created": "2026-03-03",
+      "completed": "2026-03-03"
+    },
+    {
+      "id": "t2",
+      "title": "Execute agent-conductor migration to new structure",
+      "status": "in_progress",
+      "phase": "build",
+      "agent": null,
+      "depends_on": ["t1"],
+      "output": null,
+      "created": "2026-03-03",
+      "completed": null
+    },
+    {
+      "id": "t3",
+      "title": "Update all 6 SKILL.md files to reference new paths",
+      "status": "pending",
+      "phase": "build",
+      "agent": null,
+      "depends_on": ["t2"],
+      "output": null,
+      "created": "2026-03-03",
+      "completed": null
+    },
+    {
+      "id": "t4",
+      "title": "Create CLAUDE.md for agent-conductor repo",
+      "status": "pending",
+      "phase": "build",
+      "agent": null,
+      "depends_on": ["t2"],
+      "output": null,
+      "created": "2026-03-03",
+      "completed": null
+    },
+    {
+      "id": "t5",
+      "title": "Verify migration: entity counts, orphan checks, broken references",
+      "status": "pending",
+      "phase": "test",
+      "agent": "sarah",
+      "depends_on": ["t2", "t3", "t4"],
+      "output": null,
+      "created": "2026-03-03",
+      "completed": null
+    }
+  ],
+  "created": "2026-03-03",
+  "updated": "2026-03-03",
+  "completed": null
+}

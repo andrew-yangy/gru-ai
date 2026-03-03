@@ -1,0 +1,14 @@
+{
+  "id": "repo-separation",
+  "title": "Separate agent-conductor from sw — own repo, flattened .context/, no symlink dependencies",
+  "goal_id": "data-model",
+  "status": "completed",
+  "priority": "p0",
+  "description": "Established agent-conductor as its own repository with flattened .context/ structure. Consumer project (sw) has symlinks to framework code. Consumer-owned state stays in sw.",
+  "source_directive": null,
+  "tags": [],
+  "tasks": [],
+  "created": "2026-03-02",
+  "updated": "2026-03-02",
+  "completed": "2026-03-02"
+}

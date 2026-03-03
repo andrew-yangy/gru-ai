@@ -1,0 +1,17 @@
+{
+  "id": "database-ops-batch",
+  "title": "Directive: Database Ops Batch",
+  "status": "completed",
+  "source": "ceo",
+  "weight": "tactical",
+  "created": "2026-03-02",
+  "updated": "2026-03-02",
+  "completed": "2026-03-02",
+  "triage": null,
+  "plan": null,
+  "phases": null,
+  "cast": null,
+  "dod": null,
+  "report_summary": null,
+  "telemetry": null
+}

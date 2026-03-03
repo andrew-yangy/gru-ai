@@ -1,0 +1,15 @@
+[
+  {
+    "id": "dashboard-checkpoint-visibility",
+    "title": "Dashboard checkpoint visibility",
+    "description": "Extend dashboard to scan checkpoints and include active checkpoints with stale checkpoint detection (>7 days old).",
+    "priority": "p2",
+    "status": "proposed",
+    "source": "ceo",
+    "source_detail": "checkpoint-resume directive",
+    "trigger": "When checkpoint-resume is used 3+ times and CEO wants dashboard visibility",
+    "promoted_to": null,
+    "created": "2026-03-02",
+    "updated": "2026-03-03"
+  }
+]

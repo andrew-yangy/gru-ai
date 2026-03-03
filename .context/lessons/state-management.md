@@ -35,3 +35,13 @@
 
 - **shadcn Progress component needs indicatorClassName for color variants.** Default Progress only supports one bar color. Add an `indicatorClassName` prop for per-instance color overrides (green for done, yellow for in-progress).
 - **Artifact contentSummary contains raw markdown.** The indexer stores the first non-heading line(s) as contentSummary, including `**bold**` markers. Parse `**Key**: Value` patterns with regex into structured key-value grids for clean display.
+
+## Foundational Problem (from 2026-03-02 discussion)
+
+Work state gets buried. The CEO raised this FOUR times across sessions. Root causes:
+1. Context window is the single point of failure -- strategic thinking dies with sessions
+2. Md files are write-once graveyards -- not queryable, not lifecycle-aware
+3. Partial solutions get marked "done" (P0 ships, P1/P2 silently abandoned)
+4. Each ask gets treated as a new problem instead of the same recurring one
+
+CEO requirements: projects need hierarchy (teams/roadmaps/initiatives), day-to-day scenario to support: "add something to backlog while doing something else, do it later, with context". Nobody in the framework ecosystem solves multi-day autonomous work natively. The closest comparables are Devin (UX/session sleep/resume), LangGraph (checkpoint-after-every-step), Taskmaster AI (structured task state in JSON).

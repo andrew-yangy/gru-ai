@@ -1,0 +1,14 @@
+{
+  "id": "team-org-dashboard",
+  "title": "Team & Agent Org Dashboard page",
+  "goal_id": "ui",
+  "status": "proposed",
+  "priority": "p2",
+  "description": "Dashboard page showing the org structure — C-suite agents, their domains, standing responsibilities, and current assignments. Visual team groupings.",
+  "source_directive": "team-org-dashboard",
+  "tags": [],
+  "tasks": [],
+  "created": "2026-03-02",
+  "updated": "2026-03-02",
+  "completed": null
+}

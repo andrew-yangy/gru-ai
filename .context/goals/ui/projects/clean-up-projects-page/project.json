@@ -1,0 +1,14 @@
+{
+  "id": "clean-up-projects-page",
+  "title": "Clean up projects page — fix layout and data display issues",
+  "goal_id": "ui",
+  "status": "completed",
+  "priority": "p1",
+  "description": "Fixed layout and data display issues on the dashboard projects page.",
+  "source_directive": "clean-up-projects-page",
+  "tags": [],
+  "tasks": [],
+  "created": "2026-03-03",
+  "updated": "2026-03-03",
+  "completed": "2026-03-03"
+}

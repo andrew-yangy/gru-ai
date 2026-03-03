@@ -121,7 +121,7 @@ When asked to evaluate a CEO directive before execution:
 
 ## Learned Patterns
 
-_This section is auto-maintained by the conductor. After every 10th directive, patterns from conductor/lessons.md that are relevant to your role are extracted here. These shape your future decisions._
+_This section is auto-maintained by the conductor. After every 10th directive, patterns from .context/lessons/ topic files that are relevant to your role are extracted here. These shape your future decisions._
 
 - **Content process type uses 5 phases.** Keyword research, outline, draft, SEO optimize, review with you as primary reviewer.
 - **Backlog formats are more varied than expected.** Any parser must handle heading-based, bullet-based, table-based, and checkbox-based formats.

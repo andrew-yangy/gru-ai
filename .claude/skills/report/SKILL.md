@@ -20,10 +20,10 @@ Read ALL of these:
 ### Always (both modes)
 - `.context/vision.md` — for context on what matters
 - `.context/preferences.md` — CEO standing orders
-- `.context/goals/_index.md` — goals overview
+- `.context/goals/*/goal.json` — goals overview
 
 ### External Intelligence (from /scout)
-- Read `.context/intelligence/latest/*.json` — latest scout outputs per agent
+- Read `.context/intel/latest/*.json` — latest scout outputs per agent
 - Summarize key intelligence by domain: technology, product, growth, operations
 - Highlight any act_now or this_week urgency items
 
@@ -33,9 +33,9 @@ Read ALL of these:
 - Note any auto-fixed items from the last healthcheck
 
 ### Project Inventory (both modes)
-- Read `.context/goals/inventory.json` — machine-readable project inventory
-- If inventory.json doesn't exist, walk `.context/goals/*/active/*/tasks.json` for completion data
-- Read all `.context/goals/*/backlog.md` for backlog counts
+- Read all `.context/goals/*/projects/*/project.json` — machine-readable project inventory
+- Projects have embedded tasks in project.json
+- Read all `.context/goals/*/backlog.json` for backlog counts
 
 ### Decision Queue (both modes)
 - Scan `.context/reports/` for recent directive reports with unaddressed high-risk follow-ups
@@ -56,7 +56,7 @@ find .context/ -name "*.md" -mtime -{days} -type f | head -20
 ```
 
 ### What Needs Input
-- Check `.context/inbox/` — pending directives awaiting execution
+- Check `.context/directives/` (filter by status: pending) — pending directives awaiting execution
 - Check for medium/high risk follow-ups in recent reports (`.context/reports/`)
 - Check for items in backlogs marked as needing CEO decision
 
@@ -67,17 +67,16 @@ find .context/ -name "*.md" -mtime -{days} -type f | head -20
 
 ### What's At Risk
 - Run `npm run type-check` — are there build errors?
-- Check for active features with no recent progress (`.context/goals/*/active/*/`)
+- Check for active projects with no recent progress (`.context/goals/*/projects/*/project.json`)
 - Read recent directive reports for failed/blocked initiatives
 
 ### OKR Progress (both modes, but expanded in weekly)
-- Read ALL `okrs.md` files in `.context/goals/*/`
+- Read all `.context/goals/*/goal.json` for okrs field
 - Summarize status per KR: ACHIEVED / PROGRESSED / NOT STARTED / BLOCKED
 
 ### Weekly-Only Data
-- Read `.context/proposals.log` — compute acceptance rates per agent
-- Read `.context/lessons.md` — any new lessons this week?
-- Read `.context/lessons.md` — any new project lessons?
+- Read `.context/reports/ (proposals tracked in reports)` — compute acceptance rates per agent
+- Read `.context/lessons/*.md` topic files — any new lessons this week?
 - Count commits per area (apps/buywisely, apps/sellwisely, packages/) for activity distribution
 - Read all directive reports from the past 7 days
 
@@ -122,36 +121,36 @@ find .context/ -name "*.md" -mtime -{days} -type f | head -20
 
 ## Project Inventory
 
-{Read .context/goals/inventory.json if it exists. If not, walk .context/goals/*/ manually.}
+{Read all .context/goals/*/goal.json and .context/goals/*/projects/*/project.json for project inventory.}
 
 ### Active Goals ({count})
-| Goal | Active Features | Done | Backlog | Status |
+| Goal | Active Projects | Done | Backlog | Status |
 |------|----------------|------|---------|--------|
 | {goal title} | {count} ({list names}) | {done_count} | {backlog_count} | {status badge} |
 
 ### Partially-Done Alerts
-{For each active feature: read tasks.json, compute completion %. Flag features where:
+{For each active feature: read project.json embedded tasks, compute completion %. Flag features where:
 - completion > 0% but < 100%
 - AND last file modification in the feature folder > 7 days ago}
 
 ⚠️ **{feature name}** ({goal}) — {X}% complete, stale {N} days
    Last activity: {date} | Tasks: {completed}/{total}
 
-{If no partially-done alerts: "All active features are either fresh or complete."}
+{If no partially-done alerts: "All active projects are either fresh or complete."}
 
 ### Completed But Not Archived
-{Features in active/ folders with 100% task completion — should be moved to done/ via /feature-done}
-- {feature name} ({goal}) — 100% complete, still in active/
+{Projects with status "active" but 100% task completion — should have status updated to "completed"}
+- {project name} ({goal}) — 100% complete, still status: active
 
 ## What Needs Your Input
-{Pending directives in inbox/ — list with one-line description each}
+{Pending directives in directives/ (filter by status: pending) — list with one-line description each}
 {Medium/high risk items awaiting approval from recent directives}
 {Backlog items flagged for CEO decision}
 {If nothing: "Nothing pending — all clear."}
 
 ## What's At Risk
 {Build errors from type-check, if any}
-{Stale active features with no recent changes}
+{Stale active projects with no recent changes}
 {Failed/blocked initiatives from recent directives}
 {If nothing: "No risks identified."}
 
@@ -162,13 +161,13 @@ find .context/ -name "*.md" -mtime -{days} -type f | head -20
 ### From Recent Directives
 {Scan .context/reports/ for the last 3 directive reports.
 For each, check the "Follow-Up Actions" section for high-risk backlogged items.
-Cross-reference with .context/goals/*/backlog.md to see if they've been addressed.}
+Cross-reference with .context/goals/*/backlog.json to see if they've been addressed.}
 
 - **{action}** — Backlogged from {directive name} ({date})
   Risk: {high} | Status: {addressed/pending}
 
 ### From Backlogs
-{Scan all .context/goals/*/backlog.md for items explicitly marked as needing CEO decision
+{Scan all .context/goals/*/backlog.json for items explicitly marked as needing CEO decision
 or items with Priority P0 that are not yet started}
 
 ### From Healthchecks
@@ -221,26 +220,26 @@ or items with Priority P0 that are not yet started}
 
 ## Project Inventory
 
-{Read .context/goals/inventory.json if it exists. If not, walk .context/goals/*/ manually.}
+{Read all .context/goals/*/goal.json and .context/goals/*/projects/*/project.json for project inventory.}
 
 ### Active Goals ({count})
-| Goal | Active Features | Done | Backlog | Status |
+| Goal | Active Projects | Done | Backlog | Status |
 |------|----------------|------|---------|--------|
 | {goal title} | {count} ({list names}) | {done_count} | {backlog_count} | {status badge} |
 
 ### Partially-Done Alerts
-{For each active feature: read tasks.json, compute completion %. Flag features where:
+{For each active feature: read project.json embedded tasks, compute completion %. Flag features where:
 - completion > 0% but < 100%
 - AND last file modification in the feature folder > 7 days ago}
 
 ⚠️ **{feature name}** ({goal}) — {X}% complete, stale {N} days
    Last activity: {date} | Tasks: {completed}/{total}
 
-{If no partially-done alerts: "All active features are either fresh or complete."}
+{If no partially-done alerts: "All active projects are either fresh or complete."}
 
 ### Completed But Not Archived
-{Features in active/ folders with 100% task completion — should be moved to done/ via /feature-done}
-- {feature name} ({goal}) — 100% complete, still in active/
+{Projects with status "active" but 100% task completion — should have status updated to "completed"}
+- {project name} ({goal}) — 100% complete, still status: active
 
 ## What Needs Your Input
 {Same as daily, but covering the full week}
@@ -256,13 +255,13 @@ or items with Priority P0 that are not yet started}
 ### From Recent Directives
 {Scan .context/reports/ for the last 3 directive reports.
 For each, check the "Follow-Up Actions" section for high-risk backlogged items.
-Cross-reference with .context/goals/*/backlog.md to see if they've been addressed.}
+Cross-reference with .context/goals/*/backlog.json to see if they've been addressed.}
 
 - **{action}** — Backlogged from {directive name} ({date})
   Risk: {high} | Status: {addressed/pending}
 
 ### From Backlogs
-{Scan all .context/goals/*/backlog.md for items explicitly marked as needing CEO decision
+{Scan all .context/goals/*/backlog.json for items explicitly marked as needing CEO decision
 or items with Priority P0 that are not yet started}
 
 ### From Healthchecks
@@ -279,7 +278,7 @@ in .context/reports/weekly-*.md}
 - {feature name} ({goal}) — started this week
 
 ### Completed This Week
-- {feature name} ({goal}) — moved to done/
+- {project name} ({goal}) — status changed to completed
 
 ### Went Stale (no activity >7 days)
 - {feature name} ({goal}) — last activity {date}
@@ -293,7 +292,7 @@ in .context/reports/weekly-*.md}
 {Full OKR breakdown per goal — same as daily but with week-over-week changes if prior report exists}
 
 ## Team Performance
-{From proposals.log:}
+{From recent scout reports in .context/intel/latest/:}
 - **Proposals this week**: {count} ({count} approved, {count} rejected, {count} deferred)
 - **By agent**:
   - Sarah: {proposed} proposed, {accepted} accepted ({rate}%)
@@ -322,7 +321,7 @@ in .context/reports/weekly-*.md}
 {If no violations: "Clean week — all standing corrections respected across all directives."}
 
 ## Lessons Learned
-{New entries in lessons.md or conductor/lessons.md from this week}
+{New entries in .context/lessons/ topic files from this week}
 {If none: "No new lessons captured this week."}
 
 ## Recommendations
@@ -343,14 +342,14 @@ For weekly reports, also offer: "Would you like me to save this report to `.cont
 | Situation | Action |
 |-----------|--------|
 | No OKR files exist | Skip OKR section, note "No OKRs tracked yet" |
-| No scout data (intelligence/latest/) | Skip external intelligence section, note "No scout data yet — run /scout" |
+| No scout data (intel/latest/) | Skip external intelligence section, note "No scout data yet — run /scout" |
 | No healthcheck data (healthchecks/latest/) | Skip internal health section, note "No healthcheck data yet — run /healthcheck" |
-| No proposals.log exists | Skip team performance section, note "No scout/patrol data yet" |
+| No scout data exists | Skip team performance section, note "No scout/patrol data yet" |
 | Type-check fails to run | Note the error, skip build health section |
 | No recent commits | Note "No commits in {timeframe}" |
 | No directive reports | Skip directive outcomes section |
-| No inventory.json and no active features | Note "No active projects tracked yet" in Project Inventory |
-| No tasks.json in a feature folder | Skip that feature in completion calculations |
+| No active projects found | Note "No active projects tracked yet" in Project Inventory |
+| No tasks in a project.json | Skip that feature in completion calculations |
 | No previous weekly report for comparison | Note "First weekly report — no comparison available" in Shift Tracking |
 | No conductor reports for Decision Queue | Note "No directive history to scan" |
 | No healthcheck data for Decision Queue | Skip "From Healthchecks" subsection |

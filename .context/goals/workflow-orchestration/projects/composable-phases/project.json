@@ -1,0 +1,14 @@
+{
+  "id": "composable-phases",
+  "title": "Composable phase system replacing 7 rigid process types",
+  "goal_id": "workflow-orchestration",
+  "status": "completed",
+  "priority": "p0",
+  "description": "Replaced 7 rigid process types with a composable phase system. Morgan evaluates complexity per directive and designs the process dynamically.",
+  "source_directive": null,
+  "tags": [],
+  "tasks": [],
+  "created": "2026-03-02",
+  "updated": "2026-03-02",
+  "completed": "2026-03-02"
+}

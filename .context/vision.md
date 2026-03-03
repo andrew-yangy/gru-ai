@@ -29,21 +29,13 @@ Skills (the interface):
   /report     — CEO dashboard (daily/weekly) with external intelligence + internal health + OKR tracking
 
 Context (the state):
-  .context/                      — all conductor state (flattened, no conductor/ subfolder)
-  .context/inbox/                — pending directives
-  .context/done/                 — completed directives
-  .context/artifacts/            — directive phase artifacts
-  .context/checkpoints/          — directive resume checkpoints
-  .context/reports/              — directive execution reports
-  .context/intelligence/         — scout outputs (latest/ + archive/)
-  .context/intelligence.log      — append-only intelligence record
-  .context/proposals.log         — append-only proposals record
-  .context/discussions/          — strategic discussions
-  .context/lessons.md            — top-level lessons
+  .context/                      — all conductor state
+  .context/goals/                — goal > project > task hierarchy (goal.json, project.json)
+  .context/directives/           — flat directive files (status in JSON, not directory)
+  .context/intel/                — scout outputs (latest/ + archive/)
+  .context/reports/              — CEO dashboard reports (daily/weekly/walkthrough)
   .context/lessons/              — topic-specific lesson files
-  .context/scenarios.md          — walkthrough scenarios
   .context/vision.md             — this file
-  .context/goals/                — consumer goals, OKRs, backlogs
 
 Agents (the team):
   .claude/agents/morgan-coo.md — orchestration, planning, casting + ecosystem intelligence

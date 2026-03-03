@@ -1,0 +1,25 @@
+{
+  "id": "fix-subagent-status-propagation",
+  "title": "Fix sub-agent status propagation in dashboard",
+  "status": "completed",
+  "source": "ceo",
+  "weight": "tactical",
+  "created": "2026-03-03",
+  "updated": "2026-03-03",
+  "completed": "2026-03-03",
+  "triage": {
+    "action": "update_existing",
+    "goal_id": "ui",
+    "project_id": null,
+    "task_ids": [],
+    "secondary_goal_ids": [],
+    "rationale": null,
+    "requires_ceo_approval": false
+  },
+  "plan": null,
+  "phases": null,
+  "cast": null,
+  "dod": null,
+  "report_summary": "fix-subagent-status-propagation-2026-03-03",
+  "telemetry": null
+}

@@ -1,0 +1,14 @@
+{
+  "id": "review-quality-backlog",
+  "title": "Review quality backlog — multi-reviewer casting and DOD visibility",
+  "goal_id": "workflow-orchestration",
+  "status": "completed",
+  "priority": "p0",
+  "description": "Implemented multi-reviewer casting with role-specific guidance for all process types, and DOD visibility at CEO plan approval with corrections-caught data in reports.",
+  "source_directive": "review-quality-backlog",
+  "tags": [],
+  "tasks": [],
+  "created": "2026-03-02",
+  "updated": "2026-03-02",
+  "completed": "2026-03-02"
+}

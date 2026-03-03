@@ -1,0 +1,14 @@
+{
+  "id": "improve-session-subagent-ui",
+  "title": "Improve session and sub-agent status UI in dashboard",
+  "goal_id": "ui",
+  "status": "proposed",
+  "priority": "p1",
+  "description": "Improve how sessions and sub-agent status are displayed in the conductor dashboard. Better status propagation, clearer hierarchy, and real-time updates.",
+  "source_directive": "improve-session-subagent-ui",
+  "tags": [],
+  "tasks": [],
+  "created": "2026-03-02",
+  "updated": "2026-03-02",
+  "completed": null
+}

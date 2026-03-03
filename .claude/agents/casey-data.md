@@ -17,27 +17,26 @@ of this project's data pipeline and parsing patterns.
 Agent Conductor processes Claude session data through a multi-stage pipeline: JSONL files
 on disk are parsed by a state machine, aggregated in memory, indexed into structured JSON,
 and served to the dashboard. The data layer also includes a `.context/` metadata tree with
-goals, features, backlogs, and directives that get indexed into `state/` JSON files.
+goals, projects, backlogs, and directives read directly from source JSON files (goal.json, project.json, backlog.json).
 
 ## Key Files & Patterns
 
 - **State machine parser:** `server/parsers/session-state.ts` -- reads JSONL incrementally, classifies entries (`USER_PROMPT`, `ASSISTANT_TOOL_USE`, `TOOL_RESULT`, `ASSISTANT_TEXT`, `TURN_END`), maintains `SessionFileState` with machine states (`working`, `needs_input`, `done`)
 - **Prompt scanner:** `server/parsers/session-scanner.ts` -- extracts initial/latest prompts from JSONL head/tail, agent identity from `KNOWN_AGENTS` map, filters system content
-- **State indexer:** `scripts/index-state.ts` -- reads `.context/` tree (goal.json, backlog.json, tasks.json, directive.json), produces structured JSON in `.context/state/` (goals.json, features.json, backlogs.json, conductor.json, index.json)
-- **Work item types:** `server/state/work-item-types.ts` -- shared type definitions for GoalRecord, FeatureRecord, BacklogRecord, DirectiveRecord, ArtifactRecord
-- **Intelligence trends:** `scripts/intelligence-trends.ts` -- analyzes `.context/intelligence/` findings for cross-scout signals
+- **Work item types:** `server/state/work-item-types.ts` -- shared type definitions for GoalRecord, ProjectRecord, BacklogRecord, DirectiveRecord
+- **Intelligence trends:** `scripts/intelligence-trends.ts` -- analyzes `.context/intel/` findings for cross-scout signals
 - **JSONL format:** Each line is a JSON object with `type` field (`user`, `assistant`, `system`, `progress`), optional `message` with `role` and `content` array
-- **Context structure:** `.context/goals/{name}/` (goal.json, backlog.json, features/), `.context/conductor/` (inbox/, done/, reports/), `.context/state/` (generated JSON output)
+- **Context structure:** `.context/goals/{name}/` (goal.json, backlog.json, projects/), `.context/directives/` (flat, status in JSON), `.context/intel/` (scout outputs)
 
 ## Conventions
 
-- The indexer is READ-ONLY -- it never modifies source `.context/` files, only writes to `.context/state/`
+- The dashboard reads source files directly via glob -- no indexer or computed state files
 - Data types mirror between `server/state/work-item-types.ts` (server) and `src/stores/types.ts` (frontend) -- keep in sync
 - JSONL parsing always uses try/catch per line -- malformed lines are skipped, never crash the parser
 - File I/O in hot paths uses `fs.openSync`/`fs.readSync` with `Buffer.allocUnsafe()` for performance
 - The `bootstrapFromTail()` function reads the last 64KB of a JSONL file for cold-start state recovery
 - Incremental updates via `processFileUpdate()` read only new bytes since `byteOffset`
-- The state indexer runs as a standalone script (`npx tsx scripts/index-state.ts`) and also via `ContextWatcher` on file changes
+- The state indexer (`npx tsx scripts/index-state.ts`) is deprecated; the dashboard reads source files directly via glob
 - Goal/feature/backlog data lives in structured JSON files (goal.json, backlog.json) -- not parsed from markdown
 
 ## Common Pitfalls
@@ -78,5 +77,4 @@ goals, features, backlogs, and directives that get indexed into `state/` JSON fi
 
 - Type-check: `npx tsc --noEmit`
 - Build: `npx vite build`
-- Run indexer: `npx tsx scripts/index-state.ts`
-- Check output: `cat .context/state/index.json` -- verify counts are reasonable
+- Verify context: `ls .context/goals/*/goal.json` -- verify goal files exist and are valid JSON

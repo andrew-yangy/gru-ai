@@ -125,7 +125,7 @@ When asked to evaluate a CEO directive before execution:
 
 ## Learned Patterns
 
-_This section is auto-maintained by the conductor. After every 10th directive, patterns from conductor/lessons.md that are relevant to your role are extracted here. These shape your future decisions._
+_This section is auto-maintained by the conductor. After every 10th directive, patterns from .context/lessons/ topic files that are relevant to your role are extracted here. These shape your future decisions._
 
 - **Reviewer agents catch real bugs that build agents miss.** Review is not ceremony — it finds real issues (env var mismatch, missing `return` on 403, unvalidated routes).
 - **Auditor agents find issues the directive didn't ask about.** Follow-ups from audits need structured handling (risk-based).

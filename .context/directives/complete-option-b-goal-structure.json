@@ -1,0 +1,25 @@
+{
+  "id": "complete-option-b-goal-structure",
+  "title": "Complete Option B: Structured Goals \u2014 Finish What Was Started",
+  "status": "completed",
+  "source": "ceo",
+  "weight": "tactical",
+  "created": "2026-03-02",
+  "updated": "2026-03-02",
+  "completed": "2026-03-02",
+  "triage": {
+    "action": "update_existing",
+    "goal_id": "data-model",
+    "project_id": null,
+    "task_ids": [],
+    "secondary_goal_ids": [],
+    "rationale": null,
+    "requires_ceo_approval": false
+  },
+  "plan": null,
+  "phases": null,
+  "cast": null,
+  "dod": null,
+  "report_summary": "complete-option-b-goal-structure-2026-03-02",
+  "telemetry": null
+}

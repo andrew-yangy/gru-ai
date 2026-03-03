@@ -19,7 +19,7 @@ Simulate user scenarios against the current system. Find what's broken, missing,
 
 ### If $ARGUMENTS is a scenario name or "all":
 
-Read standing scenarios from `.context/scenarios.md`.
+Read standing scenarios from `.context/lessons/scenarios.md`.
 
 Each scenario has:
 - **Name**: slug identifier
@@ -60,7 +60,7 @@ CRITICAL OUTPUT FORMAT: First character must be `{`, last must be `}`. JSON only
 
 ### If $ARGUMENTS is empty:
 
-Read `.context/scenarios.md` and list available scenarios:
+Read `.context/lessons/scenarios.md` and list available scenarios:
 
 ```
 Available scenarios:
@@ -129,7 +129,7 @@ Sarah receives:
 - Her personality from `.claude/agents/sarah-cto.md`
 - The scenario definition
 - Marcus's ideal flow (from Step 2)
-- `.context/lessons.md` — known issues
+- `.context/lessons/` topic files — known issues
 - `.context/preferences.md`
 
 ```
@@ -229,7 +229,7 @@ After all scenarios are traced, consolidate the findings:
 ```
 
 Then ask the CEO:
-- "Create directive from gaps" — bundle gaps into a directive in inbox/
+- "Create directive from gaps" — bundle gaps into a directive in directives/
 - "Add to backlog" — write gaps to the relevant goal's backlog
 - "Note only" — just keep the report
 
@@ -237,11 +237,11 @@ Then ask the CEO:
 
 Write the full report to `.context/reports/walkthrough-{date}.md`
 
-If gaps were approved as a directive, create it in `.context/inbox/`.
+If gaps were approved as a directive, create it in `.context/directives/`.
 
 ## Standing Scenarios File
 
-If `.context/scenarios.md` doesn't exist, create it with starter scenarios on first run. The CEO and team add scenarios over time as new flows become important.
+If `.context/lessons/scenarios.md` doesn't exist, create it with starter scenarios on first run. The CEO and team add scenarios over time as new flows become important.
 
 ## Failure Handling
 

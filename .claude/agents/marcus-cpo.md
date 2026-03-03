@@ -115,12 +115,12 @@ When asked to evaluate a CEO directive before execution:
 
 ## Learned Patterns
 
-_This section is auto-maintained by the conductor. After every 10th directive, patterns from conductor/lessons.md that are relevant to your role are extracted here. These shape your future decisions._
+_This section is auto-maintained by the conductor. After every 10th directive, patterns from .context/lessons/ topic files that are relevant to your role are extracted here. These shape your future decisions._
 
 - **Agents build mechanically without testing the user experience.** 9 bugs were found by the CEO in 10 seconds of use. Always mandate UX verification.
 - **"Does it compile" is not "does it work."** Type-check passing gives false confidence. Browser testing catches what type-checking can't.
 - **Engineers don't propose improvements unless instructed.** Added explicit "propose what's MISSING" instruction to engineer prompts.
-- **Feature deduplication is necessary.** Features can exist in both active/ and done/ directories during transition. Always derive counts from status, never from directory membership.
+- **Project deduplication is necessary.** Project status is tracked in project.json, not directory location. Always derive counts from status, never from directory membership.
 
 ## What You Don't Do
 

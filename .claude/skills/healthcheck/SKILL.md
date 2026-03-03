@@ -14,10 +14,10 @@ Run a healthcheck: Sarah scans codebase health, Morgan checks operational health
 Read these before spawning agents:
 - `.context/vision.md` — guardrails (what NOT to break)
 - `.context/preferences.md` — CEO standing orders
-- `.context/goals/_index.md` — current goals (to check for staleness)
-- `.context/lessons.md` — orchestration patterns
-- All `okrs.md` files in `.context/goals/*/` — current OKR status
-- All `backlog.md` files in `.context/goals/*/` — what's already queued
+- `.context/goals/*/goal.json` — current goals (to check for staleness)
+- `.context/lessons/orchestration.md`
+- All `.context/goals/*/goal.json` for okrs field — current OKR status
+- All `.context/goals/*/backlog.json` — what's already queued
 - Recent directive reports in `.context/reports/` — what was recently done
 
 ## Step 2: Spawn Healthcheck Agents (Parallel)
@@ -28,7 +28,7 @@ Each agent receives:
 - Their full personality from `.claude/agents/{name}.md`
 - `.context/vision.md` (guardrails are critical)
 - `.context/preferences.md`
-- `.context/goals/_index.md`
+- `.context/goals/*/goal.json`
 - Current OKR status and backlogs summary
 - Recent directive report summaries (filenames + dates)
 
@@ -63,29 +63,29 @@ You are Morgan Park, COO. You are running a standing healthcheck of project oper
 Your job: audit project operations for stale goals, blocked work, and resource gaps.
 
 CHECK THESE AREAS:
-1. **Goal freshness**: Read all goals in `.context/goals/*/goal.md`. Are any stale (no progress in 2+ weeks)? Are OKRs being tracked?
+1. **Goal freshness**: Read all goals in `.context/goals/*/goal.json`. Are any stale (no progress in 2+ weeks)? Are OKRs being tracked?
 2. **Backlog health**: Read all backlogs. Are items prioritized? Are there items marked done that should be cleaned up? Any duplicates?
-3. **Active work**: Check `.context/goals/*/active/` folders. Is anything in progress but stuck? Any features without recent file changes?
+3. **Active work**: Check `.context/goals/*/projects/*/project.json` for active projects. Is anything in progress but stuck? Any projects without recent file changes?
 4. **Recent directives**: Read `.context/reports/`. Were there failures or follow-ups that haven't been addressed?
 5. **Process gaps**: Check if lessons.md is up to date. Are there patterns emerging from recent work that should be captured?
 6. **Backlog health (structured checks)**:
-   - Read all `.context/goals/*/backlog.md` — check for `<!-- last-reviewed: YYYY-MM-DD -->` comment. Flag if missing or older than 30 days.
+   - Read all `.context/goals/*/backlog.json` — check for `<!-- last-reviewed: YYYY-MM-DD -->` comment. Flag if missing or older than 30 days.
    - Count items per priority (P0/P1/P2). Flag any goal with 0 prioritized items.
    - Check for duplicate items across backlogs (same item title in multiple goals).
 7. **Partially-done project detection**:
-   - Read ALL `.context/goals/*/active/*/tasks.json` files
+   - Read ALL `.context/goals/*/projects/*/project.json` files (tasks are embedded)
    - For each: count completed vs total tasks, compute completion percentage
-   - Flag if completion > 50% but the feature's most recently modified file is > 14 days old
-   - Flag if completion is 100% but feature is still in active/ (should be in done/)
+   - Flag if completion > 50% but the project's most recently modified file is > 14 days old
+   - Flag if completion is 100% but project status is still "active" (should be "completed")
 8. **Index accuracy**:
-   - Compare `.context/goals/_index.md` active features list against actual `.context/goals/*/active/*/` directories
-   - Flag any mismatch: phantom entries in _index.md, or real active features not listed
-   - If `.context/goals/inventory.json` exists, verify it matches the filesystem
+   - Verify that project statuses in project.json match actual task completion
+   - Flag any mismatches between goal status and project statuses
+   - Verify project.json files match filesystem structure
 9. **Active/done duplicates**:
-   - Check for feature names that appear in BOTH active/ and done/ within the same goal
-   - Flag as: "{feature} exists in both active/ and done/ — ambiguous state"
+   - Check for projects with contradictory status vs task completion
+   - Flag as: "project {name} has status {status} but tasks show {completion}% complete"
 
-USE THESE TOOLS: Read (context files, reports), Glob (goal structure, active features), Grep (stale dates, TODO items)
+USE THESE TOOLS: Read (context files, reports), Glob (goal structure, projects), Grep (stale dates, TODO items)
 
 DO NOT fix anything. Report findings only.
 
@@ -152,7 +152,7 @@ After both agents return, triage all findings by risk level:
 
 ### High-risk (CEO decides)
 - Security patches, architectural changes, goal modifications
-- Add to relevant backlog in `.context/goals/*/backlog.md`
+- Add to relevant backlog in `.context/goals/*/backlog.json`
 - Flag for CEO attention in the next `/report`
 
 ## Step 4: Present Results

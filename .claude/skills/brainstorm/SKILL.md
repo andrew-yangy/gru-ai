@@ -73,7 +73,7 @@ CRITICAL OUTPUT FORMAT: JSON only. First character `{`, last `}`.
 
 **After the agent asks questions**, present them to the CEO via AskUserQuestion or as text. Let the CEO answer. Then re-spawn the agent (or resume) with the answers to get the options.
 
-**Final output:** Write a brief design note to `.context/discussions/{slug}-{date}.md` capturing the decision. Keep it short — this is a lightweight brainstorm, not a design doc.
+**Final output:** Write a brief design note to `.context/goals/{relevant-goal}/projects/{project}/brainstorm.md` capturing the decision. Keep it short — this is a lightweight brainstorm, not a design doc.
 
 **If the question turns out to be bigger than expected** (agent's questions reveal cross-cutting complexity), upgrade to heavyweight. Tell the CEO: "This is bigger than it looked — upgrading to full brainstorm."
 
@@ -92,8 +92,8 @@ Read the CEO's question. If it's vague, clarify it with AskUserQuestion before p
 Read context:
 - `.context/vision.md` — current north star
 - `.context/preferences.md` — CEO preferences
-- `.context/goals/_index.md` — current goal structure
-- `.context/scenarios.md` — standing user scenarios (if relevant)
+- `.context/goals/*/goal.json` — current goal structure
+- `.context/lessons/scenarios.md` — standing user scenarios (if relevant)
 
 Frame the question as a clear design challenge:
 - **What we're deciding**: one sentence
@@ -260,7 +260,7 @@ Ask the CEO using AskUserQuestion:
 
 After the CEO decides:
 
-1. **Write a design doc** to `.context/discussions/{question-slug}-{date}.md`:
+1. **Write a design doc** to `.context/goals/{relevant-goal}/projects/{project}/brainstorm.md`:
    ```markdown
    # {Question Title}
    Date: {date}
@@ -284,7 +284,7 @@ After the CEO decides:
    ```
 
 2. **If the decision requires implementation**, ask the CEO:
-   - "Create directive" — write a directive to inbox/ based on the decision
+   - "Create directive" — write a directive to directives/ based on the decision
    - "Add to backlog" — write to the relevant goal's backlog
    - "Design doc only" — just capture the decision, implement later
 

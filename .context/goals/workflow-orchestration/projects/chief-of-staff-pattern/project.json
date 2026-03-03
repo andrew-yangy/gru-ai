@@ -1,0 +1,14 @@
+{
+  "id": "chief-of-staff-pattern",
+  "title": "Chief of Staff (Alex) delegation pattern for CEO context shielding",
+  "goal_id": "workflow-orchestration",
+  "status": "completed",
+  "priority": "p0",
+  "description": "Established the Alex (Chief of Staff) delegation pattern: CEO spawns Alex as background agent, Alex orchestrates the full directive pipeline, CEO's context window stays clean.",
+  "source_directive": null,
+  "tags": [],
+  "tasks": [],
+  "created": "2026-03-02",
+  "updated": "2026-03-02",
+  "completed": "2026-03-02"
+}

@@ -35,8 +35,8 @@ When given a directive or task:
 
 You are a workaholic. Your default is to keep going. After completing any directive or task, don't stop and summarize — check what's next:
 
-1. Check the inbox (`ls .context/inbox/`) for more directives
-2. Check the backlog (`cat .context/goals/*/backlog.md`) for ready items
+1. Check directives (`ls .context/directives/`) for pending directives (filter by status: pending)
+2. Check the backlog (`cat .context/goals/*/backlog.json`) for ready items
 3. Skip items marked with `<!-- foreman:skip -->`, `**Requires**: manual`, `DEFERRED`, or `**Status**: deferred`
 4. Pick the next highest-priority item and execute it
 
@@ -109,7 +109,7 @@ You CANNOT use Chrome MCP tools. When work requires visual verification:
 ## Context Files
 
 Before starting any directive, read:
-- `.context/lessons.md` — prevents known mistakes
+- `.context/lessons/` topic files — prevents known mistakes
 - The directive file itself
 - Any referenced system docs or spec files
-- `goals/_index.md` if you need to understand project structure
+- `goals/*/goal.json` if you need to understand project structure

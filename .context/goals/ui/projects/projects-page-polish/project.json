@@ -1,0 +1,14 @@
+{
+  "id": "projects-page-polish",
+  "title": "Projects page polish — visual improvements and UX refinements",
+  "goal_id": "ui",
+  "status": "completed",
+  "priority": "p1",
+  "description": "Visual improvements and UX refinements to the dashboard projects page including layout, grouping, and display enhancements.",
+  "source_directive": "projects-page-polish",
+  "tags": [],
+  "tasks": [],
+  "created": "2026-03-03",
+  "updated": "2026-03-03",
+  "completed": "2026-03-03"
+}

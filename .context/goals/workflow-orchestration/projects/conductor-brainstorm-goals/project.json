@@ -1,0 +1,14 @@
+{
+  "id": "conductor-brainstorm-goals",
+  "title": "Goal.json structure + indexer update + brainstorm pipeline rewire",
+  "goal_id": "workflow-orchestration",
+  "status": "completed",
+  "priority": "p0",
+  "description": "Established the goal.json structure with features array, OKR references, and lifecycle states. Updated indexer to support goal.json. Rewired brainstorm pipeline to output structured artifacts.",
+  "source_directive": "conductor-brainstorm-goals",
+  "tags": ["cross-goal:data-model"],
+  "tasks": [],
+  "created": "2026-03-02",
+  "updated": "2026-03-03",
+  "completed": "2026-03-03"
+}

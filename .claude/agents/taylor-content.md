@@ -21,13 +21,13 @@ automated indexers that produce structured state files.
 
 ## Key Files & Patterns
 
-- **Lessons:** `.context/lessons.md` (index) + `.context/lessons/{topic}.md` (topic files: agent-behavior, orchestration, state-management, review-quality, skill-design)
+- **Lessons:** `.context/lessons/{topic}.md` (topic files: agent-behavior, orchestration, state-management, review-quality, skill-design)
 - **Vision & preferences:** `.context/vision.md` (guardrails), `.context/preferences.md` (CEO standing orders)
-- **Goals:** `.context/goals/{name}/goal.json` (structured metadata), `.context/goals/{name}/backlog.md` (backlog items with triggers/priorities)
-- **Features:** `.context/goals/{name}/features/{feature}/` -- `spec.md` (requirements), `tasks.json` (task tracking)
-- **Directives:** `.context/conductor/inbox/{name}.md` (pending), `.context/conductor/done/{name}.md` (completed)
-- **Reports:** `.context/reports/{directive-name}-{date}.md` -- execution digests
-- **Artifacts:** `.context/artifacts/{directive-name}/` -- plan files, brainstorm docs, build artifacts
+- **Goals:** `.context/goals/{name}/goal.json` (structured metadata), `.context/goals/{name}/backlog.json` (backlog items with triggers/priorities)
+- **Projects:** `.context/goals/{name}/projects/{project}/` -- `project.json` (requirements + embedded tasks)
+- **Directives:** `.context/directives/{name}.json` + `.context/directives/{name}.md` (status in JSON)
+- **Reports:** `.context/reports/{directive-name}-{date}.md` -- execution digests, or co-located in project directories
+- **Artifacts:** Written to project directories: `.context/goals/{goal}/projects/{project}/` -- plan files, brainstorm docs, build artifacts
 - **Agent templates:** `.claude/agents/{name}-{role}.md` -- YAML frontmatter + markdown body
 - **Skills:** `.claude/skills/{name}/SKILL.md` -- YAML frontmatter + pipeline instructions
 
@@ -36,18 +36,18 @@ automated indexers that produce structured state files.
 - Agent template files use YAML frontmatter: `name`, `description`, `model: inherit`, `memory: project`
 - Agent templates MUST use the pattern "You are {Name} {LastName}, {Role}" for session scanner detection
 - Directive files include priority (P0/P1/P2), scope description, and definition of done
-- Backlog items in `backlog.md` use `###` headings with `**Priority**: P{n}` and `**Trigger**: {condition}` fields
+- Backlog items in `backlog.json` use structured JSON with priority field
 - Reports follow a standard structure: TL;DR, Changes, Metrics, Follow-ups
 - Lesson files are split by topic so agents read only what is relevant to their role
 - Markdown files should use `--` for em-dashes (not unicode), plain ASCII quotes (not smart quotes)
-- JSON files (goal.json, backlog.json, tasks.json) follow schemas defined in `server/state/work-item-types.ts`
+- JSON files (goal.json, backlog.json, project.json) follow schemas defined in `server/state/work-item-types.ts`
 
 ## Common Pitfalls
 
 - Goal.json and backlog.json are the source of truth for the indexer -- markdown backlogs are legacy and should not be relied on for structured data
 - Agent template filenames must match the pattern `{firstname}-{role}.md` (lowercase)
 - The `KNOWN_AGENTS` map in `server/parsers/session-scanner.ts` must include any new agent names for session detection
-- When adding new lesson topics, update the index table in `.context/lessons.md`
+- When adding new lesson topics, add to the appropriate topic file in `.context/lessons/`
 - Reports should be concise -- the CEO reads these for quick status, not deep technical detail
 - SKILL.md files are loaded as full text into agent prompts -- keep them focused to avoid context window waste
 

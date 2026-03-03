@@ -1,0 +1,25 @@
+{
+  "id": "review-quality-backlog",
+  "title": "Directive: Review Quality Backlog Completion",
+  "status": "completed",
+  "source": "ceo",
+  "weight": "tactical",
+  "created": "2026-03-02",
+  "updated": "2026-03-02",
+  "completed": "2026-03-02",
+  "triage": {
+    "action": "update_existing",
+    "goal_id": "workflow-orchestration",
+    "project_id": null,
+    "task_ids": [],
+    "secondary_goal_ids": [],
+    "rationale": null,
+    "requires_ceo_approval": false
+  },
+  "plan": null,
+  "phases": null,
+  "cast": null,
+  "dod": null,
+  "report_summary": "review-quality-backlog-2026-03-02",
+  "telemetry": null
+}

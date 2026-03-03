@@ -1,0 +1,11 @@
+{
+  "id": "ui",
+  "title": "UI — Dashboard App, Watchers, CEO Experience",
+  "status": "active",
+  "category": "framework",
+  "description": "The conductor dashboard application, file watchers, real-time visualizations, and overall CEO experience. How the human operator sees and interacts with the autonomous system.",
+  "created": "2026-03-03",
+  "updated": "2026-03-03",
+  "kpis": [],
+  "okrs": []
+}

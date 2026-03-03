@@ -1,0 +1,14 @@
+{
+  "id": "functional-specialist-agents",
+  "title": "Functional specialist agents with domain expertise",
+  "goal_id": "workflow-orchestration",
+  "status": "completed",
+  "priority": "p1",
+  "description": "Created functional specialist agent definitions with domain-specific expertise and casting logic.",
+  "source_directive": "functional-specialist-agents",
+  "tags": [],
+  "tasks": [],
+  "created": "2026-03-03",
+  "updated": "2026-03-03",
+  "completed": "2026-03-03"
+}

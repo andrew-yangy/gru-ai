@@ -14,11 +14,11 @@ Run a scout: each C-suite member researches their external domain, brings back i
 Read ALL of these before spawning agents:
 - `.context/vision.md` — north star + guardrails (agents need to know what's relevant)
 - `.context/preferences.md` — CEO standing orders
-- `.context/goals/_index.md` — current goals and priorities (so agents focus research on what matters)
-- All `backlog.md` files in `.context/goals/*/` — so agents don't propose what's already queued, AND so Morgan can check trigger conditions during consolidation
-- `.context/lessons.md` — orchestration patterns
-- Recent scout archive in `.context/intelligence/archive/` — so agents don't re-report known intelligence (just filenames + dates, not full content)
-- `.context/proposals.log` — so agents know what's been proposed and approved/rejected before
+- `.context/goals/*/goal.json` — current goals and priorities (so agents focus research on what matters)
+- All `backlog.json` files in `.context/goals/*/` — so agents don't propose what's already queued, AND so Morgan can check trigger conditions during consolidation
+- `.context/lessons/orchestration.md`
+- Recent scout archive in `.context/intel/archive/` — so agents don't re-report known intelligence (just filenames + dates, not full content)
+- `.context/reports/ (proposals tracked in reports)` — so agents know what's been proposed and approved/rejected before
 
 ## Step 2: Spawn Scout Agents (Parallel)
 
@@ -28,7 +28,7 @@ Each agent receives:
 - Their full personality from `.claude/agents/{name}.md`
 - `.context/vision.md` (full file — guardrails help agents assess relevance)
 - `.context/preferences.md`
-- `.context/goals/_index.md`
+- `.context/goals/*/goal.json`
 - Current backlogs summary (what's already planned)
 - List of recent intelligence reports (filenames only — so they skip known topics)
 
@@ -196,7 +196,7 @@ CONSOLIDATION RULES:
 3. **Prioritize**: Rank all proposals. Break ties using: act_now urgency > revenue impact > competitive threat > strategic alignment.
 4. **Filter already-planned**: Remove proposals for work that's already in a backlog or OKR. Note them in the summary.
 5. **Validate urgency**: If an agent rated something act_now but the evidence is weak, downgrade it. If something rated this_month has stronger implications, upgrade it.
-6. **Backlog promotion check**: Read all `.context/goals/*/backlog.md` files. For each backlog item that has a **Trigger** condition, check if any intelligence finding satisfies that trigger. If yes, promote it — add it to `promotable_backlog_items` with the matching intelligence. This is how backlog items come alive instead of rotting.
+6. **Backlog promotion check**: Read all `.context/goals/*/backlog.json` files. For each backlog item that has a **Trigger** condition, check if any intelligence finding satisfies that trigger. If yes, promote it — add it to `promotable_backlog_items` with the matching intelligence. This is how backlog items come alive instead of rotting.
 7. **Cross-scout pattern detection**: After consolidation, identify topics/entities that appear in findings from 2+ different agents. These cross-scout signals are the highest-confidence intelligence. Classify signal strength: **strong** (3+ agents OR 4+ total mentions), **moderate** (2 agents + 3+ mentions), **weak** (2 agents, few mentions). Strong signals with `act_now` or `this_week` urgency should be flagged for automatic promotion to inbox directives — they represent validated, multi-perspective intelligence that doesn't need CEO approval to queue. Include cross-scout signals in the `cross_scout_signals` field of your output.
 
 CRITICAL OUTPUT FORMAT: Your response must contain ONLY valid JSON. The very first character must be `{` and the very last must be `}`.
@@ -240,7 +240,7 @@ CRITICAL OUTPUT FORMAT: Your response must contain ONLY valid JSON. The very fir
   "promotable_backlog_items": [
     {
       "backlog_item": "Title from backlog",
-      "source_file": ".context/goals/{goal}/backlog.md",
+      "source_file": ".context/goals/{goal}/backlog.json",
       "trigger_condition": "The trigger text from the backlog item",
       "matching_intelligence": ["intel-slug-1"],
       "why_triggered": "How the intelligence satisfies the trigger condition",
@@ -327,21 +327,21 @@ Then ask the CEO to approve using AskUserQuestion:
 - "Approve selected" — CEO picks which proposals and backlog promotions to approve
 - "Review only" — no action, just noting the intelligence
 
-**For promotable backlog items**, approved items get converted into directive files in `inbox/` (same as new proposals). The directive content should reference the original backlog item and the triggering intelligence.
+**For promotable backlog items**, approved items get converted into directive files in `directives/` (same as new proposals). The directive content should reference the original backlog item and the triggering intelligence.
 
 ## Step 5: Save Intelligence + Create Directives
 
 ### Save intelligence outputs
 
-Write each agent's raw JSON output to `.context/intelligence/latest/{agent}.json`, overwriting any previous file.
+Write each agent's raw JSON output to `.context/intel/latest/{agent}.json`, overwriting any previous file.
 
 If the `latest/` directory already has files, move them to `archive/{date}/` first.
 
-Create directories if they don't exist: `mkdir -p .context/intelligence/latest .context/intelligence/archive`
+Create directories if they don't exist: `mkdir -p .context/intel/latest .context/intel/archive`
 
 ### Create directives from approved proposals
 
-For each approved proposal, create a directive file in `.context/inbox/`:
+For each approved proposal, create a directive file in `.context/directives/`:
 
 **Filename:** `{initiative-slug}.md` (kebab-case)
 
@@ -372,13 +372,13 @@ For each approved proposal, create a directive file in `.context/inbox/`:
 {derived from the initiative scope — what does "done" look like}
 ```
 
-Tell the CEO: "Created {N} directives in `.context/inbox/`. Run `/directive {name}` to execute any of them."
+Tell the CEO: "Created {N} directives in `.context/directives/`. Run `/directive {name}` to execute any of them."
 
 ## Step 6: Log to Intelligence Log + Proposals Log
 
 ### Intelligence log
 
-Append to `.context/intelligence.log`:
+Append to `.context/reports/ (intelligence tracked in reports)`:
 
 ```
 --- Scout {date} ---
@@ -391,7 +391,7 @@ Initiatives proposed: {count}
 Initiatives approved: {count}
 ```
 
-If `intelligence.log` doesn't exist, create it with a header:
+Intelligence is now tracked in reports only. Skip the log file.
 
 ```
 # Intelligence Log
@@ -400,7 +400,7 @@ If `intelligence.log` doesn't exist, create it with a header:
 
 ### Proposals log
 
-Append approved/rejected proposals to `.context/proposals.log` (same format as before):
+Append approved/rejected proposals to `.context/reports/ (proposals tracked in reports)` (same format as before):
 
 ```
 --- Scout {date} ---
@@ -423,7 +423,7 @@ Append approved/rejected proposals to `.context/proposals.log` (same format as b
 | Morgan consolidation fails | Present raw agent outputs to CEO without consolidation. |
 | CEO rejects all proposals | Log rejections. Scout still recorded as completed. |
 | No intelligence across all agents | Report "quiet week" — this is a valid outcome. |
-| intelligence/latest/ directory doesn't exist | Create it with mkdir -p. |
+| intel/latest/ directory doesn't exist | Create it with mkdir -p. |
 
 ## Rules
 
@@ -431,7 +431,7 @@ Append approved/rejected proposals to `.context/proposals.log` (same format as b
 - Scan the codebase during scout (that's /healthcheck)
 - Run npm commands, grep source files, or read code files
 - Create directives without CEO approval
-- Overwrite intelligence.log or proposals.log (always append)
+- Overwrite intel files without archiving first
 - Run scout agents sequentially (always parallel)
 - Make up intelligence — only report what WebSearch/WebFetch actually found
 
@@ -441,6 +441,6 @@ Append approved/rejected proposals to `.context/proposals.log` (same format as b
 - Include vision + preferences in all agent prompts (for relevance filtering)
 - Parse agent output defensively (extract JSON between first `{` and last `}`)
 - Save raw intelligence to latest/ for /report to read
-- Log all proposals to proposals.log, whether approved or not
+- Include all proposals (approved and rejected) in the scout report
 - Show the CEO what was found before asking for decisions
 - Include source URLs for all intelligence (verifiability matters)

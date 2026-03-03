@@ -26,7 +26,7 @@ runtime correctness verification, and ensuring the data pipeline produces accura
 - **Frontend types:** `src/stores/types.ts` -- must stay in sync with `server/types.ts`
 - **Server types:** `server/types.ts` -- canonical type definitions for Session, Team, HookEvent, DashboardState
 - **Work item types:** `server/state/work-item-types.ts` -- GoalRecord, FeatureRecord, BacklogRecord (shared across indexer, server, frontend)
-- **State indexer:** `scripts/index-state.ts` -- validates `.context/` structure and produces `state/` JSON
+- **State indexer:** `scripts/index-state.ts` -- legacy indexer (deprecated; dashboard reads source files directly)
 - **Health endpoint:** `GET /api/health` -- reports server uptime, watcher readiness, connected clients
 
 ## Conventions
@@ -34,7 +34,7 @@ runtime correctness verification, and ensuring the data pipeline produces accura
 - Type-check with `npx tsc --noEmit` -- this checks ALL project references (app, server, cli, mcp-server)
 - Build with `npx vite build` -- this also type-checks the frontend and produces the production bundle
 - NEVER use `npm run lint` -- ESLint OOMs on this project
-- The indexer (`npx tsx scripts/index-state.ts`) serves as an integration test for the `.context/` data layer
+- The indexer (`npx tsx scripts/index-state.ts`) is deprecated; the dashboard reads source files directly
 - Server health check (`curl http://localhost:4444/api/health`) verifies all watchers are ready
 - WebSocket state snapshot (`curl http://localhost:4444/api/state`) provides full system state for manual inspection
 - Type sync verification: compare interfaces in `server/types.ts` and `src/stores/types.ts` -- they should have the same fields
@@ -79,6 +79,6 @@ runtime correctness verification, and ensuring the data pipeline produces accura
 
 1. `npx tsc --noEmit` -- passes with no errors
 2. `npx vite build` -- produces `dist/` successfully
-3. `npx tsx scripts/index-state.ts` -- runs without errors, produces valid JSON in `.context/state/`
+3. Context structure: `.context/goals/*/goal.json` files are valid JSON, all project.json files are valid
 4. Type sync: `server/types.ts` Session interface matches `src/stores/types.ts` Session interface
 5. Server starts: `npm run dev:server` and `curl http://localhost:4444/api/health` returns `{"status":"ok"}`
