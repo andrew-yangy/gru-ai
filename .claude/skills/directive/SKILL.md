@@ -1040,22 +1040,30 @@ Log completion status: completed / partial / skipped / failed.
 
 Collect `proposed_improvements` from the engineer's build report. These are ideas the builder had while working — features that should exist, edge cases not covered, UX gaps. Include them in the digest and present to the CEO in Step 7.
 
-### Register Features in goal.json (after all initiatives complete)
+### Register Projects (after all initiatives complete)
 
-When the directive produces new features (most directives do), register or update them in the appropriate `goal.json`:
+When the directive produces shippable work, create or update project.json files in `.context/goals/{goal_folder}/projects/{project-id}/`:
 
-1. **For each completed initiative that produced a shippable feature:**
-   - Read `.context/goals/{goal_folder}/goal.json`
-   - Add or update the feature entry with:
-     - `source_directive`: the directive name (`$ARGUMENTS`)
-     - `dod`: structured DOD from Morgan's plan — `{ "criteria": [{ "text": "...", "met": true/false, "verified_by": "reviewer-name" }] }`
-     - `report`: the report filename (set in Step 6c, can be null here — updated later)
-   - If the feature already exists (from a previous partial run), update rather than duplicate
+1. **For each completed initiative that produced a shippable project:**
+   - Create directory: `mkdir -p .context/goals/{goal_folder}/projects/{initiative-id}/`
+   - Write `project.json` conforming to the SPEC (Section 2.2). **All fields are mandatory:**
+     - `id`, `title`, `goal_id`, `status`, `priority`, `description`
+     - `source_directive`: the directive name
+     - `scope`: `{ "in": [...], "out": [...] }` — from Morgan's plan scope + audit findings
+     - `dod`: from Morgan's `definition_of_done` — mapped to `[{ "criterion": "...", "met": true/false, "verified_by": "reviewer-name | null" }]`. Mark criteria met/unmet based on review outcomes.
+     - `verify`: `{ "checklist": [...], "reviewers": [{ "agent": "...", "domain": "..." }], "browser_test": true/false }` — derived from Morgan's cast (reviewers), initiative domain, and whether UI was touched. Checklist items are project-specific acceptance tests, NOT "type-check passes" (that's implied).
+     - `tasks`: populated from the initiative's phases and sub-work
+   - If the project already exists (from a previous partial run), update rather than duplicate
 
 2. **For each completed initiative, also update directive.json:**
-   - Add the feature's full ID (`goal-id/feature-id`) to `produced_features` array
+   - Add `goal-id/project-id` to `produced_projects` array
 
-This ensures bidirectional links: feature -> directive (via `source_directive`) and directive -> feature (via `produced_features`).
+**Reviewer derivation for verify.reviewers:**
+- Use Morgan's `cast.reviewers` array from the initiative
+- Map each reviewer to their domain: Sarah → architecture, Marcus → ux/product, Priya → seo/growth, Morgan → process
+- Complex initiatives (P0, 10+ tasks): must have 2+ reviewers
+
+This ensures bidirectional links: project -> directive (via `source_directive`) and directive -> project (via `produced_projects`).
 
 ## Step 6: Update Goal OKRs (if applicable)
 

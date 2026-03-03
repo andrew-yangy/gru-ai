@@ -12,15 +12,18 @@
   },
   "dod": [
     { "criterion": "Org page shows all C-suite agents with their domains and current assignments", "met": false, "verified_by": null },
-    { "criterion": "Agent cards are clickable and show agent detail (personality summary, recent directives)", "met": false, "verified_by": null },
-    { "criterion": "npm run type-check passes", "met": false, "verified_by": null }
+    { "criterion": "Agent cards are clickable and show agent detail (personality summary, recent directives)", "met": false, "verified_by": null }
   ],
   "verify": {
-    "command": "npm run type-check",
-    "reviewer": "marcus",
-    "reviewer_rationale": "New product page — product/UX domain",
-    "browser_test": true,
-    "browser_test_rationale": "New page must be visually verified"
+    "checklist": [
+      "Navigate to org page — all 6+ agents render with correct domain labels",
+      "Click an agent card — detail panel shows personality summary and last 3 directives",
+      "Verify domain grouping matches .claude/agents/*.md definitions"
+    ],
+    "reviewers": [
+      { "agent": "marcus", "domain": "ux — new product page, information architecture" }
+    ],
+    "browser_test": true
   },
   "tags": [],
   "tasks": [],

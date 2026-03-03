@@ -107,11 +107,14 @@
     }
   ],
   "verify": {
-    "command": "string (verification command, e.g. npm run type-check)",
-    "reviewer": "string (agent name: sarah | marcus | priya — based on domain)",
-    "reviewer_rationale": "string (why this reviewer — domain + complexity justification)",
-    "browser_test": "boolean (true if project touches UI)",
-    "browser_test_rationale": "string | null (why browser test is needed/not needed)"
+    "checklist": ["string (project-specific verification steps — NOT type-check, that's always implied)"],
+    "reviewers": [
+      {
+        "agent": "string (sarah | marcus | priya | morgan)",
+        "domain": "string (what they verify: architecture, ux, seo, process)"
+      }
+    ],
+    "browser_test": "boolean (true if project touches UI)"
   },
   "source_directive": "string | null (FK to Directive.id)",
   "tags": ["string (for cross-goal relevance, secondary categorization)"],
@@ -124,25 +127,26 @@
 }
 ```
 
-**Required fields:** id, title, goal_id, status, priority, description, tasks (can be `[]`), created, updated
-**Optional fields:** sequence, depends_on_project, scope, dod, verify, source_directive, tags, completed
+**Required fields:** id, title, goal_id, status, priority, description, dod, verify, tasks (can be `[]`), created, updated
+**Optional fields:** sequence, depends_on_project, scope, source_directive, tags, completed
 
 **Reviewer Assignment Rules (by domain and complexity):**
 
-| Goal Category | Primary Reviewer | Rationale |
-|---------------|-----------------|-----------|
-| `framework` | Sarah | Architecture, schema integrity, system design |
-| `infrastructure` | Sarah | Server, deployment, security |
-| `product` | Marcus | User-facing features, UX flows, product decisions |
-| `growth` | Priya | SEO, marketing, content, positioning |
+| Goal Category | Reviewers | Rationale |
+|---------------|-----------|-----------|
+| `framework` | [Sarah] | Architecture, schema integrity, system design |
+| `infrastructure` | [Sarah] | Server, deployment, security |
+| `product` | [Marcus] | User-facing features, UX flows, product decisions |
+| `growth` | [Priya] | SEO, marketing, content, positioning |
+| Cross-cutting (P0) | [domain lead, + Sarah or Marcus] | Complex work needs multi-perspective review |
 
-| Complexity | Testing Strategy |
-|------------|-----------------|
-| Simple (P2-P3, <5 tasks) | Single reviewer + type-check |
-| Moderate (P1, 5-10 tasks) | Reviewer + type-check + targeted browser test |
-| Complex (P0, 10+ tasks) | Multi-reviewer + type-check + full browser verification |
+**verify.checklist semantics:**
+- NOT "type-check passes" — that's always run, listing it is noise
+- NOT "it works" — too vague
+- YES: project-specific acceptance tests the reviewer walks through
+- Examples: "Dashboard loads with real goal data from .context/", "All API endpoints return new entity shapes", "Foreman can discover and launch directives from directives/ directory"
 
-**DoD is mandatory for active/pending projects.** Completed projects may omit DoD (retroactive assessment optional). Each criterion must be a verifiable statement that can be objectively marked `met: true` or `met: false`.
+**DoD + verify are required for all non-completed projects.** Completed projects may omit them. Each DoD criterion must be verifiable — can be objectively marked `met: true` or `met: false`.
 
 ### 2.3 Task (embedded in project.json tasks[])
 

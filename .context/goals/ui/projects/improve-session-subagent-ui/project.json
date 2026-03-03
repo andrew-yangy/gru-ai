@@ -12,15 +12,18 @@
   },
   "dod": [
     { "criterion": "Session cards show real-time status (running, idle, needs-you) with sub-agent tree", "met": false, "verified_by": null },
-    { "criterion": "Sub-agent status propagates to parent session within 2 seconds", "met": false, "verified_by": null },
-    { "criterion": "npm run type-check passes", "met": false, "verified_by": null }
+    { "criterion": "Sub-agent status propagates to parent session within 2 seconds", "met": false, "verified_by": null }
   ],
   "verify": {
-    "command": "npm run type-check",
-    "reviewer": "marcus",
-    "reviewer_rationale": "User-facing UI — product/UX domain, CEO dashboard experience",
-    "browser_test": true,
-    "browser_test_rationale": "UI components must be visually verified in browser"
+    "checklist": [
+      "Open dashboard with 2+ active sessions — cards update in real time",
+      "Expand a session with sub-agents — hierarchy renders correctly",
+      "Kill a sub-agent — parent session status updates within 2s"
+    ],
+    "reviewers": [
+      { "agent": "marcus", "domain": "ux — CEO dashboard experience, status clarity" }
+    ],
+    "browser_test": true
   },
   "tags": [],
   "tasks": [],

@@ -16,11 +16,16 @@
     { "criterion": "3-agent review (path audit, data integrity, SPEC compliance) passes", "met": true, "verified_by": "sarah+marcus+morgan" }
   ],
   "verify": {
-    "command": "grep -rn '.context/conductor/' .claude/ | grep -v node_modules | wc -l",
-    "reviewer": "sarah",
-    "reviewer_rationale": "Architecture domain — schema compliance and structural integrity",
-    "browser_test": false,
-    "browser_test_rationale": "No UI changes in this project"
+    "checklist": [
+      "All entity JSON files validate against SPEC.md Section 2 schemas",
+      "Zero stale path references across .claude/ directory (grep returns 0)",
+      "Every active/pending project has dod and verify fields populated"
+    ],
+    "reviewers": [
+      { "agent": "sarah", "domain": "architecture — schema compliance and structural integrity" },
+      { "agent": "morgan", "domain": "process — SPEC compliance, entity completeness" }
+    ],
+    "browser_test": false
   },
   "tags": [],
   "tasks": [

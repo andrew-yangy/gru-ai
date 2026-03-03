@@ -13,18 +13,24 @@
     "out": ["SKILL.md files (already updated)", "agent .md files (already updated)", "sw consumer repo migration"]
   },
   "dod": [
-    { "criterion": "npm run type-check passes with zero errors", "met": false, "verified_by": null },
-    { "criterion": "Dashboard loads and renders all 3 pages (dashboard, projects, insights) with real data from .context/", "met": false, "verified_by": "sarah" },
-    { "criterion": "Zero references to state/, inbox/, done/, intelligence/, backlog.md, features/ in server/, scripts/, mcp-server/", "met": false, "verified_by": "sarah" },
-    { "criterion": "MCP tools (status, backlog, directive) return correct data from new paths", "met": false, "verified_by": "sarah" },
-    { "criterion": "Foreman scheduler can find and launch directives from directives/ directory", "met": false, "verified_by": "sarah" }
+    { "criterion": "Dashboard loads and renders all 3 pages (dashboard, projects, insights) with real data from .context/", "met": false, "verified_by": null },
+    { "criterion": "Zero references to state/, inbox/, done/, intelligence/, backlog.md, features/ in server/, scripts/, mcp-server/", "met": false, "verified_by": null },
+    { "criterion": "MCP tools (status, backlog, directive) return correct data from new paths", "met": false, "verified_by": null },
+    { "criterion": "Foreman scheduler can find and launch directives from directives/ directory", "met": false, "verified_by": null }
   ],
   "verify": {
-    "command": "npm run type-check",
-    "reviewer": "sarah",
-    "reviewer_rationale": "Architecture/infrastructure domain — server rewrite with many integration points",
-    "browser_test": true,
-    "browser_test_rationale": "Dashboard UI must render with real data after server rewrite"
+    "checklist": [
+      "Dashboard renders goals with correct active/completed project counts",
+      "Projects page shows project.json tasks with completion percentages",
+      "Directives page lists all 35 directives with correct status from directive.json",
+      "MCP `conductor-status` tool returns goal/project/directive counts matching filesystem",
+      "Foreman discovers pending directives and triggers launch"
+    ],
+    "reviewers": [
+      { "agent": "sarah", "domain": "architecture — server rewrite, watcher integration, API shape" },
+      { "agent": "marcus", "domain": "ux — dashboard renders correctly, CEO workflow intact" }
+    ],
+    "browser_test": true
   },
   "tags": ["migration", "server", "dashboard"],
   "tasks": [
