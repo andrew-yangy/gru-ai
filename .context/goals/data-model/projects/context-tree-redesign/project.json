@@ -6,6 +6,23 @@
   "priority": "p0",
   "description": "Complete redesign of the .context/ directory structure. Three-tier hierarchy (Goal > Project > Task), embedded tasks in project.json, flat directives with triage linking, kill state/indexer, co-locate context with entities. Definitive spec from 4 brainstorm rounds.",
   "source_directive": "context-tree-redesign",
+  "scope": {
+    "in": ["agent-conductor .context/ directory structure", "SKILL.md path references", "agent .md path references", "sw consumer repo .context/ (t6)"],
+    "out": ["server/dashboard code (separate project: dashboard-glob-reads)", "MCP server tools"]
+  },
+  "dod": [
+    { "criterion": "All goal.json, project.json, directive.json, backlog.json files conform to SPEC.md schemas", "met": true, "verified_by": "morgan" },
+    { "criterion": "Zero stale path references in SKILL.md and agent .md files", "met": true, "verified_by": "sarah" },
+    { "criterion": "3-agent review (path audit, data integrity, SPEC compliance) passes", "met": true, "verified_by": "sarah+marcus+morgan" },
+    { "criterion": "SW consumer repo migrated to new structure (t6)", "met": false, "verified_by": null }
+  ],
+  "verify": {
+    "command": "grep -rn '.context/conductor/' .claude/ | grep -v node_modules | wc -l",
+    "reviewer": "sarah",
+    "reviewer_rationale": "Architecture domain — schema compliance and structural integrity",
+    "browser_test": false,
+    "browser_test_rationale": "No UI changes in this project"
+  },
   "tags": [],
   "tasks": [
     {

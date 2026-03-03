@@ -106,6 +106,13 @@
       "verified_by": "string | null"
     }
   ],
+  "verify": {
+    "command": "string (verification command, e.g. npm run type-check)",
+    "reviewer": "string (agent name: sarah | marcus | priya — based on domain)",
+    "reviewer_rationale": "string (why this reviewer — domain + complexity justification)",
+    "browser_test": "boolean (true if project touches UI)",
+    "browser_test_rationale": "string | null (why browser test is needed/not needed)"
+  },
   "source_directive": "string | null (FK to Directive.id)",
   "tags": ["string (for cross-goal relevance, secondary categorization)"],
   "tasks": [
@@ -118,7 +125,24 @@
 ```
 
 **Required fields:** id, title, goal_id, status, priority, description, tasks (can be `[]`), created, updated
-**Optional fields:** sequence, depends_on_project, scope, dod, source_directive, tags, completed
+**Optional fields:** sequence, depends_on_project, scope, dod, verify, source_directive, tags, completed
+
+**Reviewer Assignment Rules (by domain and complexity):**
+
+| Goal Category | Primary Reviewer | Rationale |
+|---------------|-----------------|-----------|
+| `framework` | Sarah | Architecture, schema integrity, system design |
+| `infrastructure` | Sarah | Server, deployment, security |
+| `product` | Marcus | User-facing features, UX flows, product decisions |
+| `growth` | Priya | SEO, marketing, content, positioning |
+
+| Complexity | Testing Strategy |
+|------------|-----------------|
+| Simple (P2-P3, <5 tasks) | Single reviewer + type-check |
+| Moderate (P1, 5-10 tasks) | Reviewer + type-check + targeted browser test |
+| Complex (P0, 10+ tasks) | Multi-reviewer + type-check + full browser verification |
+
+**DoD is mandatory for active/pending projects.** Completed projects may omit DoD (retroactive assessment optional). Each criterion must be a verifiable statement that can be objectively marked `met: true` or `met: false`.
 
 ### 2.3 Task (embedded in project.json tasks[])
 

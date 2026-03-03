@@ -8,6 +8,24 @@
   "depends_on_project": "context-tree-redesign",
   "description": "After the context tree migration, the dashboard server still reads from deleted/renamed paths (state/, inbox/, done/, intelligence/, lessons.md, backlog.md, features/active/done/). Rewrite ALL server, script, MCP, and frontend code to glob source files directly from the new structure. Kill the indexer (index-state.ts) — dashboard reads goal.json, project.json, directive.json, backlog.json directly.",
   "source_directive": null,
+  "scope": {
+    "in": ["server watchers", "server/index.ts endpoints", "MCP server tools", "scripts (foreman, intelligence-trends, index-state)", "CLI scaffolding", "frontend API fetchers and types"],
+    "out": ["SKILL.md files (already updated)", "agent .md files (already updated)", "sw consumer repo migration"]
+  },
+  "dod": [
+    { "criterion": "npm run type-check passes with zero errors", "met": false, "verified_by": null },
+    { "criterion": "Dashboard loads and renders all 3 pages (dashboard, projects, insights) with real data from .context/", "met": false, "verified_by": "sarah" },
+    { "criterion": "Zero references to state/, inbox/, done/, intelligence/, backlog.md, features/ in server/, scripts/, mcp-server/", "met": false, "verified_by": "sarah" },
+    { "criterion": "MCP tools (status, backlog, directive) return correct data from new paths", "met": false, "verified_by": "sarah" },
+    { "criterion": "Foreman scheduler can find and launch directives from directives/ directory", "met": false, "verified_by": "sarah" }
+  ],
+  "verify": {
+    "command": "npm run type-check",
+    "reviewer": "sarah",
+    "reviewer_rationale": "Architecture/infrastructure domain — server rewrite with many integration points",
+    "browser_test": true,
+    "browser_test_rationale": "Dashboard UI must render with real data after server rewrite"
+  },
   "tags": ["migration", "server", "dashboard"],
   "tasks": [
     {
