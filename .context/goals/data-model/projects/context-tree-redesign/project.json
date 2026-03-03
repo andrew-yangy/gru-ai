@@ -2,19 +2,18 @@
   "id": "context-tree-redesign",
   "title": "Context Tree Redesign — Three-tier Goal > Project > Task hierarchy with clean-slate migration",
   "goal_id": "data-model",
-  "status": "active",
+  "status": "completed",
   "priority": "p0",
   "description": "Complete redesign of the .context/ directory structure. Three-tier hierarchy (Goal > Project > Task), embedded tasks in project.json, flat directives with triage linking, kill state/indexer, co-locate context with entities. Definitive spec from 4 brainstorm rounds.",
   "source_directive": "context-tree-redesign",
   "scope": {
-    "in": ["agent-conductor .context/ directory structure", "SKILL.md path references", "agent .md path references", "sw consumer repo .context/ (t6)"],
-    "out": ["server/dashboard code (separate project: dashboard-glob-reads)", "MCP server tools"]
+    "in": ["agent-conductor .context/ directory structure", "SKILL.md path references", "agent .md path references"],
+    "out": ["server/dashboard code (separate project: dashboard-glob-reads)", "MCP server tools", "sw consumer repo (separate backlog item: sw-consumer-migration)"]
   },
   "dod": [
     { "criterion": "All goal.json, project.json, directive.json, backlog.json files conform to SPEC.md schemas", "met": true, "verified_by": "morgan" },
     { "criterion": "Zero stale path references in SKILL.md and agent .md files", "met": true, "verified_by": "sarah" },
-    { "criterion": "3-agent review (path audit, data integrity, SPEC compliance) passes", "met": true, "verified_by": "sarah+marcus+morgan" },
-    { "criterion": "SW consumer repo migrated to new structure (t6)", "met": false, "verified_by": null }
+    { "criterion": "3-agent review (path audit, data integrity, SPEC compliance) passes", "met": true, "verified_by": "sarah+marcus+morgan" }
   ],
   "verify": {
     "command": "grep -rn '.context/conductor/' .claude/ | grep -v node_modules | wc -l",
@@ -79,20 +78,9 @@
       "output": "3-agent review: Sarah (path audit, 80+ stale refs found+fixed), Marcus (data integrity, PASS), Morgan (SPEC compliance, 3 blocking issues found+fixed)",
       "created": "2026-03-03",
       "completed": "2026-03-03"
-    },
-    {
-      "id": "t6",
-      "title": "Migrate sw consumer repo .context/ to new context tree structure",
-      "status": "pending",
-      "phase": "build",
-      "agent": null,
-      "depends_on": ["t5"],
-      "output": null,
-      "created": "2026-03-03",
-      "completed": null
     }
   ],
   "created": "2026-03-03",
   "updated": "2026-03-03",
-  "completed": null
+  "completed": "2026-03-03"
 }
