@@ -4,6 +4,7 @@ import { cn } from '@/lib/utils';
 import { FileText, ChevronRight, Loader2, RefreshCw } from 'lucide-react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import type { ArtifactRecord } from '@/stores/types';
+import { API_BASE } from '@/lib/api';
 
 function ReportCard({ report }: { report: ArtifactRecord }) {
   const [expanded, setExpanded] = useState(false);
@@ -19,7 +20,7 @@ function ReportCard({ report }: { report: ArtifactRecord }) {
     setExpanded(true);
     setLoading(true);
     setError(null);
-    fetch(`http://localhost:4444/api/state/artifact-content?path=${encodeURIComponent(report.filePath)}`)
+    fetch(`${API_BASE}/api/state/artifact-content?path=${encodeURIComponent(report.filePath)}`)
       .then(r => {
         if (!r.ok) throw new Error(`Failed to load: ${r.status}`);
         return r.text();

@@ -180,6 +180,11 @@ export default function OrgPage() {
     s => !s.isSubagent && (!s.agentName || !namedAgentIds.has(s.agentName.toLowerCase()))
   );
   const ceoWorking = ceoSessions.filter(s => s.status === 'working').length;
+  const ceoWaiting = ceoSessions.filter(
+    s => s.status === 'waiting-input' || s.status === 'waiting-approval'
+  ).length;
+  const ceoStatus: 'working' | 'waiting' | 'idle' | 'offline' =
+    ceoWorking > 0 ? 'working' : ceoWaiting > 0 ? 'waiting' : ceoSessions.length > 0 ? 'idle' : 'offline';
 
   // Overall counts
   const totalWorking = Object.values(agentSummaryMap).filter(a => a.status === 'working').length;
@@ -208,31 +213,61 @@ export default function OrgPage() {
       </div>
 
       {/* CEO Node */}
-      <Card className={cn('border', CEO_CONFIG.borderColor)}>
-        <CardContent className="p-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className={cn(
-                'h-10 w-10 rounded-full flex items-center justify-center text-sm font-bold',
-                CEO_CONFIG.bgColor
-              )}>
-                CEO
-              </div>
-              <div>
-                <div className="text-sm font-medium">CEO (You)</div>
-                <div className="text-xs text-muted-foreground">
-                  {ceoSessions.length} direct sessions
-                  {ceoWorking > 0 && ` (${ceoWorking} active)`}
+      <Link to="/org/ceo" className="block group">
+        <Card className={cn(
+          'border transition-colors hover:border-accent',
+          CEO_CONFIG.borderColor,
+          ceoStatus === 'working' && 'ring-1 ring-status-green/20'
+        )}>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className={cn(
+                  'h-10 w-10 rounded-full flex items-center justify-center text-sm font-bold',
+                  CEO_CONFIG.bgColor
+                )}>
+                  CEO
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-medium">CEO (You)</span>
+                    <ChevronRight className="h-3.5 w-3.5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+                  </div>
+                  <div className="text-xs text-muted-foreground">{CEO_CONFIG.role}</div>
                 </div>
               </div>
+              <div className="flex items-center gap-3">
+                {ceoStatus !== 'offline' && (
+                  <Badge className={cn(
+                    'border-0 text-xs',
+                    ceoStatus === 'working' && 'bg-status-green/20 text-status-green',
+                    ceoStatus === 'waiting' && 'bg-status-yellow/20 text-status-yellow',
+                    ceoStatus === 'idle' && 'bg-muted text-muted-foreground',
+                  )}>
+                    {statusLabel(ceoStatus)}
+                  </Badge>
+                )}
+              </div>
             </div>
-            <div className="flex items-center gap-2 text-xs text-muted-foreground">
-              <Users className="h-3.5 w-3.5" />
-              <span>{TEAM_CONFIGS.length} teams, {AGENT_CONFIGS.length} agents</span>
+
+            {/* Status row */}
+            <div className="flex items-center gap-2 mt-3">
+              <div className={cn(
+                'h-2 w-2 rounded-full shrink-0',
+                statusDotColor(ceoStatus),
+                ceoStatus === 'working' && 'animate-pulse'
+              )} />
+              <span className="text-xs text-muted-foreground">{statusLabel(ceoStatus)}</span>
+              {ceoSessions.length > 0 && (
+                <span className="text-xs text-muted-foreground ml-auto">
+                  {ceoSessions.length} session{ceoSessions.length !== 1 ? 's' : ''}
+                  {ceoWorking > 0 && ` (${ceoWorking} active)`}
+                </span>
+              )}
             </div>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      </Link>
 
       {/* Connecting line */}
       <div className="flex justify-center">

@@ -1,91 +1,88 @@
 ---
 name: "report"
-description: "CEO dashboard — daily or weekly report on project health, OKR progress, pending approvals, and team performance. Takes an optional argument: 'daily' (default) or 'weekly'."
+description: "CEO dashboard with progressive disclosure — 3 tiers: headline (5 lines, default), summary (per-goal detail), deep (full weekly analysis). Takes an optional argument: headline (default), summary, deep, or legacy aliases daily/weekly."
 ---
 
 # CEO Report
 
-Generate a CEO report. Mode: $ARGUMENTS (default: daily)
+Generate a CEO report. Tier: $ARGUMENTS (default: headline)
 
-## Step 1: Determine Mode
+## Step 1: Determine Tier
 
 Parse `$ARGUMENTS`:
-- If empty, "daily", or "d" → **daily mode**
-- If "weekly" or "w" → **weekly mode**
+- If empty or "headline" or "h" → **headline tier**
+- If "summary" or "s" or "daily" or "d" → **summary tier**
+- If "deep" or "weekly" or "w" → **deep tier**
 
 ## Step 2: Gather Data
 
-Read ALL of these:
+What to read depends on the tier. Higher tiers include everything from lower tiers.
 
-### Always (both modes)
+### Headline Tier Data (minimal — fast)
+- `.context/goals/*/goal.json` — count active goals
+- `.context/goals/*/projects/*/project.json` — count active/completed/blocked projects, identify recently completed
+- `.context/goals/*/backlog.json` — count P0 items needing CEO
+- `.context/directives/*.json` — count pending directives (filter by status: pending)
+- `.context/reports/` — scan 3 most recent for unaddressed high-risk follow-ups
+- `.context/healthchecks/latest/*.json` — quick health status (pass/fail)
+- Run `npm run type-check` — build status (pass/fail only, don't show errors here)
+
+### Summary Tier Data (adds detail on top of headline)
+All headline data, PLUS:
 - `.context/vision.md` — for context on what matters
 - `.context/preferences.md` — CEO standing orders
-- `.context/goals/*/goal.json` — goals overview
-
-### External Intelligence (from /scout)
-- Read `.context/intel/latest/*.json` — latest scout outputs per agent
-- Summarize key intelligence by domain: technology, product, growth, operations
-- Highlight any act_now or this_week urgency items
-
-### Internal Health (from /healthcheck)
-- Read `.context/healthchecks/latest/*.json` — latest healthcheck outputs
-- Summarize findings by severity
-- Note any auto-fixed items from the last healthcheck
-
-### Project Inventory (both modes)
-- Read all `.context/goals/*/projects/*/project.json` — machine-readable project inventory
-- Projects have embedded tasks in project.json
-- Read all `.context/goals/*/backlog.json` for backlog counts
-
-### Decision Queue (both modes)
-- Scan `.context/reports/` for recent directive reports with unaddressed high-risk follow-ups
-- Read `.context/healthchecks/latest/*.json` for high-risk findings
-- Read all backlogs for P0 items needing CEO decision
-
-### What Changed
-Run these commands:
+- `.context/intel/latest/*.json` — latest scout outputs per agent
+- `~/.conductor/scheduler.json` and `~/.conductor/scheduler.log` — autopilot status
+- Recent directive reports — corrections caught data
+- Run git commands for recent changes:
 ```bash
-# Recent commits on main (last 7 days for weekly, last 24h for daily)
-git log --oneline --since="{timeframe}" main
-
-# Active worktrees (directive branches in progress)
+# Recent commits on main (last 24h)
+git log --oneline --since="24 hours ago" main
+# Active worktrees
 git worktree list
-
 # Recently modified context files
-find .context/ -name "*.md" -mtime -{days} -type f | head -20
+find .context/ -name "*.md" -mtime -1 -type f | head -20
 ```
+- Active projects with no recent progress
+- Failed/blocked initiatives from recent directives
+- OKR progress from `.context/goals/*/goal.json`
 
-### What Needs Input
-- Check `.context/directives/` (filter by status: pending) — pending directives awaiting execution
-- Check for medium/high risk follow-ups in recent reports (`.context/reports/`)
-- Check for items in backlogs marked as needing CEO decision
-
-### Autopilot Status
-- Read `~/.conductor/scheduler.json` for config (enabled, budget, quiet hours)
-- Read `~/.conductor/scheduler.log` for today's activity (launches, skips, errors)
-- Summarize: enabled/disabled, budget remaining, recent launches, any errors
-
-### What's At Risk
-- Run `npm run type-check` — are there build errors?
-- Check for active projects with no recent progress (`.context/goals/*/projects/*/project.json`)
-- Read recent directive reports for failed/blocked initiatives
-
-### OKR Progress (both modes, but expanded in weekly)
-- Read all `.context/goals/*/goal.json` for okrs field
-- Summarize status per KR: ACHIEVED / PROGRESSED / NOT STARTED / BLOCKED
-
-### Weekly-Only Data
-- Read `.context/reports/ (proposals tracked in reports)` — compute acceptance rates per agent
-- Read `.context/lessons/*.md` topic files — any new lessons this week?
-- Count commits per area (apps/buywisely, apps/sellwisely, packages/) for activity distribution
-- Read all directive reports from the past 7 days
+### Deep Tier Data (adds weekly analysis)
+All summary data, PLUS:
+- `.context/reports/` — compute agent acceptance rates from all reports this week
+- `.context/lessons/*.md` topic files — any new lessons this week?
+- Commit activity distribution by area
+- All directive reports from the past 7 days
+- Previous weekly report for comparison (`.context/reports/weekly-*.md`)
+- Expand git log to 7 days: `git log --oneline --since="7 days ago" main`
 
 ## Step 3: Generate Report
 
-### Daily Report Format
+### Headline Tier Format (default)
+
+The headline is a 5-line status snapshot. The CEO should know the state of the world in <10 seconds.
 
 ```
-# Daily Report — {date}
+# Status — {date}
+
+Shipped: {N} projects completed | Blocked: {N} projects stalled | Needs CEO: {N} decisions pending
+Health: {build pass/fail} | {security ok/N issues} | {N active goals}
+Top action: {single most important thing the CEO should do next — e.g., "Review 2 high-risk follow-ups from auth-hardening directive" or "Nothing — all clear"}
+```
+
+**Derivation rules for headline signals:**
+- **Shipped**: Count projects where `status` changed to `"completed"` in the last 24h (compare project.json `completed` timestamps)
+- **Blocked**: Count active projects where all tasks are incomplete AND last modification > 7 days ago
+- **Needs CEO**: Count pending directives + P0 backlog items + unaddressed high-risk follow-ups from recent digests
+- **Health**: type-check pass/fail + healthcheck summary + active goal count
+- **Top action**: Priority order: (1) high-risk items needing decision, (2) blocked projects needing unblocking, (3) pending directives awaiting execution, (4) "Nothing — all clear"
+
+If the CEO wants more detail: "Run `/report summary` for per-goal detail or `/report deep` for full analysis."
+
+### Summary Tier Format
+
+```
+# Summary Report — {date}
 
 ## External Intelligence (from latest /scout)
 - **Technology (Sarah)**: {summary + any act_now/this_week items}
@@ -133,7 +130,7 @@ find .context/ -name "*.md" -mtime -{days} -type f | head -20
 - completion > 0% but < 100%
 - AND last file modification in the feature folder > 7 days ago}
 
-⚠️ **{feature name}** ({goal}) — {X}% complete, stale {N} days
+Warning: **{feature name}** ({goal}) — {X}% complete, stale {N} days
    Last activity: {date} | Tasks: {completed}/{total}
 
 {If no partially-done alerts: "All active projects are either fresh or complete."}
@@ -144,7 +141,7 @@ find .context/ -name "*.md" -mtime -{days} -type f | head -20
 
 ## What Needs Your Input
 {Pending directives in directives/ (filter by status: pending) — list with one-line description each}
-{Medium/high risk items awaiting approval from recent directives}
+{High risk items awaiting decision from recent directives}
 {Backlog items flagged for CEO decision}
 {If nothing: "Nothing pending — all clear."}
 
@@ -182,10 +179,10 @@ or items with Priority P0 that are not yet started}
 - KR-2: ...
 ```
 
-### Weekly Report Format
+### Deep Tier Format
 
 ```
-# Weekly Report — Week of {date}
+# Deep Report — Week of {date}
 
 ## Executive Summary
 {3-5 bullet overview of the week: what shipped, what's in progress, what needs attention}
@@ -232,7 +229,7 @@ or items with Priority P0 that are not yet started}
 - completion > 0% but < 100%
 - AND last file modification in the feature folder > 7 days ago}
 
-⚠️ **{feature name}** ({goal}) — {X}% complete, stale {N} days
+Warning: **{feature name}** ({goal}) — {X}% complete, stale {N} days
    Last activity: {date} | Tasks: {completed}/{total}
 
 {If no partially-done alerts: "All active projects are either fresh or complete."}
@@ -242,10 +239,10 @@ or items with Priority P0 that are not yet started}
 - {project name} ({goal}) — 100% complete, still status: active
 
 ## What Needs Your Input
-{Same as daily, but covering the full week}
+{Same as summary, but covering the full week}
 
 ## What's At Risk
-{Same as daily, but covering the full week}
+{Same as summary, but covering the full week}
 {Trend: are risks increasing or decreasing?}
 
 ## Decision Queue
@@ -289,7 +286,7 @@ in .context/reports/weekly-*.md}
 {If no previous weekly report exists: "First weekly report — no comparison available."}
 
 ## OKR Progress
-{Full OKR breakdown per goal — same as daily but with week-over-week changes if prior report exists}
+{Full OKR breakdown per goal — same as summary but with week-over-week changes if prior report exists}
 
 ## Team Performance
 {From recent scout reports in .context/intel/latest/:}
@@ -335,7 +332,9 @@ in .context/reports/weekly-*.md}
 
 Output the report directly to the CEO. Do NOT write it to a file unless the CEO asks.
 
-For weekly reports, also offer: "Would you like me to save this report to `.context/reports/weekly-{date}.md`?"
+For deep tier reports, also offer: "Would you like me to save this report to `.context/reports/weekly-{date}.md`?"
+
+After any tier, remind: "Drill down with `/report summary` or `/report deep` for more detail." (Skip this line if already at deep tier.)
 
 ## Failure Handling
 
@@ -365,9 +364,11 @@ For weekly reports, also offer: "Would you like me to save this report to `.cont
 - Include raw git logs (always summarize and group)
 
 ### ALWAYS
-- Read preferences.md before generating
+- Read preferences.md before generating (summary and deep tiers)
 - Show concrete numbers (counts, percentages, dates)
 - Flag items needing CEO action prominently
-- Keep daily reports under 5 minutes reading time
-- Keep weekly reports under 15 minutes reading time
+- Keep headline tier to exactly 3 lines of content (after the heading)
+- Keep summary reports under 5 minutes reading time
+- Keep deep reports under 15 minutes reading time
 - Group information by importance, not by source
+- Include drill-down hint after headline and summary tiers

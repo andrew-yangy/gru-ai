@@ -4,6 +4,12 @@
   "goal_id": "workflow-orchestration",
   "status": "completed",
   "priority": "p0",
+  "agent": [
+    "self"
+  ],
+  "reviewers": [
+    "sarah"
+  ],
   "description": "Implemented checkpoint JSON written after each phase transition, resume that skips completed work. Checkpoint files are minimal (<10KB), reference artifacts by path, and are cleaned up after successful directive completion.",
   "source_directive": "checkpoint-resume",
   "tags": [],

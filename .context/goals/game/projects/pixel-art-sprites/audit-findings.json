@@ -1,0 +1,86 @@
+{
+  "initiatives": [
+    {
+      "id": "character-sprites",
+      "baseline": "5 named agents (Alex, Sarah, Morgan, Marcus, Priya) + no generic agent. Current rendering: renderDesk() uses ctx.fillText for a single-character initial (line 117), 2x ctx.arc for brand-color dot (3px radius) and status dot (2.5px radius). No pixel-art sprites, no offscreen canvas caching, no drawImage calls anywhere in the codebase. Agent brand colors defined in AGENT_BRAND_COLORS (5 entries: blue, purple, green, orange, pink). Status dot colors in STATUS_DOT_COLORS (5 states). TILE_SIZE=40 world-space pixels. The initiative specifies 16x24 pixel-array templates \u2014 these would render inside the 40x40 desk tile.",
+      "active_files": [
+        "src/components/game/engine/renderer.ts",
+        "src/components/game/types.ts",
+        "src/components/game/office-layout.ts",
+        "src/components/game/CanvasOffice.tsx"
+      ],
+      "dead_code": [
+        "src/components/game/OfficeGrid.tsx"
+      ],
+      "findings": "1. renderer.ts has a clean TILE_RENDERERS dispatch table (Record<TileType, TileRenderer>) at line 197 with 10 entries. Only renderDesk uses TileRenderOpts (agentName, brandColor, statusColor). 2. Agent character rendering is purely ctx.fillText of first letter (line 117: `ctx.fillText(opts.agentName[0], ...)`), plus two arc() calls for dots. No pixel art exists anywhere. 3. The TileRenderer signature is `(ctx, x, y, size, opts?) => void` \u2014 character sprites will need either (a) an expanded opts with a pre-rendered offscreen canvas, or (b) a module-level sprite cache keyed by agent+status that renderDesk looks up internally. Option (b) is cleaner \u2014 keeps the TileRenderer signature stable. 4. CanvasOffice already sets `ctx.imageSmoothingEnabled = false` (line 110), which is essential for crisp pixel-art upscaling. 5. OFFICE_AGENTS defines exactly 5 agents \u2014 the initiative mentions 6 (adding 'generic=gray'). Generic agent doesn't exist in OFFICE_AGENTS or AGENT_CHAR_MAP. The sprite system will need a fallback for unknown agent names. 6. OfficeGrid.tsx is dead code \u2014 never imported anywhere (only a comment reference in renderer.ts and CanvasOffice.tsx). Was the old CSS-grid implementation replaced by CanvasOffice. 7. The grid is 20x14 = 280 tiles, with only 5 desk tiles occupied by agents. Sprite caching at 1x scale is correct \u2014 each sprite is rendered once to an offscreen canvas, then drawImage'd at zoom scale. With imageSmoothingEnabled=false, integer-zoom upscaling will give crisp pixel art.",
+      "recommended_approach": "1. Create `src/components/game/engine/sprites.ts` \u2014 new module for sprite definitions and caching. Define 16x24 pixel arrays as typed constants (e.g., `const ALEX_SPRITE: number[][]` using palette indices). Include a palette map per agent (brand color + skin + accent). 2. Implement a sprite cache: `Map<string, HTMLCanvasElement>` keyed by `{agentName}-{status}`. Each entry is a 16x24 offscreen canvas created via `document.createElement('canvas')`. Render pixel array to offscreen canvas once at 1x scale using fillRect per pixel. Status indicator (working/waiting/idle/error/offline) can be a small overlay or palette swap. 3. Export a `getAgentSprite(name: string, status: AgentStatus): HTMLCanvasElement` function. On first call for a given key, renders the sprite to an offscreen canvas and caches it. Subsequent calls return the cached canvas. 4. In renderer.ts, modify `renderDesk()` to call `getAgentSprite()` and use `ctx.drawImage(sprite, x + offset, y + offset, scaledW, scaledH)` instead of the current fillText+arc approach. The 16x24 sprite centered in a 40x40 tile leaves 12px horizontal and 8px vertical padding at 1x. 5. Keep the brand-color dot and status dot as-is (or integrate into sprite palette) \u2014 the dots are small and performant as arc() calls. 6. Add a generic gray sprite as the fallback for unrecognized agent names. 7. No changes needed to TileRenderer type signature, TileRenderOpts, TILE_RENDERERS dispatch table, camera.ts, or CanvasOffice.tsx \u2014 the change is fully contained within renderDesk() and the new sprites module.",
+      "follow_ups": [
+        {
+          "action": "Delete dead OfficeGrid.tsx \u2014 replaced by CanvasOffice, zero imports",
+          "risk": "low",
+          "rationale": "File is never imported anywhere. Only referenced in comments. Safe to remove.",
+          "files": [
+            "src/components/game/OfficeGrid.tsx"
+          ]
+        },
+        {
+          "action": "Remove stale OfficeGrid comment references in renderer.ts line 10 and CanvasOffice.tsx line 2",
+          "risk": "low",
+          "rationale": "Comment-only changes, no behavior impact",
+          "files": [
+            "src/components/game/engine/renderer.ts",
+            "src/components/game/CanvasOffice.tsx"
+          ]
+        },
+        {
+          "action": "Add 'generic' agent color entry to AGENT_BRAND_COLORS (gray: '#9ca3af') for fallback sprite",
+          "risk": "low",
+          "rationale": "Additive change, existing fallback already uses '#9ca3af' as default",
+          "files": [
+            "src/components/game/engine/renderer.ts"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "environment-sprites",
+      "baseline": "10 tile types defined in TileType union. 10 renderer functions in TILE_RENDERERS dispatch table. Current rendering breakdown: (a) FLAT COLOR ONLY (fillRect): renderFloor (1 fillRect), (b) FLAT + BORDER: renderWall (fillRect + strokeRect), renderWhiteboard (fillRect + strokeRect + fillText 'W'), (c) FLAT + TEXT/EMOJI: renderCeoDesk (fillRect + fillText '\u2605'), renderConference (fillRect + fillText 'T'), renderMailbox (fillRect + fillText '\ud83d\udceb'), renderBell (fillRect + fillText '\ud83d\udd14'), renderServerRoom (fillRect + fillText 'SRV'), renderDoor (fillRect + fillText '\u25c9'). Total: 10 fillRect calls, 8 fillText calls (including 2 emoji), 2 strokeRect calls, 2 arc calls (desk only). All tile types use the same TileRenderer signature. No Canvas path drawings, no procedural textures, no gradients exist yet.",
+      "active_files": [
+        "src/components/game/engine/renderer.ts",
+        "src/components/game/types.ts"
+      ],
+      "dead_code": [
+        "src/components/game/OfficeGrid.tsx"
+      ],
+      "findings": "1. All 10 renderers follow the same pattern: fillRect for background, then optional text/emoji overlay. This is the simplest possible rendering \u2014 every tile is a flat colored rectangle. 2. The furniture tile renderers (desk, ceo-desk, conference, whiteboard, mailbox, bell, server-room, door) currently use fillText for icons. The initiative asks to replace these with procedural Canvas path drawings (moveTo/lineTo/arc/bezierCurveTo). 3. Floor and wall tiles are purely flat fills. The initiative asks for 'subtle texture passes' \u2014 this could be noise patterns, grid lines, or dithering rendered to cached tiles. 4. TILE_COLORS constant (line 13) maps all 10 tile types to hex colors. This will still be useful as base colors under the procedural details. 5. The dispatch table pattern (TILE_RENDERERS at line 197) is perfect for this work \u2014 each renderer function is independently replaceable without touching the render loop or any other renderer. 6. Performance concern: floor tiles dominate the grid (280 tiles, ~200 are floor). If floor texture involves per-pixel operations (noise), it MUST be cached to an offscreen canvas. The same applies to wall tiles (~56 tiles on perimeter). Furniture tiles (8 unique types, ~15 tile instances) are few enough that per-frame procedural drawing is acceptable, but caching is still recommended for consistency. 7. The render() function already has viewport culling (lines 247-250), so only visible tiles are drawn \u2014 this limits the worst-case draw count. 8. ctx.imageSmoothingEnabled = false is set in CanvasOffice \u2014 this is correct for pixel-art style but needs consideration for procedural paths (anti-aliased curves may look jagged). If the initiative wants smooth curves on furniture, imageSmoothingEnabled may need to be true for the procedural pass, then reset.",
+      "recommended_approach": "1. Replace each renderer function in-place in renderer.ts. The TILE_RENDERERS dispatch table and TileRenderer type signature stay exactly the same \u2014 only the function bodies change. 2. For furniture tiles (desk, ceo-desk, conference, whiteboard, mailbox, bell, server-room, door): Replace fillText icon rendering with Canvas 2D path drawings. E.g., renderDesk draws a desk surface with a monitor shape (rectangles + bezier), renderServerRoom draws rack-mount shapes (stacked rectangles with LED dots), renderMailbox draws a mailbox outline, etc. Keep base fillRect as ground color, overlay procedural paths on top. 3. For floor tiles: Add a subtle texture pass after the base fillRect \u2014 options include (a) a repeating 4x4 pixel noise tile cached to an offscreen canvas and drawn via createPattern(), or (b) thin 1px grid lines at tile boundaries. Floor is ~70% of tiles so caching is mandatory. Create a single offscreen canvas for the floor texture pattern at init time. 4. For wall tiles: Add subtle brick/stone texture \u2014 horizontal lines every 8-10px with offset vertical joints. Can be drawn procedurally since wall tile count is moderate (~56 tiles), or cached like floor. 5. Create a `src/components/game/engine/textures.ts` module for offscreen texture caching (floor pattern, wall pattern). Export cached CanvasPattern objects that renderers can use via `ctx.fillStyle = pattern`. 6. Keep TILE_COLORS as the base palette \u2014 procedural details are drawn on top of the base color. 7. The imageSmoothingEnabled=false setting in CanvasOffice works well for pixel-art textures but may cause jagged edges on curved paths. Consider: (a) stick with rectilinear paths only (pixel-art aesthetic), or (b) temporarily enable smoothing for specific renders. Recommend option (a) for visual consistency with the pixel-art sprite initiative.",
+      "follow_ups": [
+        {
+          "action": "Audit imageSmoothingEnabled interaction with procedural curves \u2014 if furniture sprites use arcs/beziers, test at all 4 zoom levels for visual quality",
+          "risk": "medium",
+          "rationale": "Could produce jagged artifacts at certain zoom levels; easy to revert by toggling smoothing per-renderer",
+          "files": [
+            "src/components/game/CanvasOffice.tsx",
+            "src/components/game/engine/renderer.ts"
+          ]
+        },
+        {
+          "action": "Performance benchmark floor texture rendering at zoom level 4 (all 280 tiles visible, 4x scale) \u2014 measure frame time before and after",
+          "risk": "medium",
+          "rationale": "Floor tiles dominate the grid; texture rendering must not regress from current <1ms frame time. Offscreen caching mitigates this but needs verification.",
+          "files": [
+            "src/components/game/engine/renderer.ts"
+          ]
+        },
+        {
+          "action": "Delete dead OfficeGrid.tsx (same as character-sprites follow-up)",
+          "risk": "low",
+          "rationale": "File is never imported anywhere. Safe to remove.",
+          "files": [
+            "src/components/game/OfficeGrid.tsx"
+          ]
+        }
+      ]
+    }
+  ]
+}

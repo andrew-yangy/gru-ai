@@ -1,0 +1,140 @@
+{
+  "goal": "game",
+  "goal_folder": "game",
+  "challenges": {
+    "risks": [
+      "Procedural character art quality: Hand-crafting 32+ pixel arrays (4 animation states \u00d7 2+ directions \u00d7 2-4 frames each) as TypeScript number arrays is extremely error-prone. Each 16x24 array = 384 pixels that must form recognizable human shapes. Without visual feedback iteration, bad arrays = ugly characters that fail the quality bar.",
+      "Renderer restructuring for z-sort: Moving from flat grid-order tile rendering to painter's algorithm requires merging walls, furniture, and characters into a single sorted draw list. Wrong z-sort logic = visual artifacts (characters clipping through furniture, furniture rendering over walls). The current render() function structure must be significantly refactored.",
+      "Environment rendering scope: Upgrading ALL 10 tile types to 20-40 lines of multi-layer procedural art code is 200-400 new lines in renderer.ts, each requiring visual verification. Floors need HSL colorization tied to room data. Walls need depth shading. Risk of the visual feedback loop making this 3x slower than estimated."
+    ],
+    "over_engineering_flags": [
+      "Wall auto-tiling with 4-bit bitmask (16 variants) from pixel-agents is complex \u2014 simpler depth shading with accent colors achieves 80% of the visual lift for 20% of the effort",
+      "RoomGrid data model could creep toward a room editor system \u2014 must stay render-only (static data, no CRUD)"
+    ],
+    "recommendation": "Proceed as-is \u2014 CEO mandated ALL furniture gets full treatment and quality bar is explicit. Combine floors/walls/furniture into one initiative since they all modify renderer.ts (learned pattern: avoid merge conflicts). Keep wall auto-tiling simple (depth shading, not full bitmask)."
+  },
+  "initiatives": [
+    {
+      "id": "z-sort-room-system",
+      "title": "Z-Sort Painter's Algorithm + Room Zone Data Model",
+      "priority": "P0",
+      "complexity": "complex",
+      "phases": [
+        "design",
+        "clarification",
+        "build",
+        "tech-review",
+        "product-review"
+      ],
+      "user_scenario": "CEO sees an office with distinct colored room zones and characters that correctly overlap with furniture based on their Y position.",
+      "cast": {
+        "auditor": "sarah",
+        "builder": "riley",
+        "reviewers": [
+          "sarah",
+          "marcus"
+        ]
+      },
+      "scope": "Add RoomGrid data model to types.ts with typed room zones (engineering, executive, conference, lobby) including department names, color themes (HSL base), and tile boundaries. Update office-layout.ts to export ROOM_GRID data mapping tile coordinates to rooms. Refactor render() in renderer.ts to use painter's algorithm \u2014 collect all renderable entities (floor/wall tiles, furniture, characters) with zY values, sort by Y, draw back-to-front. Ensure floor tiles always draw first per row, walls and furniture sort correctly, and characters overlap furniture when in front.",
+      "verify": "npx tsc --noEmit && npx vite build",
+      "definition_of_done": [
+        "RoomGrid type exists in types.ts with room id, display name, color theme (HSL), and tile boundary rect",
+        "office-layout.ts exports ROOM_GRID with at least 4 distinct room zones covering the full 20x14 grid",
+        "Renderer sorts all drawable entities by Y coordinate using painter's algorithm before drawing",
+        "Existing tile renderers produce no visual regressions \u2014 all 10 tile types still render correctly",
+        "TypeScript compiles and Vite builds with zero errors"
+      ]
+    },
+    {
+      "id": "environment-rendering",
+      "title": "Floors, Walls, and Furniture Visual Overhaul",
+      "priority": "P0",
+      "complexity": "complex",
+      "phases": [
+        "design",
+        "clarification",
+        "build",
+        "tech-review",
+        "product-review"
+      ],
+      "user_scenario": "CEO sees rich textured floors, detailed walls with depth shading, and furniture with wood grain, glowing monitors, and shadow detail that exceeds pixel-agents and claw-empire quality.",
+      "cast": {
+        "auditor": "sarah",
+        "builder": "riley",
+        "reviewers": [
+          "sarah",
+          "marcus"
+        ]
+      },
+      "scope": "Upgrade all tile renderers in renderer.ts to exceed reference repo quality. Floors: replace flat fills with textured patterns (checkerboard with fake 3D lighting, wood grain) using HSL colorization from the room's color theme. Walls: add depth shading (top edge lighter, bottom darker), baseboard with room accent colors, and subtle mortar texture improvements. Furniture: upgrade all 10 tile types (desk, ceo-desk, conference, whiteboard, mailbox, bell, server-room, door, floor, wall) to 20-40 lines each with multi-layer procedural Canvas 2D \u2014 wood grain textures, monitor screens showing colored code lines, coffee mug details, keyboard keycaps, book spines on shelves, cable detail, steam effects via offset pixels.",
+      "verify": "npx tsc --noEmit && npx vite build",
+      "definition_of_done": [
+        "Floors use textured patterns (checkerboard or wood grain) with HSL colorization per room type \u2014 zero flat solid fills remain",
+        "Walls have visible depth shading (light top edge, dark bottom) and room-specific accent colors",
+        "All 10 tile type renderers use 20-40 lines of procedural drawing with highlights, shadows, and at least 2 detail layers",
+        "Desk monitors show colored rectangles suggesting code content, desks show wood grain texture via alternating pixel rows",
+        "TypeScript compiles and Vite builds with zero errors"
+      ]
+    },
+    {
+      "id": "character-sprites",
+      "title": "Multi-Frame Directional Character Sprite System",
+      "priority": "P0",
+      "complexity": "complex",
+      "phases": [
+        "design",
+        "clarification",
+        "build",
+        "tech-review",
+        "product-review"
+      ],
+      "user_scenario": "CEO sees distinct agent characters at their desks with recognizable hair styles, clothing details, and poses \u2014 each agent is clearly identifiable at a glance.",
+      "cast": {
+        "auditor": "sarah",
+        "builder": "riley",
+        "reviewers": [
+          "sarah",
+          "marcus"
+        ]
+      },
+      "scope": "Expand sprites.ts with hand-crafted 16x24 pixel array templates for multiple animation states and directions. Required states: walk (4 frames), sit (1 frame), type (2 frames), idle (2 frames). Required directions: front-facing and side-facing (left drawn, right as horizontal flip). Add distinct per-agent visual differentiation beyond palette colors \u2014 at minimum 2-3 different hair style templates and clothing variations encoded in the pixel arrays. Maintain and expand the palette system (H/K/S/P pattern from pixel-agents) for brand color tinting. Export a getSpriteFrame(name, action, direction, frameIndex) function. Keep sprite cache with offscreen canvases.",
+      "verify": "npx tsc --noEmit && npx vite build",
+      "definition_of_done": [
+        "Sprite templates exist for at least 4 animation states: walk (4 frames), sit (1), type (2), idle (2) \u2014 minimum 9 unique pixel arrays",
+        "Front-facing and side-facing directions supported, with side-right as horizontal flip of side-left",
+        "Each of the 5 named agents has visually distinct appearance via palette + at least 2 hair style variants across agents",
+        "getSpriteFrame(name, action, direction, frameIndex) exported and returns correct cached offscreen canvas",
+        "TypeScript compiles and Vite builds with zero errors"
+      ]
+    },
+    {
+      "id": "animation-system",
+      "title": "Character Animation State Machine and Frame Cycling",
+      "priority": "P1",
+      "complexity": "moderate",
+      "phases": [
+        "design",
+        "clarification",
+        "build",
+        "review"
+      ],
+      "user_scenario": "CEO sees agents typing at their desks with subtle 2-frame animation, walking with fluid 4-frame cycles, and idling with gentle movement \u2014 the office feels alive.",
+      "cast": {
+        "auditor": "sarah",
+        "builder": "riley",
+        "reviewers": [
+          "sarah"
+        ]
+      },
+      "scope": "Add animation state types to types.ts tracking per-agent current action (walk/sit/type/idle), direction, and frame index. Implement animation tick logic in the rAF loop \u2014 frame cycling at appropriate rates (8fps for walk, 4fps for type/idle). Map AgentStatus to animation action (working\u2192typing, idle\u2192idle, waiting\u2192idle, error\u2192idle). Update renderer to call getSpriteFrame with current animation state instead of the static getAgentSprite. Add animation time accumulator to CanvasOffice.tsx so frame advances are independent of display refresh rate.",
+      "verify": "npx tsc --noEmit && npx vite build",
+      "definition_of_done": [
+        "AnimationState type in types.ts tracks action, direction, and frameIndex per agent name",
+        "Frame cycling runs at 8fps for walk and 4fps for type/idle, decoupled from display refresh rate",
+        "AgentStatus automatically maps to animation action \u2014 working agents type, idle agents idle",
+        "Renderer uses animation state to select correct sprite frame via getSpriteFrame",
+        "TypeScript compiles and Vite builds with zero errors"
+      ]
+    }
+  ]
+}

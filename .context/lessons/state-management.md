@@ -1,7 +1,7 @@
 # Lessons: State Management
 
 > Checkpoints, state files, worktrees, persistence patterns.
-> Relevant to: Alex (execution), Sarah (review), engineers (build)
+> Relevant to: orchestrator (execution), Sarah (review), engineers (build)
 
 ## Checkpoint-Resume
 

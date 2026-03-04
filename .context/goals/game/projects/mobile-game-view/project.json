@@ -1,0 +1,30 @@
+{
+  "id": "mobile-game-view",
+  "title": "Make the HQ game view mobile friendly",
+  "goal_id": "game",
+  "status": "completed",
+  "priority": "p1",
+  "agent": ["riley"],
+  "reviewers": ["sam"],
+  "description": "Add mobile responsiveness to the HQ game: touch handlers (drag/tap/pinch-to-zoom), responsive bottom sheet SidePanel, smart camera zoom, compact GameHeader.",
+  "source_directive": null,
+  "tags": ["mobile", "responsive", "game", "frontend"],
+  "tasks": [
+    {
+      "id": "review-mobile-game",
+      "title": "Review mobile-friendly HQ game implementation",
+      "status": "completed",
+      "agent": ["riley", "sam"],
+      "dod": [
+        { "criterion": "Touch handlers properly distinguish drag from tap from pinch-to-zoom", "met": true },
+        { "criterion": "Camera fitToView correctly calculates zoom for mobile viewports", "met": true },
+        { "criterion": "No hardcoded widths that break below 375px", "met": true },
+        { "criterion": "Bottom sheet SidePanel handles iOS safe areas", "met": true },
+        { "criterion": "GameHeader compact mode works without layout shifts", "met": true },
+        { "criterion": "Type-check passes cleanly", "met": true }
+      ]
+    }
+  ],
+  "created": "2026-03-04T00:00:00Z",
+  "updated": "2026-03-04T00:00:00Z"
+}

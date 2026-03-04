@@ -1,8 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { useDashboardStore } from '@/stores/dashboard-store';
 import type { WsMessage, DashboardState, DirectiveState, GoalInventory, Session, HookEvent, Team, TeamTask, SessionActivity, NotificationConfig, ProjectGroup, FullWorkState } from '@/stores/types';
-
-const WS_URL = 'ws://localhost:4444';
+import { API_BASE, WS_URL } from '@/lib/api';
 const MAX_RECONNECT_DELAY = 30000;
 
 export function useWebSocket() {
@@ -39,7 +38,7 @@ export function useWebSocket() {
         reconnectDelayRef.current = 1000;
 
         // Fetch notification config (not included in full_state)
-        fetch('http://localhost:4444/api/config')
+        fetch(`${API_BASE}/api/config`)
           .then((res) => res.json())
           .then((data: { notifications?: NotificationConfig }) => {
             if (data.notifications) updateNotificationConfig(data.notifications);
@@ -47,13 +46,13 @@ export function useWebSocket() {
           .catch(() => {});
 
         // Fetch initial work state
-        fetch('http://localhost:4444/api/state/goals')
+        fetch(`${API_BASE}/api/state/goals`)
           .then((res) => res.json())
           .then((goals: FullWorkState['goals']) => {
             Promise.all([
-              fetch('http://localhost:4444/api/state/features').then(r => r.json()),
-              fetch('http://localhost:4444/api/state/backlogs').then(r => r.json()),
-              fetch('http://localhost:4444/api/state/conductor').then(r => r.json()),
+              fetch(`${API_BASE}/api/state/features`).then(r => r.json()),
+              fetch(`${API_BASE}/api/state/backlogs`).then(r => r.json()),
+              fetch(`${API_BASE}/api/state/conductor`).then(r => r.json()),
             ]).then(([features, backlogs, conductor]) => {
               setWorkState({ goals, features, backlogs, conductor, index: null });
             }).catch(() => {});

@@ -120,7 +120,9 @@ export default function DirectivePipeline({
   directives: DirectiveRecord[];
   onReportClick?: (reportPath: string) => void;
 }) {
-  const pending = directives.filter(d => d.status !== 'completed');
+  const pending = [...directives.filter(d => d.status !== 'completed')].sort(
+    (a, b) => (b.createdAt ?? '').localeCompare(a.createdAt ?? '')
+  );
   const done = [...directives.filter(d => d.status === 'completed')].sort(
     (a, b) => (b.updatedAt ?? '').localeCompare(a.updatedAt ?? '')
   );

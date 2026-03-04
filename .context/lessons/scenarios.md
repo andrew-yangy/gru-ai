@@ -6,14 +6,14 @@
 - **Trigger**: CEO types `/directive improve-security`
 - **Goal**: Get the work done without blocking my session. Review the plan quickly, approve, and get back a summary when it's done.
 - **Critical path**:
-  1. CEO invokes /directive — session should stay free immediately
-  2. Alex plans in background — CEO can do other work
-  3. CEO gets notified — short plan summary, not a wall of text
-  4. CEO approves in 30 seconds — not a 5-minute read
-  5. Alex executes in background — CEO is free again
+  1. CEO invokes /directive — lightweight runs inline, medium/heavy launches a CLI session
+  2. Planning happens — Morgan plans, auditor scans
+  3. CEO gets notified — short plan summary, not a wall of text (heavyweight only)
+  4. CEO approves in 30 seconds — not a 5-minute read (heavyweight only)
+  5. Execution proceeds — engineers build, reviewers verify
   6. CEO gets done summary — Done / Changes / Needs CEO Eyes / Next
   7. CEO does UX verification if needed — clear instructions on what to check
-- **Success criteria**: CEO's context window stays clean. Total CEO involvement < 5 minutes for a medium directive.
+- **Success criteria**: CEO's context window stays clean for medium/heavy. Lightweight runs fast inline. Total CEO involvement < 5 minutes for a medium directive.
 
 ## ceo-morning-review
 - **Actor**: CEO
@@ -41,14 +41,14 @@
 ## ceo-continuous-execution
 - **Actor**: CEO
 - **Trigger**: CEO says "do the backlogs" or "keep going"
-- **Goal**: Alex works through all actionable backlog items autonomously, CEO reviews periodically.
+- **Goal**: The system works through all actionable backlog items autonomously, CEO reviews periodically.
 - **Critical path**:
-  1. Alex scans all backlogs across all goals
-  2. Alex triages each item (lightweight/medium/heavyweight)
+  1. Foreman scans all backlogs across all goals
+  2. Each item is triaged (lightweight/medium/heavyweight)
   3. Lightweight items: just done, no CEO involvement
   4. Medium items: planned and executed, CEO gets summary
   5. Heavyweight items: queued for CEO approval
-  6. Alex keeps going until nothing actionable remains
+  6. Foreman keeps launching until nothing actionable remains
   7. CEO checks in when notified, not constantly
 - **Success criteria**: CEO says "do the backlogs" once. Work happens continuously. CEO reviews outcomes, not process.
 
@@ -77,14 +77,14 @@
 - **Success criteria**: CEO reviews external intel and approves/rejects proposals in under 15 minutes. Approved proposals become actionable directives.
 
 ## directive-executes-project
-- **Actor**: The conductor system (Alex + agents)
+- **Actor**: The conductor system (directive session + agents)
 - **Trigger**: CEO approves a directive via /directive {name}
 - **Goal**: Execute the directive end-to-end, produce a project with completed tasks, update all state.
 - **Critical path**:
-  1. Alex reads directive from .context/directives/{name}.md
+  1. Directive session reads directive from .context/directives/{name}.md
   2. Morgan plans initiatives with phases and agent casting
   3. Auditor scans codebase, produces baseline findings
-  4. CEO approves plan (heavyweight) or Alex auto-approves (medium)
+  4. CEO approves plan (heavyweight) or auto-approved (medium)
   5. Engineers execute initiatives — each phase produces artifacts in goals/{goal}/projects/{project}/
   6. Reviewers verify DOD criteria are met
   7. project.json is created/updated with tasks, DOD status, and verification results

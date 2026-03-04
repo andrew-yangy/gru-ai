@@ -4,7 +4,13 @@
   "goal_id": "workflow-orchestration",
   "status": "completed",
   "priority": "p0",
-  "description": "Established the Alex (Chief of Staff) delegation pattern: CEO spawns Alex as background agent, Alex orchestrates the full directive pipeline, CEO's context window stays clean.",
+  "agent": [
+    "self"
+  ],
+  "reviewers": [
+    "sarah"
+  ],
+  "description": "SUPERSEDED by remove-alex-proxy. The background subagent pattern was fundamentally broken: subagents can't use Agent tool (platform limitation), CLI spawning via Bash gets permission-rejected for background agents. Replaced by inline execution (lightweight) and top-level CLI sessions (medium/heavy).",
   "source_directive": null,
   "tags": [],
   "tasks": [],

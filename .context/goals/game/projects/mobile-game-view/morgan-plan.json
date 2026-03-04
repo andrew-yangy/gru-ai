@@ -1,0 +1,38 @@
+{
+  "goal": "Make the HQ game view mobile friendly",
+  "goal_folder": "game",
+  "challenges": {
+    "risks": [
+      "Touch handler conflicts: single-finger drag vs scroll, pinch-to-zoom vs browser native zoom",
+      "Bottom sheet UX on small screens: safe areas, drag thresholds, iPhone SE (375px)",
+      "Camera fitToView assumptions: doesn't account for bottom sheet overlay or virtual keyboard"
+    ],
+    "over_engineering_flags": [],
+    "recommendation": "Proceed as-is — code is already written, needs thorough review"
+  },
+  "initiatives": [
+    {
+      "id": "mobile-game-review",
+      "title": "Review mobile-friendly HQ game implementation",
+      "priority": "P0",
+      "complexity": "moderate",
+      "phases": ["review"],
+      "user_scenario": "The CEO opens the HQ game on their phone, pans the office with a finger, pinch-zooms to inspect a desk, and taps an employee to see their status in a bottom sheet.",
+      "cast": {
+        "auditor": "riley",
+        "builder": "riley",
+        "reviewers": ["sam"]
+      },
+      "scope": "Review all mobile game changes across 5 files: GamePage.tsx, CanvasOffice.tsx, camera.ts, GameHeader.tsx, SidePanel.tsx.",
+      "verify": "npm run type-check",
+      "definition_of_done": [
+        "Touch handlers properly distinguish single-finger drag from tap and from pinch-to-zoom",
+        "Camera fitToView correctly calculates zoom for mobile viewport sizes",
+        "No hardcoded widths that break below 375px",
+        "Bottom sheet SidePanel handles iOS safe areas",
+        "GameHeader compact mode hides non-essential elements without layout shifts",
+        "Type-check passes cleanly"
+      ]
+    }
+  ]
+}

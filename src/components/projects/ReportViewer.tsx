@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import { FileText, X, Loader2, RefreshCw } from 'lucide-react';
+import { API_BASE } from '@/lib/api';
 
 export default function ReportViewer({
   reportPath,
@@ -17,7 +18,7 @@ export default function ReportViewer({
   const fetchContent = () => {
     setLoading(true);
     setError(null);
-    fetch(`http://localhost:4444/api/state/artifact-content?path=${encodeURIComponent(reportPath)}`)
+    fetch(`${API_BASE}/api/state/artifact-content?path=${encodeURIComponent(reportPath)}`)
       .then(r => {
         if (!r.ok) throw new Error(`Failed to load: ${r.status}`);
         return r.text();

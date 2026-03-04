@@ -2,8 +2,15 @@
   "id": "correction-to-code-pipeline",
   "title": "Auto-escalate CEO corrections from prose to enforced constraints",
   "goal_id": "workflow-orchestration",
-  "status": "proposed",
-  "priority": "p0",
+  "status": "deferred",
+  "priority": "p3",
+  "agent": [
+    "self"
+  ],
+  "reviewers": [
+    "marcus",
+    "sarah"
+  ],
   "sequence": 3,
   "depends_on_project": "workflow-orchestration/deterministic-constraint-checker",
   "description": "When the CEO states a correction twice, it should automatically become an enforced constraint \u2014 not remain prose that reviewers may miss. Phase 1 is research (define detection heuristics for 'what counts as a correction stated twice'), Phase 2 is build (generator + integration). Depends on the constraint checker existing to receive generated constraints.",
@@ -27,49 +34,26 @@
   "dod": [
     {
       "criterion": "Detection heuristics documented with examples of true positives and false positives",
-      "met": false,
-      "verified_by": []
+      "met": false
     },
     {
       "criterion": "Given a correction in Standing Corrections, the pipeline generates a valid constraint definition",
-      "met": false,
-      "verified_by": []
+      "met": false
     },
     {
       "criterion": "Generated constraints are automatically loaded by the constraint checker",
-      "met": false,
-      "verified_by": []
+      "met": false
     },
     {
       "criterion": "Digest includes 'New Constraints' section when corrections are escalated",
-      "met": false,
-      "verified_by": []
+      "met": false
     },
     {
       "criterion": "CEO can review and reject auto-generated constraints before they become active",
-      "met": false,
-      "verified_by": []
+      "met": false
     }
   ],
-  "verify": {
-    "checklist": [
-      "Manually add a correction to Standing Corrections \u2014 verify constraint is generated",
-      "Verify generated constraint catches violations when run through checker",
-      "Verify digest shows the new constraint",
-      "Verify CEO rejection path works"
-    ],
-    "reviewers": [
-      {
-        "agent": "sarah",
-        "domain": "architecture \u2014 heuristic quality, false positive rate, generated constraint correctness"
-      },
-      {
-        "agent": "marcus",
-        "domain": "product \u2014 is the correction-to-constraint flow intuitive for CEO?"
-      }
-    ],
-    "browser_test": false
-  },
+  "browser_test": false,
   "tags": [
     "harness-engineering",
     "automation",
@@ -85,12 +69,10 @@
         "sarah"
       ],
       "depends_on": [],
-      "acceptance_criteria": null,
-      "verified_by": null,
-      "review_outcome": null,
       "output": null,
       "created": "2026-03-03",
-      "completed": null
+      "completed": null,
+      "dod": []
     },
     {
       "id": "t2",
@@ -104,12 +86,10 @@
       "depends_on": [
         "t1"
       ],
-      "acceptance_criteria": null,
-      "verified_by": null,
-      "review_outcome": null,
       "output": null,
       "created": "2026-03-03",
-      "completed": null
+      "completed": null,
+      "dod": []
     },
     {
       "id": "t3",
@@ -120,12 +100,10 @@
       "depends_on": [
         "t2"
       ],
-      "acceptance_criteria": null,
-      "verified_by": null,
-      "review_outcome": null,
       "output": null,
       "created": "2026-03-03",
-      "completed": null
+      "completed": null,
+      "dod": []
     },
     {
       "id": "t4",
@@ -136,12 +114,10 @@
       "depends_on": [
         "t2"
       ],
-      "acceptance_criteria": null,
-      "verified_by": null,
-      "review_outcome": null,
       "output": null,
       "created": "2026-03-03",
-      "completed": null
+      "completed": null,
+      "dod": []
     },
     {
       "id": "t5",
@@ -153,12 +129,10 @@
         "t3",
         "t4"
       ],
-      "acceptance_criteria": null,
-      "verified_by": null,
-      "review_outcome": null,
       "output": null,
       "created": "2026-03-03",
-      "completed": null
+      "completed": null,
+      "dod": []
     },
     {
       "id": "t6",
@@ -171,12 +145,10 @@
       "depends_on": [
         "t5"
       ],
-      "acceptance_criteria": null,
-      "verified_by": null,
-      "review_outcome": null,
       "output": null,
       "created": "2026-03-03",
-      "completed": null
+      "completed": null,
+      "dod": []
     }
   ],
   "created": "2026-03-03",

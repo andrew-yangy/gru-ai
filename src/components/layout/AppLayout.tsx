@@ -4,6 +4,7 @@ import Sidebar from './Sidebar';
 import Header from './Header';
 import SearchCommandPalette from '@/components/shared/SearchCommandPalette';
 import { useDashboardStore } from '@/stores/dashboard-store';
+import { API_BASE } from '@/lib/api';
 
 export default function AppLayout() {
   const workState = useDashboardStore((s) => s.workState);
@@ -14,10 +15,10 @@ export default function AppLayout() {
     if (workState?.goals || fetchedRef.current) return;
     fetchedRef.current = true;
     Promise.all([
-      fetch('http://localhost:4444/api/state/goals').then(r => r.json()).catch(() => null),
-      fetch('http://localhost:4444/api/state/features').then(r => r.json()).catch(() => null),
-      fetch('http://localhost:4444/api/state/backlogs').then(r => r.json()).catch(() => null),
-      fetch('http://localhost:4444/api/state/conductor').then(r => r.json()).catch(() => null),
+      fetch( `${API_BASE}/api/state/goals`).then(r => r.json()).catch(() => null),
+      fetch( `${API_BASE}/api/state/features`).then(r => r.json()).catch(() => null),
+      fetch( `${API_BASE}/api/state/backlogs`).then(r => r.json()).catch(() => null),
+      fetch( `${API_BASE}/api/state/conductor`).then(r => r.json()).catch(() => null),
     ]).then(([goals, features, backlogs, conductor]) => {
       if (goals?.goals) {
         const current = useDashboardStore.getState().workState;

@@ -4,6 +4,12 @@
   "goal_id": "workflow-orchestration",
   "status": "completed",
   "priority": "p1",
+  "agent": [
+    "self"
+  ],
+  "reviewers": [
+    "sarah"
+  ],
   "description": "Exposed agent-conductor functionality as an MCP server with 5 tools for Claude Code integration, enabling programmatic directive launching and status queries.",
   "source_directive": null,
   "tags": [],

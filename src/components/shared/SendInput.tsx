@@ -12,6 +12,7 @@ import {
 } from '@/components/ui/dialog';
 
 import type { Session } from '@/stores/types';
+import { API_BASE } from '@/lib/api';
 
 const MAX_CHARS = 500;
 
@@ -32,7 +33,7 @@ export default function SendInput({ paneId, terminalApp }: SendInputProps) {
     if (!inputValue.trim() || sending) return;
     setSending(true);
     try {
-      const response = await fetch('http://localhost:4444/api/actions/send-input', {
+      const response = await fetch( `${API_BASE}/api/actions/send-input`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ paneId, type: 'text', input: inputValue }),

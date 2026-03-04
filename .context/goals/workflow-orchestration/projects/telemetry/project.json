@@ -1,9 +1,15 @@
 {
   "id": "telemetry",
-  "title": "Directive telemetry — wall time, phase outcomes, review stats",
+  "title": "Directive telemetry \u2014 wall time, phase outcomes, review stats",
   "goal_id": "workflow-orchestration",
   "status": "completed",
   "priority": "p1",
+  "agent": [
+    "self"
+  ],
+  "reviewers": [
+    "sarah"
+  ],
   "description": "Added telemetry tracking to directives: wall time, phase outcomes, and review statistics for performance monitoring.",
   "source_directive": null,
   "tags": [],

@@ -9,6 +9,7 @@ import TeamCard from './TeamCard';
 import ActiveSessions from './RecentActivity';
 import SchedulerCard from './SchedulerCard';
 import { useDashboardStore } from '@/stores/dashboard-store';
+import { API_BASE } from '@/lib/api';
 
 export default function DashboardPage() {
   const { teams, sessions, events, sessionActivities, tasksByTeam } = useDashboardStore();
@@ -20,10 +21,10 @@ export default function DashboardPage() {
     if (workState?.goals || fetchedWorkState) return;
     setFetchedWorkState(true);
     Promise.all([
-      fetch('http://localhost:4444/api/state/goals').then(r => r.json()),
-      fetch('http://localhost:4444/api/state/features').then(r => r.json()),
-      fetch('http://localhost:4444/api/state/backlogs').then(r => r.json()),
-      fetch('http://localhost:4444/api/state/conductor').then(r => r.json()),
+      fetch( `${API_BASE}/api/state/goals`).then(r => r.json()),
+      fetch( `${API_BASE}/api/state/features`).then(r => r.json()),
+      fetch( `${API_BASE}/api/state/backlogs`).then(r => r.json()),
+      fetch( `${API_BASE}/api/state/conductor`).then(r => r.json()),
     ]).then(([goals, features, backlogs, conductor]) => {
       if (goals?.goals) {
         useDashboardStore.getState().setWorkState({ goals, features, backlogs, conductor, index: null });

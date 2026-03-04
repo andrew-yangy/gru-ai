@@ -1,0 +1,143 @@
+{
+  "id": "game-phase2-canvas-and-ai",
+  "title": "Canvas 2D Engine Core — Replace CSS Grid with Canvas renderer",
+  "goal_id": "game",
+  "status": "completed",
+  "priority": "P0",
+  "agent": ["riley"],
+  "verified_by": ["sarah", "marcus"],
+  "description": "Replace the Phase 1 CSS Grid rendering with a Canvas 2D game engine. Canvas component with requestAnimationFrame loop, tile-based rendering, camera system (pan/zoom), click/hover detection, integer zoom for pixel-perfect rendering, ResizeObserver for responsive sizing. Keeps SidePanel and GameHeader as React components.",
+  "source_directive": "game-phase2-canvas-and-ai",
+  "scope": {
+    "in": [
+      "CanvasOffice.tsx component replacing OfficeGrid.tsx",
+      "Engine modules: engine/types.ts, engine/camera.ts, engine/renderer.ts",
+      "requestAnimationFrame game loop with ref-based state and dirty flag (NO separate game-loop.ts)",
+      "Camera system with pan (drag) and zoom (scroll wheel, integer steps 1-4x, cursor-anchored)",
+      "Tile rendering with hex color map matching current Tailwind classes",
+      "Click/hover detection with screen-to-tile coordinate conversion (inline in CanvasOffice)",
+      "HiDPI/DPR scaling: canvas.width = cssWidth * dpr, ctx.scale(dpr, dpr)",
+      "ResizeObserver for responsive canvas sizing",
+      "Hover highlights, selection ring, cursor management on interactive tiles",
+      "Zoom level badge overlay",
+      "Grid centering when viewport > grid at default zoom"
+    ],
+    "out": [
+      "Pixel art sprites (Phase 2 Project 2)",
+      "Agent movement and AI behavior (Phase 2 Project 3)",
+      "CEO character movement (Phase 2 Project 5)",
+      "Sound effects",
+      "Drag-and-drop interactions",
+      "Dark mode canvas colors (deferred follow-up)"
+    ]
+  },
+  "dod": [
+    { "criterion": "CanvasOffice.tsx renders the 20x14 office grid on Canvas with tile colors matching current CSS Grid", "met": true, "verified_by": ["sarah", "marcus"] },
+    { "criterion": "Agent desks show colored dots (brand color) and status dots matching current OfficeGrid", "met": true, "verified_by": ["sarah", "marcus"] },
+    { "criterion": "Mouse click on interactive tiles fires onTileClick with correct (row, col, tileType)", "met": true, "verified_by": ["sarah", "marcus"] },
+    { "criterion": "Scroll wheel zooms in integer steps (1x-4x) with pixel-perfect rendering", "met": true, "verified_by": ["sarah", "marcus"] },
+    { "criterion": "Mouse drag pans camera, constrained to office bounds", "met": true, "verified_by": ["sarah", "marcus"] },
+    { "criterion": "Canvas auto-sizes via ResizeObserver, default zoom fits full office", "met": true, "verified_by": ["sarah", "marcus"] },
+    { "criterion": "Hover over interactive tiles shows visual highlight", "met": true, "verified_by": ["sarah", "marcus"] },
+    { "criterion": "Type-check and build pass with zero errors", "met": true, "verified_by": ["alex"] }
+  ],
+  "browser_test": true,
+  "tasks": [
+    {
+      "id": "t1-engine-types",
+      "title": "T1: Engine types (CameraState)",
+      "status": "completed",
+      "agent": ["riley"],
+      "dod": [
+        { "criterion": "engine/types.ts with CameraState (zoom, offsetX, offsetY)", "met": true, "verified_by": ["sarah"] }
+      ]
+    },
+    {
+      "id": "t2-camera-math",
+      "title": "T2: Camera math — pure functions, cursor-anchored zoom, grid centering",
+      "status": "completed",
+      "agent": ["riley"],
+      "dod": [
+        { "criterion": "engine/camera.ts with worldToScreen, screenToTile, clampToBounds, fitToView, zoomAtPoint", "met": true, "verified_by": ["sarah"] },
+        { "criterion": "All functions are pure (no state, no React imports)", "met": true, "verified_by": ["sarah"] },
+        { "criterion": "zoomAtPoint anchors to cursor position, not viewport center", "met": true, "verified_by": ["sarah", "marcus"] },
+        { "criterion": "Grid centers when viewport > grid at default zoom", "met": true, "verified_by": ["sarah", "marcus"] }
+      ]
+    },
+    {
+      "id": "t3-input-translator",
+      "title": "T3: Input handling — inline in CanvasOffice (input.ts deleted as dead code)",
+      "status": "completed",
+      "agent": ["riley"],
+      "dod": [
+        { "criterion": "Input handling maps raw DOM events to semantic actions (click, pan, zoom, hover)", "met": true, "verified_by": ["sarah"] },
+        { "criterion": "Drag detection: delta < 4px = click, >= 4px = pan", "met": true, "verified_by": ["marcus"] }
+      ]
+    },
+    {
+      "id": "t4-renderer",
+      "title": "T4: Renderer — dispatch table, hex color map, dots, icons",
+      "status": "completed",
+      "agent": ["riley"],
+      "dod": [
+        { "criterion": "engine/renderer.ts with render() entry point", "met": true, "verified_by": ["sarah"] },
+        { "criterion": "Dispatch table TILE_RENDERERS[tileType] for per-tile rendering", "met": true, "verified_by": ["sarah"] },
+        { "criterion": "Tile fills with hex colors matching current Tailwind classes", "met": true, "verified_by": ["sarah", "marcus"] },
+        { "criterion": "Agent brand-color dots + status dots on desk tiles", "met": true, "verified_by": ["sarah", "marcus"] },
+        { "criterion": "Tile icons via ctx.fillText (star, T, W, emojis, SRV, agent initials)", "met": true, "verified_by": ["sarah"] },
+        { "criterion": "Selection highlight (2px blue stroke) and hover highlight (2px lighter stroke)", "met": true, "verified_by": ["sarah"] }
+      ]
+    },
+    {
+      "id": "t5-canvas-office",
+      "title": "T5: CanvasOffice component — rAF loop, dirty flag, DPR, ResizeObserver",
+      "status": "completed",
+      "agent": ["riley"],
+      "dod": [
+        { "criterion": "CanvasOffice.tsx with same props interface as OfficeGrid (selectedPosition, onTileClick, agentStatuses)", "met": true, "verified_by": ["sarah", "marcus"] },
+        { "criterion": "useRef for canvas, camera state, dirty flag, rAF handle, drag state", "met": true, "verified_by": ["sarah"] },
+        { "criterion": "ResizeObserver sets canvas.width/height = css * dpr, ctx.scale(dpr, dpr)", "met": true, "verified_by": ["sarah"] },
+        { "criterion": "rAF loop checks dirty flag, renders only when needed", "met": true, "verified_by": ["sarah"] },
+        { "criterion": "Mouse wheel: integer zoom 1x-4x anchored to cursor", "met": true, "verified_by": ["sarah", "marcus"] },
+        { "criterion": "Mouse drag: pan camera, clamp to office bounds", "met": true, "verified_by": ["marcus"] },
+        { "criterion": "Mouse move: hover hit-test on interactive tiles only, cursor style management", "met": true, "verified_by": ["sarah", "marcus"] },
+        { "criterion": "imageSmoothingEnabled = false on every resize", "met": true, "verified_by": ["sarah"] },
+        { "criterion": "Default zoom via fitToView on mount and resize", "met": true, "verified_by": ["sarah", "marcus"] },
+        { "criterion": "Zoom level badge as absolute-positioned div overlay", "met": true, "verified_by": ["marcus"] }
+      ]
+    },
+    {
+      "id": "t6-wire-gamepage",
+      "title": "T6: Wire into GamePage — swap OfficeGrid for CanvasOffice",
+      "status": "completed",
+      "agent": ["riley"],
+      "dod": [
+        { "criterion": "GamePage.tsx imports CanvasOffice instead of OfficeGrid", "met": true, "verified_by": ["sarah", "marcus"] },
+        { "criterion": "Same props passed, SidePanel and GameHeader untouched", "met": true, "verified_by": ["sarah", "marcus"] }
+      ]
+    },
+    {
+      "id": "t7-verify",
+      "title": "T7: Type-check and build verification",
+      "status": "completed",
+      "agent": ["alex"],
+      "dod": [
+        { "criterion": "npx tsc --noEmit passes with zero errors", "met": true, "verified_by": ["alex"] },
+        { "criterion": "npx vite build passes with zero errors", "met": true, "verified_by": ["alex"] }
+      ]
+    },
+    {
+      "id": "t8-review",
+      "title": "T8: Architecture and product review",
+      "status": "completed",
+      "agent": ["sarah", "marcus"],
+      "dod": [
+        { "criterion": "Sarah architecture review passes (engine module boundaries, rAF/store pattern, DPR handling)", "met": true, "verified_by": ["sarah"] },
+        { "criterion": "Marcus product review passes (zoom UX, click feedback, cursor management)", "met": true, "verified_by": ["marcus"] }
+      ]
+    }
+  ],
+  "created": "2026-03-04T00:00:00Z",
+  "updated": "2026-03-04T14:00:00Z",
+  "completed": "2026-03-04T14:00:00Z"
+}

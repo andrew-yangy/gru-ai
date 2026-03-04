@@ -1,0 +1,255 @@
+{
+  "investigation": {
+    "initiatives": [
+      {
+        "id": "z-sort-room-system",
+        "baseline": "renderer.ts render() is 90 lines (L500-L589). It draws tiles in row-major order via nested for-loops (L532-L556): outer loop rows startRow..endRow, inner loop cols startCol..endCol. Each tile calls TILE_RENDERERS[tileType](ctx, x, y, tileSize, opts) which draws directly to canvas \u2014 no intermediate drawable collection, no sorting step. There is no RoomGrid type, no ROOM_GRID export, no room zone model anywhere in the codebase. engine/types.ts is 13 lines containing only CameraState interface. office-layout.ts exports OFFICE_GRID (TileType[][]), ROWS (14), COLS (20), rawCharAt(), agentNameAt(). No rooms.ts file exists. No z-sort, painter's algorithm, ZDrawable, or back-to-front rendering code exists anywhere in src/components/game/.",
+        "active_files": [
+          "src/components/game/engine/renderer.ts",
+          "src/components/game/engine/types.ts",
+          "src/components/game/office-layout.ts",
+          "src/components/game/types.ts",
+          "src/components/game/CanvasOffice.tsx"
+        ],
+        "dead_code": [
+          "src/components/game/OfficeGrid.tsx"
+        ],
+        "findings": "render() signature: render(ctx, grid: TileType[][], camera: CameraState, tileSize: number, agentStatuses: Record<string, AgentStatus>, selectedPosition, hoverPosition). Grid is TileType[][] passed from OFFICE_GRID. Camera transform applied at L521-L523: ctx.translate(-offsetX, -offsetY) then ctx.scale(zoom). Visible tile range culled at L526-L529. Tiles drawn in row-major order at L532-L556 with direct dispatch via TILE_RENDERERS[tileType](). Selection/hover highlights drawn on top at L558-L585 after all tiles. Agents are only rendered ON desk tiles \u2014 sprite drawn inside renderDesk() at L174-L178 via getAgentSprite(). Agent sprites are not separate renderables \u2014 they are embedded in desk tile rendering. No concept of agents as independent entities in the render pipeline. OfficeGrid.tsx (177 lines) is the old DOM-based grid with CSS grid layout and Tailwind classes. It is NOT imported anywhere \u2014 CanvasOffice.tsx replaced it. The only comment references to it are in renderer.ts L11 and CanvasOffice.tsx L2,L20. worldToScreen() in camera.ts is exported but never imported outside camera.ts (unused export).",
+        "constraints": [
+          "render() currently takes TileType[][] grid \u2014 adding room data requires either expanding the grid parameter or adding a new parameter",
+          "Agent sprites are drawn inside renderDesk() not as separate z-sorted entities \u2014 extracting them requires architectural change to the render pipeline",
+          "TILE_RENDERERS dispatch table maps TileType to TileRenderer \u2014 all 10 entries draw directly, none return drawables",
+          "CanvasOffice.tsx passes OFFICE_GRID (static import) to render() \u2014 any room overlay needs room data passed through this same path",
+          "The rAF loop in CanvasOffice.tsx (L124-L148) only renders when dirtyRef.current is true \u2014 it does not run continuously, which affects animation integration"
+        ]
+      },
+      {
+        "id": "environment-rendering",
+        "baseline": "10 tile renderers in renderer.ts TILE_RENDERERS dispatch table (L476-L487). Line counts per renderer: renderFloor: 15 lines (L79-L93), renderWall: 29 lines (L99-L127), renderDesk: 47 lines (L133-L179), renderCeoDesk: 43 lines (L185-L227), renderConference: 27 lines (L233-L259), renderWhiteboard: 42 lines (L265-L306), renderMailbox: 31 lines (L312-L342), renderBell: 33 lines (L348-L380), renderServerRoom: 46 lines (L386-L431), renderDoor: 34 lines (L437-L470). Total renderer.ts: 590 lines. Floor uses flat fill #f5f5f4 with 2-line grout seam (2x2 tile pattern). Wall uses flat fill #57534e with horizontal/vertical brick mortar lines and 3px baseboard. No HSL colorization, no room-aware coloring, no textured patterns, no auto-tiling bitmask.",
+        "active_files": [
+          "src/components/game/engine/renderer.ts",
+          "src/components/game/types.ts"
+        ],
+        "dead_code": [],
+        "findings": "TILE_COLORS constant (L14-L25) maps all 10 TileType values to hex colors. All renderers use ctx.fillRect for drawing \u2014 no gradients, no HSL transforms, no pattern fills. renderFloor draws solid fill + 2 grout lines forming a cross. renderWall draws solid fill + 3 horizontal mortar lines + offset vertical joints (running bond) + 3px baseboard. No engine/color-utils.ts file exists. No hslColorize or blendColor functions exist anywhere. renderDesk already has multi-layer detail: wooden surface with highlight/shadow edges (L145-L152), small monitor with screen glow and stand (L155-L162), brand color indicator (L167-L168), status indicator (L171-L172), and agent sprite (L175-L178). renderCeoDesk has mahogany desk with legs, large monitor with stand, gold star accents as pixel crosses, gold nameplate (43 lines). renderConference has wood table with surface/highlight, 6 chair indicators around edges. renderWhiteboard has frame, white surface, 6 colored sticky notes, 2 written lines, marker tray with 3 markers. renderServerRoom has dark floor, rack frame, 2 server units with vent lines and LEDs, cables. renderBell has handle, stacked-rect dome with highlight stripe, clapper, base pedestal. renderMailbox has post/stand, blue body with top, mail slot, red flag, label area. renderDoor has wall background, frame, wood panel with highlight, 2 panel insets, gold doorknob with highlight, threshold. Several renderers are ALREADY in the 27-47 line range, exceeding the 20-40 line target. renderFloor (15 lines) is the most minimal.",
+        "constraints": [
+          "All tile renderers receive the same signature: (ctx, x, y, size, opts?) \u2014 opts is only populated for desk tiles currently",
+          "No room-awareness exists in any renderer \u2014 floor/wall colors are hardcoded constants, not per-room",
+          "Adding HSL colorization requires a utility module (engine/color-utils.ts does not exist)",
+          "TileRenderer type (L63-L69) would need to accept room palette data to support per-room coloring",
+          "TILE_COLORS is a flat Record<TileType, string> \u2014 no per-room palette system exists"
+        ]
+      },
+      {
+        "id": "character-sprites",
+        "baseline": "sprites.ts is 166 lines total. Single SPRITE_TEMPLATE: 1 template, 16x24 pixels, front-facing sitting pose only (L33-L82, 384 values in flat array). 7 palette indices used (0=transparent, 1=skin, 2=hair, 3=shirt, 4=pants, 5=shoes, 6=eye white, 7=eye dark). BASE_COLORS shared palette (L90-L96): 5 colors (skin, pants, shoes, eye white, eye dark). AGENT_PALETTES (L102-L109): 6 entries (Alex, Sarah, Morgan, Marcus, Priya, generic), each overriding indices 2 (hair) and 3 (shirt). Sprite cache: Map<string, HTMLCanvasElement> keyed by agent name (L115). Exports: SPRITE_WIDTH=16, SPRITE_HEIGHT=24, getAgentSprite(name), clearSpriteCache().",
+        "active_files": [
+          "src/components/game/engine/sprites.ts",
+          "src/components/game/engine/renderer.ts"
+        ],
+        "dead_code": [],
+        "findings": "Only 1 pose exists (front-facing sitting). No walk frames, no side-facing, no typing frames, no idle animation frames. No direction system (front/back/left/right). No frame index parameter \u2014 getAgentSprite(name) returns a single static image per agent. renderSpriteCanvas(palette) iterates SPRITE_HEIGHT*SPRITE_WIDTH, fills 1x1 rects for non-zero pixels. Cache is simple Map<string, HTMLCanvasElement> \u2014 no frame key, no direction key. clearSpriteCache() is exported but NEVER called or imported anywhere in the codebase (dead export). Template uses integer palette indices 0-7 mapped to hex colors. No flipHorizontal() function exists. No getSpriteFrame() function exists. No template variation system \u2014 all 5 agents use identical body shape, only hair color (index 2) and shirt color (index 3) vary. The existing template has legs-apart sitting pose (rows 17-19), shoes at rows 20-21, and 2 empty transparent rows at bottom (rows 22-23). Sprite is drawn in renderDesk() at L174-L178 of renderer.ts: centered in tile via (size - SPRITE_WIDTH) / 2 and (size - SPRITE_HEIGHT) / 2, drawn with ctx.drawImage(sprite, spriteX, spriteY).",
+        "constraints": [
+          "getAgentSprite() returns HTMLCanvasElement \u2014 callers use ctx.drawImage() which expects this type",
+          "Sprite cache is keyed by name only \u2014 adding frame/direction requires changing cache key scheme",
+          "SPRITE_TEMPLATE is a flat readonly number[] \u2014 the template system uses this format, new templates must match",
+          "renderDesk() calls getAgentSprite(opts.agentName) with no frame/direction parameter \u2014 signature change needed",
+          "imageSmoothingEnabled is set to false in CanvasOffice.tsx ResizeObserver (L110) \u2014 sprites scale with nearest-neighbor for crisp pixel art"
+        ]
+      },
+      {
+        "id": "animation-system",
+        "baseline": "No animation system exists. No animation types in engine/types.ts (only CameraState). No animation.ts file in engine/. No AnimationState type anywhere. No frame index tracking. No delta time calculation. The rAF loop in CanvasOffice.tsx (L124-L148) is render-on-dirty only \u2014 it checks dirtyRef.current and skips rendering if false. No timestamp parameter captured from requestAnimationFrame callback. No per-agent animation state tracking. AgentStatus type (in types.ts L19) has 5 values: 'working' | 'waiting' | 'idle' | 'error' | 'offline'. These are computed from session data in GamePage.tsx toAgentStatus() (L19-L29).",
+        "active_files": [
+          "src/components/game/CanvasOffice.tsx",
+          "src/components/game/engine/types.ts",
+          "src/components/game/types.ts",
+          "src/components/game/GamePage.tsx",
+          "src/components/game/engine/sprites.ts",
+          "src/components/game/engine/renderer.ts"
+        ],
+        "dead_code": [],
+        "findings": "The rAF loop structure in CanvasOffice.tsx L124-L148: const loop = () => { if (dirtyRef.current) { render(...); dirtyRef.current = false; } rafRef.current = requestAnimationFrame(loop); }. The loop calls requestAnimationFrame unconditionally but only renders when dirty. The requestAnimationFrame callback receives a timestamp parameter but the loop function ignores it (declared with no parameters). dirtyRef is set to true by: ResizeObserver (L117), selectedPosition/agentStatuses change via useEffect (L84-L86), mouse hover changes (L251/L255/L258/L263/L265), drag events (L226), and wheel zoom (L175). There is no continuous rendering \u2014 the canvas is static between user interactions and prop changes. render() function signature does not accept any animation/frame parameters. agentStatuses is passed as Record<string, AgentStatus> from GamePage.tsx which derives it from session store data. The mapping from session status to AgentStatus is: 'working'\u2192'working', 'waiting-approval'/'waiting-input'\u2192'waiting', 'idle'/'paused'/'done'\u2192'idle', 'error'\u2192'error', default\u2192'offline'. No per-agent position tracking beyond the static desk assignment in office-layout.ts RAW_LAYOUT. Agents do not move \u2014 they are rendered at their desk position only.",
+        "constraints": [
+          "Switching to continuous rendering (for animation) means removing the dirtyRef guard and rendering every frame \u2014 potential performance concern",
+          "The rAF loop function takes no parameters \u2014 needs to accept DOMHighResTimeStamp for delta time",
+          "render() function signature must be extended to accept animation frame data or per-agent animation states",
+          "Agent positions are static (defined in RAW_LAYOUT) \u2014 agents cannot move between tiles without a position system",
+          "agentStatuses updates come from React props via useDashboardStore \u2014 animation state needs to be local engine state updated each tick, separate from React's render cycle",
+          "propsRef pattern (L77-L78) already solves stale-closure problem for reading React props in rAF \u2014 animation state can follow same pattern"
+        ]
+      }
+    ]
+  },
+  "architect": {
+    "initiatives": [
+      {
+        "id": "z-sort-room-system",
+        "baseline": "render() is 90 lines drawing tiles in row-major nested for-loops (lines 532-556). No RoomGrid, no ROOM_GRID, no z-sort exists. Agent sprites are drawn inside renderDesk() at line 175 \u2014 tightly coupled to tile rendering. TILE_RENDERERS draw directly to ctx, no separation of ground vs entity layers. OfficeGrid.tsx is dead code (zero imports).",
+        "active_files": [
+          "src/components/game/engine/types.ts",
+          "src/components/game/types.ts",
+          "src/components/game/office-layout.ts",
+          "src/components/game/engine/renderer.ts",
+          "src/components/game/CanvasOffice.tsx"
+        ],
+        "dead_code": [
+          "src/components/game/OfficeGrid.tsx"
+        ],
+        "findings": "1) render() signature is (ctx, grid, camera, tileSize, agentStatuses, selectedPosition, hoverPosition) \u2014 room data must be added as a new parameter, not shoe-horned into grid. 2) TILE_RENDERERS dispatch table (line 476) uses TileType as key \u2014 room-aware renderers need room color passed through TileRenderOpts. 3) Agent sprites inside renderDesk() (lines 174-178) MUST be extracted to a separate entity list for z-sort \u2014 you cannot sort sprites by Y if they're drawn as part of the tile pass. 4) The rAF loop in CanvasOffice.tsx passes OFFICE_GRID directly to render() \u2014 adding ROOM_GRID requires updating this call site. 5) RAW_LAYOUT in office-layout.ts already encodes spatial information \u2014 RoomGrid zones can be defined as tile-coordinate rectangles referencing rows/cols from this layout.",
+        "recommended_approach": "**Phase 1 \u2014 Types (engine/types.ts + game/types.ts):** Add RoomZone interface to game/types.ts: `{ id: string; name: string; department: 'engineering' | 'executive' | 'conference' | 'lobby'; baseHSL: [number, number, number]; bounds: { startRow: number; startCol: number; endRow: number; endCol: number } }`. Add `RoomGrid = RoomZone[]` type alias. Add `Renderable = { zY: number; draw: (ctx: CanvasRenderingContext2D) => void }` to engine/types.ts for painter's algorithm. **Phase 2 \u2014 Data (office-layout.ts):** Export `ROOM_GRID: RoomZone[]` with 4+ zones mapped to RAW_LAYOUT regions. Add helper `roomAt(row, col): RoomZone | undefined` that does bounds-checking against ROOM_GRID. Engineering zone: rows 4-10, cols 3-16. Executive zone: rows 2-3, cols 14-18. Conference zone: rows 2-3, cols 3-5. Lobby zone: rows 11-12, cols 1-18. **Phase 3 \u2014 Render refactor (renderer.ts):** Split render() into two passes: (a) ground pass \u2014 tiles drawn in row-major order as today, but with room color info injected into TileRenderOpts via roomAt(). (b) entity pass \u2014 collect all agents into a Renderable[] array with zY = row * tileSize + tileSize (bottom of sprite), sort by zY ascending, draw back-to-front. Extract agent sprite drawing from renderDesk() into a standalone function that creates a Renderable. Desk renderer should draw the desk furniture only. Update render() signature to accept `roomGrid: RoomZone[]`. **Phase 4 \u2014 Wire up (CanvasOffice.tsx):** Import ROOM_GRID from office-layout.ts, pass to render(). No other changes needed.",
+        "follow_ups": [
+          {
+            "action": "Delete OfficeGrid.tsx \u2014 confirmed zero imports across entire game directory",
+            "risk": "low",
+            "rationale": "Dead code. grep confirms no import of OfficeGrid anywhere. Keeping it confuses future implementers.",
+            "files": [
+              "src/components/game/OfficeGrid.tsx"
+            ]
+          },
+          {
+            "action": "Extend TileRenderOpts to include roomHSL?: [number, number, number] so tile renderers can colorize based on room zone",
+            "risk": "medium",
+            "rationale": "Additive change to existing interface. All existing renderers ignore opts they don't use. Enables environment-rendering initiative without a second refactor.",
+            "files": [
+              "src/components/game/engine/renderer.ts"
+            ]
+          },
+          {
+            "action": "Add Renderable type and painter's algorithm sort to render() \u2014 replaces flat row-major agent drawing",
+            "risk": "medium",
+            "rationale": "Core architectural change to rendering pipeline. Fully reversible (revert to row-major). Required before character-sprites or animation-system can work correctly.",
+            "files": [
+              "src/components/game/engine/renderer.ts",
+              "src/components/game/engine/types.ts"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "environment-rendering",
+        "baseline": "10 tile renderers exist: renderFloor (15 lines, most minimal), renderWall (29 lines), renderDesk (47 lines), renderCeoDesk (43 lines), renderConference (27 lines), renderWhiteboard (42 lines), renderMailbox (31 lines), renderBell (33 lines), renderServerRoom (46 lines), renderDoor (34 lines). All use flat fillRect/fillStyle. No HSL, no gradients, no room-aware colors. TILE_COLORS is a flat Record<TileType, string>.",
+        "active_files": [
+          "src/components/game/engine/renderer.ts",
+          "src/components/game/types.ts"
+        ],
+        "dead_code": [],
+        "findings": "1) Several renderers already hit 27-47 lines \u2014 DOD of '20-40 lines with 2+ detail layers' is partially met by renderDesk, renderCeoDesk, renderWhiteboard, renderServerRoom, renderBell, renderMailbox, renderDoor. 2) renderFloor at 15 lines needs the most work \u2014 currently just a flat fill + grout lines. DOD requires textured patterns with HSL colorization. 3) renderWall at 29 lines has brick pattern but no depth shading or room accent colors. 4) No HSL utilities exist \u2014 need hslToHex or direct ctx.fillStyle='hsl(...)' usage. Canvas 2D supports hsl() strings natively so NO utility needed \u2014 just use template literals. 5) Monitor screens (renderDesk line 158, renderCeoDesk line 209) currently show flat blue \u2014 DOD says 'desk monitors show code'. 6) TileRenderOpts.roomHSL (from z-sort initiative) enables per-room floor/wall tinting. 7) TILE_COLORS constant will become less relevant as renderers get room-aware HSL colors \u2014 keep as fallback for tiles outside any room zone.",
+        "recommended_approach": "**Depends on z-sort-room-system** for roomHSL in TileRenderOpts. Can proceed in parallel for renderers that don't need room colors. **renderFloor upgrade:** Replace flat fill with checkerboard pattern (2x2 sub-tiles within each tile). Use roomHSL if available: darken alternate squares by -5% lightness. Add subtle 1px highlight on top edge and shadow on bottom edge of each sub-tile for fake 3D (claw-empire style). Target: 25-30 lines. Use `ctx.fillStyle = \\`hsl(\\${h}, \\${s}%, \\${l}%)\\`` \u2014 Canvas 2D supports HSL strings natively, no utility function needed. **renderWall upgrade:** Add depth shading \u2014 top 3px lighter (highlight), bottom 3px darker (shadow). Use roomHSL to tint accent stripe at baseboard. Keep existing brick pattern. Target: 35-40 lines. **renderDesk monitor upgrade:** Replace flat blue rect with 3-4 horizontal lines of varying width in green-on-dark (terminal style) to suggest code. Add a blinking cursor pixel (toggled by an opts.tick counter if available, or static is fine for now). Target: stay at 40-47 lines. **renderCeoDesk monitor:** Same code-line treatment but with blue tones (executive dashboard look). **Wood grain for desks:** Add 2-3 horizontal lines slightly darker than desk surface between existing highlight/shadow. 1px each. Minimal change, big visual improvement. **renderConference, renderBell, renderMailbox, renderServerRoom, renderDoor:** Already 27-46 lines with multiple detail layers. Minimal upgrades: add 1-2 highlight/shadow lines where missing. Don't over-engineer what's already decent. **Order within this initiative:** Floor \u2192 Wall \u2192 Desk monitors \u2192 Wood grain \u2192 remaining touch-ups. Floor and Wall are the biggest visual wins.",
+        "follow_ups": [
+          {
+            "action": "Add code-line details to desk and CEO desk monitor screens \u2014 green horizontal lines at varying widths to simulate terminal/IDE",
+            "risk": "medium",
+            "rationale": "Visual enhancement within existing renderers. Reversible. Directly addresses DOD criterion 'desk monitors show code'.",
+            "files": [
+              "src/components/game/engine/renderer.ts"
+            ]
+          },
+          {
+            "action": "Add HSL-based floor colorization using roomHSL from TileRenderOpts \u2014 checkerboard with lightness variation",
+            "risk": "medium",
+            "rationale": "Requires roomHSL from z-sort-room-system initiative. Biggest visual upgrade for least code. Direct DOD requirement.",
+            "files": [
+              "src/components/game/engine/renderer.ts"
+            ]
+          },
+          {
+            "action": "Add wood grain texture lines to renderDesk and renderCeoDesk surfaces",
+            "risk": "low",
+            "rationale": "2-3 additional fillRect calls per renderer. No API changes. Pure visual polish.",
+            "files": [
+              "src/components/game/engine/renderer.ts"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "character-sprites",
+        "baseline": "1 template (SPRITE_TEMPLATE) at 16x24, front-facing sitting only. 7 palette indices (0=transparent, 1=skin, 2=hair, 3=shirt, 4=pants, 5=shoes, 6=eye white, 7=eye dark). 6 palettes (Alex/Sarah/Morgan/Marcus/Priya/generic). spriteCache keyed by name only (Map<string, HTMLCanvasElement>). getAgentSprite(name) returns HTMLCanvasElement with no frame/direction params. clearSpriteCache() exported but never called \u2014 dead export. renderDesk() calls getAgentSprite(name) at line 175 with no frame or direction.",
+        "active_files": [
+          "src/components/game/engine/sprites.ts",
+          "src/components/game/engine/renderer.ts"
+        ],
+        "dead_code": [],
+        "findings": "1) DOD requires 9+ unique pixel arrays \u2014 currently have 1. Need: walk_front_0-3 (4), sit_front (1, exists), type_front_0-1 (2), idle_front_0-1 (2) = 10 minimum. Side-facing variants share same arrays with potential horizontal flip for left vs right. 2) Cache key must change from name-only to 'name:frame:direction' composite key. 3) getAgentSprite signature must expand but the return type (HTMLCanvasElement) stays the same \u2014 good, no downstream type breaks. 4) SPRITE_TEMPLATE approach (flat number[] with palette indices) is proven and should be replicated for each frame. Each new template is ~50 lines (16*24 / 8 lines of 16 values with comments). 5) Hair style variants: the current template has rows 0-4 defining hair shape. Create 2-3 hair variant arrays that can be substituted into rows 0-4 of the base template. Map agents to hair variants. 6) Side-facing sprites: create one right-facing template, flip horizontally for left. pixel-agents reference confirms this approach. 7) renderDesk() at line 175 must be updated to call new getSpriteFrame() with direction and frame index \u2014 but this is also handled by z-sort-room-system extracting sprites from renderDesk(). Coordinate: whoever lands second adapts.",
+        "recommended_approach": "**Step 1 \u2014 Frame templates:** Define sprite templates as named constants. Use the existing flat number[] format. Create: SPRITE_WALK_FRONT_0 through SPRITE_WALK_FRONT_3 (legs alternating, arms swinging \u2014 classic 4-frame walk cycle), SPRITE_SIT_FRONT (rename existing SPRITE_TEMPLATE), SPRITE_TYPE_FRONT_0 and _1 (hands forward on keyboard, slight arm movement), SPRITE_IDLE_FRONT_0 and _1 (subtle breathing \u2014 torso shifts 1px up/down). For side-facing: SPRITE_WALK_SIDE_0 through _3 (profile view, narrower body ~12px wide, legs in stride). Total: 10+ templates. Each is 16*24 = 384 values. **Step 2 \u2014 Hair variants:** Define 3 hair overlay arrays (rows 0-4 only, 5*16=80 values each): short (current), long (extends to row 6), spiky (gaps in row 0). Create `HAIR_VARIANTS: Record<string, number[]>` and `AGENT_HAIR: Record<string, string>` mapping. Apply variant by overwriting rows 0-4 of base template before rendering. **Step 3 \u2014 Palette expansion:** Add skin tone variation (index 1). Currently all agents share '#F4C7A3'. Add 2-3 skin tones to AGENT_PALETTES. **Step 4 \u2014 getSpriteFrame API:** Export `getSpriteFrame(name: string, frame: SpriteFrame, direction: 'front' | 'side'): HTMLCanvasElement` where `SpriteFrame = 'walk0' | 'walk1' | 'walk2' | 'walk3' | 'sit' | 'type0' | 'type1' | 'idle0' | 'idle1'`. Internally dispatches to the right template. **Step 5 \u2014 Cache key:** Change spriteCache key to template `\\${name}:\\${frame}:\\${direction}`. Cache remains Map<string, HTMLCanvasElement>. **Step 6 \u2014 Side flip:** For direction='side', render the right-facing template. For direction='left' (if needed later), use ctx.scale(-1, 1) + ctx.translate to flip. Store flipped variant in cache too. **Keep getAgentSprite()** as a backward-compatible wrapper that calls `getSpriteFrame(name, 'sit', 'front')` \u2014 avoids breaking renderDesk() until z-sort lands.",
+        "follow_ups": [
+          {
+            "action": "Create 9+ pixel art template arrays for walk/sit/type/idle frames \u2014 each template is a hand-crafted 16x24 number array",
+            "risk": "high",
+            "rationale": "This is the core creative work. CEO mandate says NO blind LLM-generated pixel arrays \u2014 visual feedback loop is MANDATORY. Builder writes templates, reviewer screenshots in browser, iterates until quality matches references. High risk because quality is subjective and the CEO cares deeply.",
+            "files": [
+              "src/components/game/engine/sprites.ts"
+            ]
+          },
+          {
+            "action": "Update spriteCache key from name-only to 'name:frame:direction' composite \u2014 backward compatible via getAgentSprite wrapper",
+            "risk": "medium",
+            "rationale": "Cache invalidation change. getAgentSprite() wrapper preserves backward compatibility. Existing renderDesk() continues to work unchanged.",
+            "files": [
+              "src/components/game/engine/sprites.ts"
+            ]
+          },
+          {
+            "action": "Add 2-3 hair variant overlays and skin tone variations to AGENT_PALETTES",
+            "risk": "medium",
+            "rationale": "Additive data. Each agent gets distinct visual identity. Directly addresses DOD '5 named agents distinct'.",
+            "files": [
+              "src/components/game/engine/sprites.ts"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "animation-system",
+        "baseline": "No animation system exists. rAF loop in CanvasOffice.tsx (lines 125-148) is render-on-dirty only \u2014 skips frames when dirtyRef is false. No timestamp captured (rAF callback receives DOMHighResTimeStamp but loop function takes no params). No per-agent animation state. AgentStatus has 5 values computed in GamePage.tsx from session data. propsRef pattern already exists for stale-closure avoidance.",
+        "active_files": [
+          "src/components/game/CanvasOffice.tsx",
+          "src/components/game/engine/types.ts",
+          "src/components/game/types.ts",
+          "src/components/game/GamePage.tsx",
+          "src/components/game/engine/sprites.ts",
+          "src/components/game/engine/renderer.ts"
+        ],
+        "dead_code": [],
+        "findings": "1) Switching from dirty-only to continuous rendering has performance implications \u2014 rAF fires at 60fps, full render() is ~280 tiles. Mitigation: keep dirty flag for expensive tile redraws, add a separate animation tick that only updates sprite frames (cheap \u2014 just swap cached canvas in drawImage). 2) The rAF loop function (line 126) is `const loop = () => {...}` \u2014 needs to become `const loop = (timestamp: DOMHighResTimeStamp) => {...}` to capture time. 3) AnimationState per agent should be stored in a ref (Map<string, AnimationState>) not React state \u2014 avoid re-renders on every frame tick. 4) AgentStatus \u2192 animation mapping: working \u2192 type cycle (4fps), waiting \u2192 idle cycle (4fps), idle \u2192 idle cycle (4fps), error \u2192 idle cycle (4fps) with red tint, offline \u2192 static sit. 5) Frame cycling at 8fps for walk means frame advances every 125ms. At 4fps for type/idle, every 250ms. Time accumulator pattern: track lastFrameTime per agent, advance frame when delta >= interval. 6) render() needs animation data \u2014 pass current frame indices per agent. Since z-sort extracts sprites from renderDesk(), the entity pass can use getSpriteFrame with the current animation frame.",
+        "recommended_approach": "**Depends on character-sprites** (for getSpriteFrame) and **z-sort-room-system** (for entity-layer sprite drawing). **Step 1 \u2014 Types (engine/types.ts):** Add `AnimationState = { action: 'walk' | 'type' | 'idle' | 'sit'; frame: number; direction: 'front' | 'side'; lastFrameTime: number }`. Add `AnimationConfig = { fps: number; frameCount: number }`. Add `ANIMATION_CONFIGS: Record<AnimationState['action'], AnimationConfig>` = walk: 8fps/4frames, type: 4fps/2frames, idle: 4fps/2frames, sit: 0fps/1frame. **Step 2 \u2014 Status mapping (game/types.ts or new animation.ts):** Export `statusToAnimation(status: AgentStatus): AnimationState['action']` = working\u2192type, waiting\u2192idle, idle\u2192idle, error\u2192idle, offline\u2192sit. **Step 3 \u2014 Animation tick function (new file engine/animation.ts or in renderer.ts):** Export `tickAnimations(agents: Map<string, AnimationState>, timestamp: number, agentStatuses: Record<string, AgentStatus>): boolean`. For each agent: compute desired action from status, reset frame if action changed, check if enough time elapsed for next frame, advance frame index (wrapping). Return true if any frame changed (so render knows to redraw entities). **Step 4 \u2014 CanvasOffice.tsx changes:** Add `animRef = useRef<Map<string, AnimationState>>(new Map())`. Change rAF loop to capture timestamp: `const loop = (ts: DOMHighResTimeStamp) => { const animDirty = tickAnimations(animRef.current, ts, propsRef.current.agentStatuses); if (dirtyRef.current || animDirty) { render(..., animRef.current); dirtyRef.current = false; } rafRef.current = requestAnimationFrame(loop); }`. This is a HYBRID approach \u2014 tiles only redraw when dirty, but animation ticks run every frame (cheap comparison). Full canvas clear + tile redraw only happens when dirtyRef is true OR an animation frame changed. **Step 5 \u2014 Renderer integration:** In render()'s entity pass (from z-sort), look up each agent's AnimationState from the passed Map, call getSpriteFrame(name, state.action + state.frame, state.direction). **Do NOT make the rAF loop unconditionally render every frame.** The hybrid approach keeps CPU usage low when nothing is animating (all agents offline/sit = static, no redraws).",
+        "follow_ups": [
+          {
+            "action": "Switch rAF loop from dirty-only to hybrid dirty+animation-tick \u2014 add DOMHighResTimeStamp parameter",
+            "risk": "medium",
+            "rationale": "Core rendering loop change. Must preserve existing dirty-flag behavior for tile changes (props, hover, selection) while adding animation tick. Fully reversible by removing the animDirty branch.",
+            "files": [
+              "src/components/game/CanvasOffice.tsx"
+            ]
+          },
+          {
+            "action": "Add AnimationState type and ANIMATION_CONFIGS to engine/types.ts \u2014 defines fps and frame counts per action",
+            "risk": "medium",
+            "rationale": "Additive types. No existing code affected. Foundation for animation tick function.",
+            "files": [
+              "src/components/game/engine/types.ts"
+            ]
+          },
+          {
+            "action": "Create tickAnimations() function that advances per-agent frame indices based on elapsed time and AgentStatus mapping",
+            "risk": "medium",
+            "rationale": "New pure function with no side effects beyond mutating the passed Map. Easy to unit test. Core of the animation system.",
+            "files": [
+              "src/components/game/engine/renderer.ts"
+            ]
+          },
+          {
+            "action": "Wire renderer entity pass to read AnimationState and call getSpriteFrame with current frame \u2014 requires both z-sort and character-sprites to land first",
+            "risk": "high",
+            "rationale": "Integration point across 3 initiatives. If z-sort hasn't extracted sprites from renderDesk(), or getSpriteFrame doesn't exist yet, this fails. Must be the LAST thing built. CEO should confirm execution order.",
+            "files": [
+              "src/components/game/engine/renderer.ts",
+              "src/components/game/engine/sprites.ts"
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

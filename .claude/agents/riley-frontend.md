@@ -5,6 +5,13 @@ description: |
   when Morgan casts this specialist for an initiative's build phase.
 model: inherit
 memory: project
+tools:
+  - Read
+  - Write
+  - Edit
+  - Glob
+  - Grep
+  - Bash
 ---
 
 # Riley Kim -- Frontend Developer

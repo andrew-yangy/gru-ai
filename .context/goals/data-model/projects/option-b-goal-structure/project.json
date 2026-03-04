@@ -4,6 +4,12 @@
   "goal_id": "data-model",
   "status": "completed",
   "priority": "p0",
+  "agent": [
+    "self"
+  ],
+  "reviewers": [
+    "sarah"
+  ],
   "description": "Established JSON (goal.json) as the single source of truth for goal state, replacing markdown-derived state. Features, backlogs, and OKR references all tracked in structured JSON.",
   "source_directive": null,
   "tags": [],

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Check, X, Ban, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { API_BASE } from '@/lib/api';
 import type { Session } from '@/stores/types';
 
 interface QuickActionsProps {
@@ -14,7 +15,7 @@ interface QuickActionsProps {
 type ActionType = 'approve' | 'reject' | 'abort';
 
 async function sendAction(paneId: string, type: ActionType): Promise<void> {
-  const response = await fetch('http://localhost:4444/api/actions/send-input', {
+  const response = await fetch( `${API_BASE}/api/actions/send-input`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ paneId, type, input: '' }),

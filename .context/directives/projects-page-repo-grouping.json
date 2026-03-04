@@ -6,6 +6,7 @@
   "weight": "medium",
   "goal_ids": ["ui"],
   "created": "2026-03-03",
+  "completed": "2026-03-03T00:00:00Z",
   "updated": "2026-03-03",
   "produced_features": [],
   "report": "reports/projects-page-repo-grouping-2026-03-03.md",

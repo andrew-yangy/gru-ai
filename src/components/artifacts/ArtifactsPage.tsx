@@ -9,6 +9,7 @@ import { useDashboardStore } from '@/stores/dashboard-store';
 import type { ArtifactRecord, ConductorState } from '@/stores/types';
 import { cn } from '@/lib/utils';
 import { timeAgo } from '@/lib/utils';
+import { API_BASE } from '@/lib/api';
 import {
   FileText,
   MessageSquare,
@@ -132,7 +133,7 @@ function ArtifactCard({ artifact, initialOpen = false, highlighted = false }: {
   const loadContent = useCallback(() => {
     if (content || loadingContent || !artifact.filePath) return;
     setLoadingContent(true);
-    fetch(`http://localhost:4444/api/state/artifact-content?path=${encodeURIComponent(artifact.filePath)}`)
+    fetch(`${API_BASE}/api/state/artifact-content?path=${encodeURIComponent(artifact.filePath)}`)
       .then(r => {
         if (!r.ok) throw new Error('Not found');
         return r.text();
@@ -308,7 +309,7 @@ export default function ArtifactsPage() {
   useEffect(() => {
     if (workState?.conductor) return;
     setLoading(true);
-    fetch('http://localhost:4444/api/state/conductor')
+    fetch( `${API_BASE}/api/state/conductor`)
       .then(r => r.json())
       .then((conductor: ConductorState | null) => {
         if (conductor) {

@@ -92,6 +92,8 @@
   "goal_id": "string (FK to Goal.id, must match filesystem path)",
   "status": "proposed | planning | in_progress | blocked | completed | abandoned",
   "priority": "p0 | p1 | p2 | p3",
+  "agent": ["string (agent names who build this project, e.g. [\"riley\"], [\"jordan\", \"casey\"])"],
+  "reviewers": ["string (agent names who review this project, e.g. [\"sarah\"], [\"sarah\", \"marcus\"])"],
   "sequence": "integer (optional, roadmap ordering within the goal)",
   "depends_on_project": "string | null (optional, format: goal-id/project-id for cross-goal, or project-id for same-goal)",
   "description": "string (what this project delivers)",
@@ -102,20 +104,10 @@
   "dod": [
     {
       "criterion": "string (verifiable statement)",
-      "met": false,
-      "verified_by": ["string"] | null
+      "met": false
     }
   ],
-  "verify": {
-    "checklist": ["string (project-specific verification steps — NOT type-check, that's always implied)"],
-    "reviewers": [
-      {
-        "agent": "string (sarah | marcus | priya | morgan)",
-        "domain": "string (what they verify: architecture, ux, seo, process)"
-      }
-    ],
-    "browser_test": "boolean (true if project touches UI)"
-  },
+  "browser_test": "boolean (true if project touches UI)",
   "source_directive": "string | null (FK to Directive.id)",
   "tags": ["string (for cross-goal relevance, secondary categorization)"],
   "tasks": [
@@ -127,8 +119,13 @@
 }
 ```
 
-**Required fields:** id, title, goal_id, status, priority, description, dod, verify, tasks (can be `[]`), created, updated
-**Optional fields:** sequence, depends_on_project, scope, source_directive, tags, completed
+**Required fields:** id, title, goal_id, status, priority, agent, reviewers, description, dod, tasks (can be `[]`), created, updated
+**Optional fields:** sequence, depends_on_project, scope, browser_test, source_directive, tags, completed
+
+**`agent` and `reviewers` are REQUIRED arrays** — never leave them empty or omit them:
+- `agent`: who builds the project. Derive from Morgan's cast (builder assignments).
+- `reviewers`: who reviews the project. Derive from Morgan's cast (reviewer assignments).
+- Use `["self"]` for `agent` when work was done directly in the CEO session.
 
 **Reviewer Assignment Rules (by domain and complexity):**
 
@@ -140,13 +137,14 @@
 | `growth` | [Priya] | SEO, marketing, content, positioning |
 | Cross-cutting (P0) | [domain lead, + Sarah or Marcus] | Complex work needs multi-perspective review |
 
-**verify.checklist semantics:**
+**DOD semantics:**
 - NOT "type-check passes" — that's always run, listing it is noise
 - NOT "it works" — too vague
-- YES: project-specific acceptance tests the reviewer walks through
+- YES: project-specific, verifiable acceptance criteria the reviewer walks through
 - Examples: "Dashboard loads with real goal data from .context/", "All API endpoints return new entity shapes", "Foreman can discover and launch directives from directives/ directory"
+- Each criterion must be objectively marked `met: true` or `met: false`
 
-**DoD + verify are required for all non-completed projects.** Completed projects may omit them. Each DoD criterion must be verifiable — can be objectively marked `met: true` or `met: false`.
+**DOD is required for all non-completed projects.** Completed projects may omit it.
 
 ### 2.3 Task (embedded in project.json tasks[])
 
@@ -156,33 +154,35 @@
   "title": "string",
   "status": "pending | in_progress | completed | blocked | skipped",
   "phase": "string | null (optional label: research, design, build, test, etc.)",
-  "agent": ["string"] | [] (array of agent names, e.g. ["jordan"], ["sarah", "marcus"]),
+  "agent": ["string (agent names who build this task, e.g. [\"jordan\"])"],
   "depends_on": ["string (task IDs within same project)"],
   "blocked_reason": "string | null (set when status = blocked)",
   "cross_project_dep": "string | null (format: goal-id/project-id:task-id)",
-  "acceptance_criteria": ["string (testable criterion for this task)"] | null,
-  "verified_by": ["string (agent names who verified this task)"] | null,
-  "review_outcome": "pass | fail | critical | null",
+  "dod": [
+    {
+      "criterion": "string (verifiable statement)",
+      "met": false
+    }
+  ],
   "output": "string | null (summary of what was done, set on completion)",
   "created": "ISO 8601 timestamp (e.g. 2026-03-03T10:30:00Z)",
   "completed": "ISO 8601 timestamp | null"
 }
 ```
 
-**Required fields:** id, title, status, created
-**Optional fields:** phase, agent, depends_on, blocked_reason, cross_project_dep, acceptance_criteria, verified_by, review_outcome, output, completed
+**Required fields:** id, title, status, agent, dod, created
+**Optional fields:** phase, depends_on, blocked_reason, cross_project_dep, output, completed
 
-**Task verification fields:**
-- `acceptance_criteria`: Testable criteria specific to this task (mini-DOD). Set during planning or build phase. Complements the project-level DOD which covers the aggregate delivery.
-- `verified_by`: Agent(s) who reviewed/tested this task's output. Set when the task is verified — may differ from `agent` (who built it).
-- `review_outcome`: Result of verification. `pass` = criteria met, `fail` = issues found but non-blocking, `critical` = must fix before project ships.
+**DOD format** — `{criterion, met}` at both project and task level:
+- `dod[]`: Task-specific acceptance criteria. Each criterion tracks its own `met` status.
+- `met` is set to `true` after the project's `reviewers` verify the criterion.
+- When a task completes, `agent` MUST be populated. Use `["self"]` when work was done directly in the CEO session.
 
 **Constraints:**
 - Tasks are atomic, single-agent work items
 - No separate .md files for tasks
 - Cross-project dependencies are explicit but strongly discouraged
-- When a task is completed, `agent`, `verified_by`, and `review_outcome` MUST be populated. Use `["self"]` for `agent` when work was done directly in the CEO session without the directive pipeline.
-- Tasks without verification are technically valid but indicate a gap in the review process.
+- Tasks without DOD verification are technically valid but indicate a gap in the review process.
 
 ### 2.4 Directive
 
@@ -217,7 +217,7 @@
         "title": "string",
         "phases": ["build", "review"],
         "cast": { "engineer": "string", "reviewer": "string" },
-        "dod": [{ "criterion": "string", "met": false, "verified_by": [] }],
+        "dod": [{ "criterion": "string", "met": false }],
         "user_scenario": "string"
       }
     ]
@@ -228,7 +228,7 @@
     "review": { "outcome": "pass | fail | critical", "findings": [], "agent": "string", "timestamp": "ISO 8601 timestamp (e.g. 2026-03-03T10:30:00Z)" }
   },
   "cast": {},
-  "dod": [{ "criterion": "string", "met": false, "verified_by": [] }],
+  "dod": [{ "criterion": "string", "met": false }],
   "report_summary": "string | null",
   "telemetry": {
     "started": "ISO datetime",

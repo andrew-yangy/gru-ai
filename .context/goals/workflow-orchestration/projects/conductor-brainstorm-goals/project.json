@@ -4,6 +4,12 @@
   "goal_id": "workflow-orchestration",
   "status": "completed",
   "priority": "p0",
+  "agent": [
+    "self"
+  ],
+  "reviewers": [
+    "sarah"
+  ],
   "description": "Established the goal.json structure with features array, OKR references, and lifecycle states. Updated indexer to support goal.json. Rewired brainstorm pipeline to output structured artifacts.",
   "source_directive": "conductor-brainstorm-goals",
   "tags": [

@@ -1,0 +1,33 @@
+{
+  "initiatives": [
+    {
+      "id": "game-office-layout",
+      "recommended_approach": "Create a tile-based office layout using a 2D array data structure that maps tile coordinates to furniture/desk types. Use CSS Grid for rendering (each cell is a div). Define office layout as a constant data structure in a types.ts file with TileType enum and OfficeLayout type. GamePage is the route component that manages selected-item state and renders OfficeGrid + SidePanel side by side. OfficeGrid maps tiles to clickable divs with Tailwind styling. SidePanel renders context-appropriate content based on what's selected (agent desk -> agent info, whiteboard -> directives, mailbox -> reports). Follow the existing lazy-load + SuspenseWrapper pattern. Add nav link in Sidebar.tsx for /game route.",
+      "active_files": [
+        "src/router.tsx",
+        "src/components/game/GamePage.tsx",
+        "src/components/game/OfficeGrid.tsx",
+        "src/components/game/SidePanel.tsx",
+        "src/components/game/GameHeader.tsx",
+        "src/components/game/office-layout.ts",
+        "src/components/game/types.ts",
+        "src/components/layout/Sidebar.tsx"
+      ],
+      "baseline": "No game files exist. Clean slate.",
+      "follow_ups": []
+    },
+    {
+      "id": "game-state-integration",
+      "recommended_approach": "Map C-suite agent names to desk positions in the office layout. Use useDashboardStore to read sessions and match Session.agentName to desk identifiers. Create a useGameState hook that derives game-specific state from the dashboard store: which agents are active, their current status, directive state, report list. This hook abstracts the store shape so the game components don't need to know about raw Session/DirectiveState types. For status indicators, map session status to colors: working->green, waiting-*->yellow, idle/done->gray, error->red.",
+      "active_files": [
+        "src/components/game/GamePage.tsx",
+        "src/components/game/OfficeGrid.tsx",
+        "src/components/game/SidePanel.tsx",
+        "src/components/game/hooks/useGameState.ts",
+        "src/components/game/types.ts"
+      ],
+      "baseline": "Store data already available. No new API endpoints needed.",
+      "follow_ups": []
+    }
+  ]
+}

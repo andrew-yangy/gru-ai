@@ -1,0 +1,79 @@
+{
+  "id": "remove-alex-proxy",
+  "title": "Remove Alex proxy layer — skill IS the orchestrator, no hooks",
+  "goal_id": "workflow-orchestration",
+  "status": "completed",
+  "priority": "p0",
+  "agent": [],
+  "reviewers": [],
+  "description": "Remove the Alex subagent proxy pattern entirely. The /directive skill already contains all orchestration logic — Alex was just a middleman that couldn't function (background agent can't approve Bash for CLI spawns). Delete alex-cos.md, delete all hooks (enforce-completion, enforce-orchestrator-scope), replace with an explicit review verification pipeline step. Lightweight directives run inline; medium/heavy launch as top-level CC processes via CLI or Foreman.",
+  "source_directive": null,
+  "tags": ["orchestration", "pipeline", "blocking-bug", "simplification"],
+  "tasks": [
+    {
+      "id": "delete-alex-and-hooks",
+      "title": "Delete alex-cos.md and all enforcement hooks",
+      "status": "completed",
+      "agent": [],
+      "dod": [
+        { "criterion": "alex-cos.md deleted", "met": true },
+        { "criterion": "enforce-completion.sh deleted", "met": true },
+        { "criterion": "enforce-orchestrator-scope.sh deleted", "met": true },
+        { "criterion": "settings.json hook references removed", "met": true }
+      ]
+    },
+    {
+      "id": "rewrite-skill-step-0a",
+      "title": "Rewrite SKILL.md Step 0a — routing decision instead of Alex delegation",
+      "status": "completed",
+      "agent": [],
+      "dod": [
+        { "criterion": "Lightweight directives run inline without Alex", "met": true },
+        { "criterion": "Medium/heavy directives output CLI launch command", "met": true },
+        { "criterion": "No references to Alex, background agents, or ui-review-request.json", "met": true }
+      ]
+    },
+    {
+      "id": "add-review-verification-step",
+      "title": "Add pipeline Step 5b — explicit review verification (replaces hooks)",
+      "status": "completed",
+      "agent": [],
+      "dod": [
+        { "criterion": "Step 5b added as LLM pipeline step (not shell hook)", "met": true },
+        { "criterion": "Step 5b added to pipeline between execute and wrapup", "met": true },
+        { "criterion": "Checks review artifacts and DOD verification exist per initiative", "met": true }
+      ]
+    },
+    {
+      "id": "update-pipeline-docs",
+      "title": "Update pipeline docs — remove Alex and hook references everywhere",
+      "status": "completed",
+      "agent": [],
+      "dod": [
+        { "criterion": "All pipeline docs cleaned of Alex references", "met": true },
+        { "criterion": "09-execute-initiatives.md ui-review-request.json workaround removed", "met": true },
+        { "criterion": "CLAUDE.md, lessons, scenarios updated", "met": true }
+      ]
+    },
+    {
+      "id": "update-foreman",
+      "title": "Update Foreman — launch /directive directly, no Alex prompt",
+      "status": "completed",
+      "agent": [],
+      "dod": [
+        { "criterion": "Foreman launches /directive {name} without Alex references", "met": true }
+      ]
+    },
+    {
+      "id": "mark-cos-superseded",
+      "title": "Mark chief-of-staff-pattern project as superseded",
+      "status": "completed",
+      "agent": [],
+      "dod": [
+        { "criterion": "project.json updated with superseded note", "met": true }
+      ]
+    }
+  ],
+  "created": "2026-03-04T00:00:00Z",
+  "updated": "2026-03-04T00:00:00Z"
+}

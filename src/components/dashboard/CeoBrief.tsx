@@ -17,6 +17,7 @@ import {
   CheckCircle2,
 } from 'lucide-react';
 import type { ArtifactRecord, GoalRecord, FeatureRecord, DirectiveRecord } from '@/stores/types';
+import { API_BASE } from '@/lib/api';
 
 // ---------------------------------------------------------------------------
 // Simple inline markdown renderer (headings, bold, lists)
@@ -113,7 +114,7 @@ export default function CeoBrief() {
   const loadReport = useCallback((report: ArtifactRecord) => {
     if (!report.filePath) return;
     setLoadingReport(true);
-    fetch(`http://localhost:4444/api/state/artifact-content?path=${encodeURIComponent(report.filePath)}`)
+    fetch(`${API_BASE}/api/state/artifact-content?path=${encodeURIComponent(report.filePath)}`)
       .then(r => {
         if (!r.ok) throw new Error('Not found');
         return r.text();

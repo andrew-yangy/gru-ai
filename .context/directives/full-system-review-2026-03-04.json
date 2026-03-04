@@ -1,0 +1,26 @@
+{
+  "id": "full-system-review-2026-03-04",
+  "title": "Comprehensive Full-Team System Review and Smoke Test",
+  "status": "completed",
+  "completed": "2026-03-04",
+  "report": "full-system-review-2026-03-04",
+  "priority": "P0",
+  "classification": "heavyweight",
+  "created": "2026-03-04",
+  "assignee": "alex",
+  "description": "Full-team review and smoke test of all changes made on 2026-03-03/04. All 7 domain agents deployed in parallel: Sarah (architecture), Morgan (operations), Sam (QA), Riley (frontend), Jordan (backend), Casey (data/pipeline), Marcus (product).",
+  "scope": {
+    "changes_under_review": [
+      "Pipeline docs (SKILL.md, 10-wrapup.md)",
+      "Enforcement hooks (detect-stale-docs.sh, enforce-completion.sh, validate-cast.sh, enforce-orchestrator-scope.sh)",
+      "Agent definitions (alex-cos.md hooks, specialist agents jordan/riley/casey/sam)",
+      "Casting rules",
+      "Project.json completions (doc-gardening, progressive-disclosure, remove-medium-risk)",
+      "SW repo cleanup (old format removal, conductor/ deletion, CLAUDE.md/workflow.md updates)",
+      "CLAUDE.md pipeline enforcement rule",
+      "Directive trigger description updates",
+      "API_BASE migration",
+      "State-watcher deferred status"
+    ]
+  }
+}

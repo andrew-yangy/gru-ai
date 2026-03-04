@@ -1,0 +1,62 @@
+{
+  "goal": "Office Simulation Game — Phase 1: Interaction Design Prototype",
+  "goal_folder": "game",
+  "challenges": {
+    "risks": [
+      "Prototype may be too abstract without visual art — colored divs don't convey the game feel, making it hard to validate whether the game metaphor actually improves CEO workflow",
+      "Connecting to real Zustand store data in a prototype may over-invest in plumbing that gets rewritten when Canvas rendering replaces the div-based layout",
+      "Scope creep into game engine territory — the prototype should validate interaction design only, not become a mini-game"
+    ],
+    "over_engineering_flags": [
+      "Avoid building drag-and-drop agent assignment in the prototype — click-to-assign is sufficient for validating the interaction pattern"
+    ],
+    "recommendation": "Proceed as-is — the prototype is intentionally low-fidelity to validate interaction design before heavier investment"
+  },
+  "initiatives": [
+    {
+      "id": "game-office-layout",
+      "title": "Office Layout Grid + Interactive Furniture",
+      "priority": "P0",
+      "complexity": "moderate",
+      "phases": ["product-spec", "build", "review"],
+      "user_scenario": "The CEO navigates to /game and sees a top-down office layout with labeled desks for each C-suite agent, a conference room, whiteboard, mailbox, and bell — each clickable to reveal relevant data",
+      "cast": {
+        "auditor": "sarah",
+        "product_spec": "marcus",
+        "builder": "riley",
+        "reviewers": ["marcus"]
+      },
+      "scope": "Create the game route at /game in the existing router. Build a GamePage component that renders a top-down office layout using CSS grid and Tailwind. The office contains: CEO corner office (desk with document icon), 5 C-suite agent desks (labeled with agent names and colored indicators), conference room area, whiteboard area, mailbox, and bell. Each element is a clickable div that highlights on hover. Clicking an element opens a side panel showing relevant data from the Zustand store (agent status, directives, reports). The layout should be a fixed-size grid (e.g., 16x12 tiles, each tile ~40px) with furniture placed at specific coordinates. Use a simple tile-based data structure to define the office layout. Include a game-style header bar showing current time, active directive count, and agent count. The page must integrate with the existing AppLayout or optionally render standalone at /game.",
+      "verify": "npx tsc --noEmit && npx vite build",
+      "definition_of_done": [
+        "Route /game exists in router.tsx and renders the GamePage component",
+        "Office layout renders as a visible grid with at least 5 agent desks, CEO desk, conference room, whiteboard, mailbox, and bell — each as distinct clickable elements",
+        "Clicking any agent desk opens a side panel showing that agent's name, role, and current status from the Zustand store (or placeholder if no live data)",
+        "Clicking the whiteboard shows active directives list, clicking mailbox shows recent reports list",
+        "Type-check (npx tsc --noEmit) and build (npx vite build) both pass with zero errors"
+      ]
+    },
+    {
+      "id": "game-state-integration",
+      "title": "Live Data Integration + Interaction Feedback",
+      "priority": "P1",
+      "complexity": "moderate",
+      "phases": ["build", "review"],
+      "user_scenario": "The CEO clicks on Sarah's desk in the game view and sees her actual current session status, active work, and recent activity — live data from the WebSocket, not mock data",
+      "cast": {
+        "auditor": "riley",
+        "builder": "riley",
+        "reviewers": ["marcus"]
+      },
+      "scope": "Wire the game view to real Zustand store data. When the CEO clicks an agent desk, the side panel populates with real session data for that agent (status, current work, model, last activity time). When clicking the whiteboard, show real directive state from the store. When clicking the mailbox, show real reports from the work state. Add visual feedback: agent desks glow green when agent is working, yellow when waiting, gray when idle — driven by session status from the store. Add a minimap or status bar showing counts: X agents active, Y directives in progress, Z reports unread. This initiative depends on the layout from game-office-layout being complete.",
+      "verify": "npx tsc --noEmit && npx vite build",
+      "definition_of_done": [
+        "Agent desk click populates side panel with real session data (agent name, status, model, last activity) from useDashboardStore",
+        "Agent desk visual indicators change based on real session status: green for working, yellow for waiting, gray for idle",
+        "Whiteboard click shows real directive state from the store's directiveState field",
+        "Status bar shows live counts of active agents, in-progress directives, and total sessions",
+        "Type-check (npx tsc --noEmit) and build (npx vite build) both pass with zero errors"
+      ]
+    }
+  ]
+}

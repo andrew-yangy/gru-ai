@@ -4,6 +4,12 @@
   "goal_id": "workflow-orchestration",
   "status": "completed",
   "priority": "p1",
+  "agent": [
+    "self"
+  ],
+  "reviewers": [
+    "sarah"
+  ],
   "description": "Created functional specialist agent definitions with domain-specific expertise and casting logic.",
   "source_directive": "functional-specialist-agents",
   "tags": [],

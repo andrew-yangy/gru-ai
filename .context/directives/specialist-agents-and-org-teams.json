@@ -1,7 +1,7 @@
 {
   "id": "specialist-agents-and-org-teams",
   "title": "Specialist Agents & Org Teams",
-  "status": "pending",
+  "status": "cancelled",
   "source": "ceo",
   "weight": "tactical",
   "created": "2026-03-02T00:00:00Z",
@@ -20,6 +20,6 @@
   "phases": null,
   "cast": null,
   "dod": null,
-  "report_summary": null,
+  "report_summary": "Superseded: specialist agents completed via functional-specialist-agents directive; org teams covered by team-org-dashboard directive.",
   "telemetry": null
 }

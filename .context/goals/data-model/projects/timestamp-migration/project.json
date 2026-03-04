@@ -4,6 +4,12 @@
   "goal_id": "data-model",
   "status": "completed",
   "priority": "p1",
+  "agent": [
+    "self"
+  ],
+  "reviewers": [
+    "sarah"
+  ],
   "description": "All date fields (created, updated, completed, promoted_at) in context JSON files use YYYY-MM-DD format. Migrate to full ISO 8601 timestamps (e.g., 2026-03-03T00:00:00Z) for better UI display and debugging. Update SPEC.md to mandate timestamp format.",
   "scope": {
     "in": [
@@ -18,34 +24,18 @@
   "dod": [
     {
       "criterion": "All created/updated/completed/promoted_at fields in .context/**/*.json use ISO 8601 timestamp format",
-      "met": true,
-      "verified_by": [
-        "self"
-      ]
+      "met": true
     },
     {
       "criterion": "SPEC.md updated to specify ISO 8601 timestamp format for date fields",
-      "met": true,
-      "verified_by": [
-        "self"
-      ]
+      "met": true
     },
     {
       "criterion": "Both agent-conductor and sw repos migrated",
-      "met": true,
-      "verified_by": [
-        "self"
-      ]
+      "met": true
     }
   ],
-  "verify": {
-    "checklist": [
-      "grep for date-only patterns returns 0 matches in .context/**/*.json",
-      "All JSON files remain valid JSON after migration"
-    ],
-    "reviewers": [],
-    "browser_test": false
-  },
+  "browser_test": false,
   "tasks": [
     {
       "id": "t1",
@@ -56,12 +46,10 @@
         "self"
       ],
       "depends_on": [],
-      "acceptance_criteria": null,
-      "verified_by": null,
-      "review_outcome": "pass",
       "output": "Replaced all 'ISO date' references with 'ISO 8601 timestamp (e.g. 2026-03-03T10:30:00Z)' in SPEC.md",
       "created": "2026-03-03T00:00:00Z",
-      "completed": "2026-03-03T00:00:00Z"
+      "completed": "2026-03-03T00:00:00Z",
+      "dod": []
     },
     {
       "id": "t2",
@@ -74,12 +62,10 @@
       "depends_on": [
         "t1"
       ],
-      "acceptance_criteria": null,
-      "verified_by": null,
-      "review_outcome": "pass",
       "output": "234 dates converted in 62 files",
       "created": "2026-03-03T00:00:00Z",
-      "completed": "2026-03-03T00:00:00Z"
+      "completed": "2026-03-03T00:00:00Z",
+      "dod": []
     },
     {
       "id": "t3",
@@ -92,12 +78,10 @@
       "depends_on": [
         "t1"
       ],
-      "acceptance_criteria": null,
-      "verified_by": null,
-      "review_outcome": "pass",
       "output": "1285 dates converted in 86 files",
       "created": "2026-03-03T00:00:00Z",
-      "completed": "2026-03-03T00:00:00Z"
+      "completed": "2026-03-03T00:00:00Z",
+      "dod": []
     },
     {
       "id": "t4",
@@ -111,12 +95,10 @@
         "t2",
         "t3"
       ],
-      "acceptance_criteria": null,
-      "verified_by": null,
-      "review_outcome": "pass",
       "output": "0 date-only patterns remaining across both repos. All JSON files parse successfully.",
       "created": "2026-03-03T00:00:00Z",
-      "completed": "2026-03-03T00:00:00Z"
+      "completed": "2026-03-03T00:00:00Z",
+      "dod": []
     }
   ],
   "created": "2026-03-03T00:00:00Z",

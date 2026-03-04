@@ -1,0 +1,98 @@
+{
+  "review_outcome": "pass",
+  "code_quality": {
+    "issues": [
+      {
+        "file": "src/components/game/OfficeGrid.tsx",
+        "description": "OfficeGrid.tsx is now dead code \u2014 not imported by any active component. GamePage.tsx imports CanvasOffice exclusively. Should be deleted or marked deprecated to avoid confusion.",
+        "severity": "minor"
+      },
+      {
+        "file": "src/components/game/engine/sprites.ts",
+        "line": 121,
+        "description": "renderSpriteCanvas silently returns an empty canvas if getContext('2d') returns null. This is defensive but could mask issues in SSR or test environments. Consider a console.warn.",
+        "severity": "minor"
+      }
+    ],
+    "severity": "minor"
+  },
+  "user_perspective": {
+    "workflow_improvement": "yes",
+    "missing_features": [
+      "At default zoom=1, sprites render at 16x24 CSS pixels inside a 40x40 tile \u2014 recognizable as colored figures but small. Consider using ctx.drawImage(sprite, x, y, scaledW, scaledH) to fill ~75% of the tile, which would make agents immediately recognizable even at zoom=1.",
+      "No agent name labels. The old OfficeGrid showed agent initials (A, S, M, etc.). The sprites replace these with colorful figures, but a new user won't know which color = which agent without hovering or clicking. A tiny name label below the sprite or a tooltip on hover would close this gap.",
+      "Static sprites \u2014 no idle animation (breathing, blinking). The office feels like a still image rather than a living workspace. Not required by scope but is the obvious next step for the CEO 'alive office' feeling."
+    ],
+    "dead_ends": [],
+    "data_integrity": [
+      "Data flow is clean end-to-end: OFFICE_AGENTS (5 agents) \u2192 office-layout agentNameAt() \u2192 renderer renderDesk() \u2192 sprites getAgentSprite() \u2192 cached offscreen canvas \u2192 drawImage. No broken links.",
+      "Agent status dots still work: dashboard sessions \u2192 agentStatuses Record \u2192 STATUS_DOT_COLORS \u2192 rendered top-right of each desk tile.",
+      "Brand color dots (top-left) use AGENT_BRAND_COLORS which correctly match the sprite shirt colors \u2014 visual consistency between dot and sprite."
+    ]
+  },
+  "dod_verification": {
+    "criteria": [
+      {
+        "criterion": "All 5+ named agents render as 16x24 pixel-art sprites \u2014 no letter placeholders remain",
+        "met": true,
+        "evidence": "AGENT_PALETTES defines Alex, Sarah, Morgan, Marcus, Priya (5 named) + generic fallback. renderDesk() calls getAgentSprite(name) and ctx.drawImage() \u2014 no fillText calls for agent letters. The old OfficeGrid with fillText(agentName[0]) is dead code, not imported."
+      },
+      {
+        "criterion": "Each agent has visually distinct color scheme: Alex=blue, Sarah=purple, Morgan=green, Marcus=orange, Priya=pink, generic=gray",
+        "met": true,
+        "evidence": "AGENT_PALETTES shirt colors (index 3): Alex=#3B82F6 (blue), Sarah=#A855F7 (purple), Morgan=#10B981 (green), Marcus=#F97316 (orange), Priya=#EC4899 (pink), generic=#9CA3AF (gray). Hair colors also vary per agent for additional differentiation."
+      },
+      {
+        "criterion": "Sprite rendering wired into TILE_RENDERERS dispatch table \u2014 zero ad-hoc bypasses",
+        "met": true,
+        "evidence": "TILE_RENDERERS.desk = renderDesk (line 200). renderDesk calls getAgentSprite() at line 114. Main render loop at line 275 dispatches exclusively through TILE_RENDERERS[tileType](). No sprite drawing code exists outside this path."
+      },
+      {
+        "criterion": "Per-entity offscreen canvas cache implemented",
+        "met": true,
+        "evidence": "spriteCache = new Map<string, HTMLCanvasElement>() at line 115 of sprites.ts. getAgentSprite() checks cache first (line 150-151), renders to new offscreen canvas only on cache miss (line 153-154), stores result (line 155). clearSpriteCache() exported for edge cases."
+      },
+      {
+        "criterion": "No external asset files (PNG, SVG)",
+        "met": true,
+        "evidence": "sprites.ts generates everything programmatically: SPRITE_TEMPLATE is a number array, palettes are hex color maps, rendering uses fillRect pixel-by-pixel. No file imports, no fetch calls, no asset references anywhere in the file."
+      },
+      {
+        "criterion": "Zoom, pan, click, hover from Project 1 remain functional",
+        "met": true,
+        "evidence": "camera.ts is unmodified. CanvasOffice.tsx wheel handler (line 155-180), drag (line 184-228), click (line 269-294), hover (line 232-266) all intact. render() still draws hover/selection highlights (lines 280-306). imageSmoothingEnabled=false set in ResizeObserver (line 110) ensures crisp pixel-art at all zoom levels."
+      },
+      {
+        "criterion": "npx tsc --noEmit && npx vite build pass with zero errors",
+        "met": true,
+        "evidence": "Ran both commands during review. tsc --noEmit produced no output (clean). vite build completed in 1.65s with no errors or warnings. GamePage chunk is 23.16kB gzipped."
+      }
+    ],
+    "all_met": true
+  },
+  "corrections_check": {
+    "corrections_reviewed": 0,
+    "violations": []
+  },
+  "surfaces_checked": [
+    "src/components/game/engine/sprites.ts \u2014 full file, 165 lines (NEW)",
+    "src/components/game/engine/renderer.ts \u2014 full file, 311 lines, renderDesk drawImage integration",
+    "src/components/game/CanvasOffice.tsx \u2014 full file, render loop, imageSmoothingEnabled, event handlers",
+    "src/components/game/GamePage.tsx \u2014 confirmed CanvasOffice is the active component, not OfficeGrid",
+    "src/components/game/types.ts \u2014 OFFICE_AGENTS array (5 agents), AGENT_CHAR_MAP",
+    "src/components/game/office-layout.ts \u2014 agentNameAt() data flow",
+    "src/components/game/engine/camera.ts \u2014 zoom/pan math unchanged",
+    "src/components/game/engine/types.ts \u2014 CameraState interface unchanged",
+    "src/components/game/OfficeGrid.tsx \u2014 confirmed dead code, not imported anywhere"
+  ],
+  "what_is_missing": [
+    "Sprite doesn't scale to fill the tile. At zoom=1, a 16x24 sprite in a 40x40 tile uses only 40% of the tile width. Using drawImage with destination dimensions (e.g., 28x42 to fill ~70% of the tile) would make agents instantly recognizable without zooming.",
+    "No name tooltips or labels. With letters removed, the only way to identify agents is by memorizing shirt colors. The SidePanel shows agent info on click, but discovery requires prior knowledge of the color mapping.",
+    "Old OfficeGrid.tsx should be deleted. It's dead code that will confuse future engineers about which component is canonical."
+  ],
+  "regression_risks": [
+    "imageSmoothingEnabled is set once in ResizeObserver and preserved across save/restore \u2014 confirmed safe per Canvas 2D spec. No regression risk.",
+    "Sprite cache is a module-level singleton Map. If hot-module-replacement re-evaluates sprites.ts during dev, the cache clears and regenerates lazily \u2014 acceptable behavior, no visual regression.",
+    "OfficeGrid.tsx is still in the bundle (tree-shaking should eliminate it since it's not imported, but worth verifying it's excluded from production chunks)."
+  ]
+}

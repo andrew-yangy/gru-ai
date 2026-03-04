@@ -7,6 +7,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useDashboardStore } from '@/stores/dashboard-store';
 import type { GoalRecord, FeatureRecord, BacklogRecord } from '@/stores/types';
 import { cn } from '@/lib/utils';
+import { API_BASE } from '@/lib/api';
 import {
   FolderKanban,
   ChevronRight,
@@ -41,6 +42,8 @@ function lifecycleBadge(status: string) {
       return <Badge variant="outline" className="bg-status-green/15 text-status-green border-status-green/30 text-[10px] px-1.5 py-0">Completed</Badge>;
     case 'blocked':
       return <Badge variant="outline" className="bg-status-red/15 text-status-red border-status-red/30 text-[10px] px-1.5 py-0">Blocked</Badge>;
+    case 'deferred':
+      return <Badge variant="outline" className="bg-secondary text-muted-foreground/60 border-border text-[10px] px-1.5 py-0">Deferred</Badge>;
     case 'pending':
     default:
       return <Badge variant="outline" className="bg-secondary text-muted-foreground border-border text-[10px] px-1.5 py-0">Pending</Badge>;
@@ -335,7 +338,8 @@ function GoalCard({
   );
   const activeFeatures = features.filter(f => f.status === 'in_progress');
   const doneFeatures = features.filter(f => f.status === 'completed');
-  const otherFeatures = features.filter(f => f.status !== 'in_progress' && f.status !== 'completed');
+  const deferredFeatures = features.filter(f => f.status === 'deferred');
+  const otherFeatures = features.filter(f => f.status !== 'in_progress' && f.status !== 'completed' && f.status !== 'deferred');
   const hasIssues = (goal.issues?.length ?? 0) > 0;
 
   const displayStatus = (features.length === 0 && backlogs.length === 0 && goal.status === 'in_progress')
@@ -365,6 +369,7 @@ function GoalCard({
             </div>
             <div className="flex items-center gap-3 ml-7 text-[10px] text-muted-foreground">
               <span>{activeFeatures.length + otherFeatures.length} open</span>
+              {deferredFeatures.length > 0 && (<><span className="text-border">|</span><span>{deferredFeatures.length} deferred</span></>)}
               <span className="text-border">|</span>
               <span>{doneFeatures.length} done</span>
               <span className="text-border">|</span>
@@ -406,6 +411,16 @@ function GoalCard({
                     </div>
                   )}
                   {doneFeatures.map(f => (
+                    <FeatureRow key={f.id} feature={f} highlighted={f.id === highlightId} />
+                  ))}
+                </div>
+              )}
+              {deferredFeatures.length > 0 && (
+                <div className="space-y-0.5">
+                  <div className="text-[9px] uppercase tracking-wider text-muted-foreground/50 font-medium px-2 pt-1">
+                    Deferred ({deferredFeatures.length})
+                  </div>
+                  {deferredFeatures.map(f => (
                     <FeatureRow key={f.id} feature={f} highlighted={f.id === highlightId} />
                   ))}
                 </div>
@@ -496,6 +511,7 @@ export default function ProjectsPage() {
   const [reportPath, setReportPath] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'in_progress' | 'blocked' | 'completed'>('all');
+  const [repoFilter, setRepoFilter] = useState<string>('all');
   const [searchParams] = useSearchParams();
   const expandGoalId = searchParams.get('expand') ?? undefined;
   const highlightId = searchParams.get('highlight') ?? undefined;
@@ -506,10 +522,10 @@ export default function ProjectsPage() {
     setLoading(true);
     setFetchError(null);
     Promise.all([
-      fetch('http://localhost:4444/api/state/goals').then(r => { if (!r.ok) throw new Error(`Goals: ${r.status}`); return r.json(); }),
-      fetch('http://localhost:4444/api/state/features').then(r => { if (!r.ok) throw new Error(`Features: ${r.status}`); return r.json(); }),
-      fetch('http://localhost:4444/api/state/backlogs').then(r => { if (!r.ok) throw new Error(`Backlogs: ${r.status}`); return r.json(); }),
-      fetch('http://localhost:4444/api/state/conductor').then(r => { if (!r.ok) throw new Error(`Conductor: ${r.status}`); return r.json(); }),
+      fetch( `${API_BASE}/api/state/goals`).then(r => { if (!r.ok) throw new Error(`Goals: ${r.status}`); return r.json(); }),
+      fetch( `${API_BASE}/api/state/features`).then(r => { if (!r.ok) throw new Error(`Features: ${r.status}`); return r.json(); }),
+      fetch( `${API_BASE}/api/state/backlogs`).then(r => { if (!r.ok) throw new Error(`Backlogs: ${r.status}`); return r.json(); }),
+      fetch( `${API_BASE}/api/state/conductor`).then(r => { if (!r.ok) throw new Error(`Conductor: ${r.status}`); return r.json(); }),
     ]).then(([goals, features, backlogs, conductor]) => {
       if (goals?.goals) {
         useDashboardStore.getState().setWorkState({ goals, features, backlogs, conductor, index: null });
@@ -547,12 +563,25 @@ export default function ProjectsPage() {
       lessons,
       generated: workState?.goals?.generated ?? '',
       totalGoals: goals.length,
-      totalActiveFeatures: features.filter(f => f.status !== 'completed').length,
+      totalActiveFeatures: features.filter(f => f.status !== 'completed' && f.status !== 'deferred').length,
       totalBacklog: backlogs.length,
       totalDirectives: directives.length,
       blockedCount: features.filter(f => f.status === 'blocked').length,
     };
   }, [workState]);
+
+  // Unique repos for filter + goal-to-repo mapping
+  const { repos, goalRepoMap } = useMemo(() => {
+    const map = new Map<string, string>();
+    const grMap: Record<string, string> = {};
+    for (const g of goals) {
+      const rid = g.repoId ?? 'unknown';
+      const rname = g.repoName ?? 'Unknown';
+      if (!map.has(rid)) map.set(rid, rname);
+      grMap[g.id] = rid;
+    }
+    return { repos: Array.from(map.entries()), goalRepoMap: grMap };
+  }, [goals]);
 
   // Goal name map for active work section
   const goalNameMap = useMemo(() => {
@@ -577,9 +606,22 @@ export default function ProjectsPage() {
       return true;
     };
 
-    const filteredDirectives = directives.filter(d => matchesSearch(d.title));
+    const filteredDirectives = directives.filter(d => {
+      if (!matchesSearch(d.title)) return false;
+      if (statusFilter !== 'all' && !matchesStatus(d.status)) return false;
+      // Repo filter: match if any of the directive's goalIds belong to the selected repo
+      if (repoFilter !== 'all') {
+        const dGoalIds = d.goalIds ?? [];
+        if (dGoalIds.length === 0) return false;
+        if (!dGoalIds.some(gid => goalRepoMap[gid] === repoFilter)) return false;
+      }
+      return true;
+    });
 
     const filteredGoals = goals.filter(goal => {
+      // Repo filter
+      if (repoFilter !== 'all' && (goal.repoId ?? 'unknown') !== repoFilter) return false;
+
       const goalFeatures = allFeatures.filter(f => f.goalId === goal.id);
       const goalBacklogs = allBacklogs.filter(b => b.goalId === goal.id);
 
@@ -607,7 +649,7 @@ export default function ProjectsPage() {
     });
 
     return { filteredGoals, filteredDirectives, filteredReports, filteredLessons, filteredDiscussions, filteredActiveFeatures };
-  }, [searchQuery, statusFilter, goals, allFeatures, allBacklogs, directives, reports, lessons, discussions, activeFeatures]);
+  }, [searchQuery, statusFilter, repoFilter, goalRepoMap, goals, allFeatures, allBacklogs, directives, reports, lessons, discussions, activeFeatures]);
 
   // Error state
   if (fetchError && !workState?.goals) {
@@ -707,6 +749,38 @@ export default function ProjectsPage() {
             </Badge>
           ))}
         </div>
+        {repos.length > 1 && (
+          <div className="flex items-center gap-1.5">
+            <GitBranch className="h-3 w-3 text-muted-foreground" />
+            <Badge
+              variant="outline"
+              className={cn(
+                "text-[10px] px-2 py-0.5 cursor-pointer transition-colors",
+                repoFilter === 'all'
+                  ? "bg-primary/15 text-primary border-primary/30"
+                  : "text-muted-foreground hover:text-foreground"
+              )}
+              onClick={() => setRepoFilter('all')}
+            >
+              All
+            </Badge>
+            {repos.map(([rid, rname]) => (
+              <Badge
+                key={rid}
+                variant="outline"
+                className={cn(
+                  "text-[10px] px-2 py-0.5 cursor-pointer transition-colors",
+                  repoFilter === rid
+                    ? "bg-primary/15 text-primary border-primary/30"
+                    : "text-muted-foreground hover:text-foreground"
+                )}
+                onClick={() => setRepoFilter(rid)}
+              >
+                {rname}
+              </Badge>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Report Viewer (overlay) */}

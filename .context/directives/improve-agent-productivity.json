@@ -1,11 +1,11 @@
 {
   "id": "improve-agent-productivity",
   "title": "Improve Agent Productivity",
-  "status": "triaged",
+  "status": "completed",
   "created": "2026-03-03",
-  "completed": null,
+  "completed": "2026-03-03T19:50:00Z",
   "weight": "strategic",
-  "goal_ids": ["agent-productivity"],
+  "goal_ids": ["workflow-orchestration"],
   "produced_projects": [],
   "report": null,
   "backlog_sources": []

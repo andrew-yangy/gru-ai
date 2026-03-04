@@ -420,6 +420,7 @@ export class StateWatcher {
       case 'proposed': return 'pending';
       case 'completed': return 'completed';
       case 'blocked': return 'blocked';
+      case 'deferred': return 'deferred';
       case 'abandoned': return 'abandoned';
       default: return 'pending';
     }

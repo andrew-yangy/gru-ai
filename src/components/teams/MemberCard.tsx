@@ -3,6 +3,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Terminal, ExternalLink } from 'lucide-react';
 import { cn, timeAgo } from '@/lib/utils';
+import { API_BASE } from '@/lib/api';
 import type { TeamMember, Session, TeamTask, SessionActivity } from '@/stores/types';
 import QuickActions from '@/components/shared/QuickActions';
 import SendInput from '@/components/shared/SendInput';
@@ -33,7 +34,7 @@ function memberStatusLabel(member: TeamMember, session?: Session): string {
 
 async function handleFocus(paneId: string) {
   try {
-    await fetch('http://localhost:4444/api/actions/focus-session', {
+    await fetch(`${API_BASE}/api/actions/focus-session`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ paneId }),

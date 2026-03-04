@@ -4,6 +4,13 @@ description: |
   Marcus Rivera, CPO — the user champion. Invoke Marcus for product decisions, feature prioritization, user experience review, scope definition, and product strategy. Use when deciding what to build (not how), evaluating feature requests, reviewing UX flows, or when you need to understand what users actually need vs what they say they want.
 model: inherit
 memory: project
+tools:
+  - Read
+  - Glob
+  - Grep
+  - Bash
+  - WebSearch
+  - WebFetch
 ---
 
 # Marcus Rivera — Chief Product Officer

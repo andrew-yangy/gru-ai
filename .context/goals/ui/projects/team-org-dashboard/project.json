@@ -4,7 +4,13 @@
   "goal_id": "ui",
   "status": "proposed",
   "priority": "p2",
-  "description": "Dashboard page showing the org structure — C-suite agents, their domains, standing responsibilities, and current assignments. Visual team groupings.",
+  "agent": [
+    "self"
+  ],
+  "reviewers": [
+    "marcus"
+  ],
+  "description": "Dashboard page showing the org structure \u2014 C-suite agents, their domains, standing responsibilities, and current assignments. Visual team groupings.",
   "source_directive": "team-org-dashboard",
   "scope": {
     "in": [
@@ -20,29 +26,14 @@
   "dod": [
     {
       "criterion": "Org page shows all C-suite agents with their domains and current assignments",
-      "met": false,
-      "verified_by": []
+      "met": false
     },
     {
       "criterion": "Agent cards are clickable and show agent detail (personality summary, recent directives)",
-      "met": false,
-      "verified_by": []
+      "met": false
     }
   ],
-  "verify": {
-    "checklist": [
-      "Navigate to org page — all 6+ agents render with correct domain labels",
-      "Click an agent card — detail panel shows personality summary and last 3 directives",
-      "Verify domain grouping matches .claude/agents/*.md definitions"
-    ],
-    "reviewers": [
-      {
-        "agent": "marcus",
-        "domain": "ux — new product page, information architecture"
-      }
-    ],
-    "browser_test": true
-  },
+  "browser_test": true,
   "tags": [],
   "tasks": [],
   "created": "2026-03-02T00:00:00Z",

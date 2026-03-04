@@ -7,8 +7,9 @@ import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ArrowLeft, Terminal, ExternalLink } from 'lucide-react';
 import { cn, timeAgo, statusBgColor, sessionStatusLabel } from '@/lib/utils';
+import { API_BASE } from '@/lib/api';
 import { useDashboardStore } from '@/stores/dashboard-store';
-import { AGENT_CONFIGS, getAgentConfig } from './agent-config';
+import { AGENT_CONFIGS, CEO_CONFIG, getAgentConfig } from './agent-config';
 import ActivityLine from '@/components/shared/ActivityLine';
 import QuickActions from '@/components/shared/QuickActions';
 import SendInput from '@/components/shared/SendInput';
@@ -16,7 +17,7 @@ import type { Session, SessionActivity, HookEvent } from '@/stores/types';
 
 async function handleFocus(paneId: string) {
   try {
-    await fetch('http://localhost:4444/api/actions/focus-session', {
+    await fetch( `${API_BASE}/api/actions/focus-session`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ paneId }),
@@ -28,19 +29,26 @@ async function handleFocus(paneId: string) {
 
 export default function AgentDetailPage() {
   const { agentId } = useParams<{ agentId: string }>();
-  const config = agentId ? getAgentConfig(agentId) : undefined;
+  const isCeo = agentId === 'ceo';
+  const config = isCeo ? CEO_CONFIG : agentId ? getAgentConfig(agentId) : undefined;
 
   const sessions = useDashboardStore(s => s.sessions);
   const sessionActivities = useDashboardStore(s => s.sessionActivities);
   const events = useDashboardStore(s => s.events);
 
-  // All sessions for this agent
+  // All sessions for this agent (CEO = sessions without a named agent)
+  const namedAgentIds = useMemo(() => new Set(AGENT_CONFIGS.map(a => a.id)), []);
   const agentSessions = useMemo(() => {
     if (!config) return [];
+    if (isCeo) {
+      return sessions.filter(
+        s => !s.isSubagent && (!s.agentName || !namedAgentIds.has(s.agentName.toLowerCase()))
+      );
+    }
     return sessions.filter(
       s => s.agentName?.toLowerCase() === config.id
     );
-  }, [sessions, config]);
+  }, [sessions, config, isCeo, namedAgentIds]);
 
   // Parent sessions (not subagents) for this agent
   const parentSessions = useMemo(

@@ -4,6 +4,12 @@
   "goal_id": "data-model",
   "status": "completed",
   "priority": "p1",
+  "agent": [
+    "self"
+  ],
+  "reviewers": [
+    "sarah"
+  ],
   "description": "Unified status vocabulary across goals, projects, tasks, directives, and backlogs. Replaced active/executing/done with in_progress/completed. Fixed stale project statuses. Updated SPEC, all JSON files in both repos, frontend types, statusColor utility, state-watcher mappings, goal-watcher mappings, and directive SKILL.md pipeline.",
   "scope": {
     "in": [
@@ -20,48 +26,26 @@
   "dod": [
     {
       "criterion": "Zero instances of 'active', 'executing', 'achieved', or 'done' as entity status in JSON files",
-      "met": true,
-      "verified_by": [
-        "self"
-      ]
+      "met": true
     },
     {
       "criterion": "SPEC.md uses in_progress/completed consistently",
-      "met": true,
-      "verified_by": [
-        "self"
-      ]
+      "met": true
     },
     {
       "criterion": "Frontend types and components use unified statuses",
-      "met": true,
-      "verified_by": [
-        "self"
-      ]
+      "met": true
     },
     {
       "criterion": "Type-check passes",
-      "met": true,
-      "verified_by": [
-        "self"
-      ]
+      "met": true
     },
     {
       "criterion": "SKILL.md pipeline uses in_progress instead of executing, and explicitly marks completed projects",
-      "met": true,
-      "verified_by": [
-        "self"
-      ]
+      "met": true
     }
   ],
-  "verify": {
-    "checklist": [
-      "grep for active/executing/done/achieved entity statuses returns 0 in .context/**/*.json",
-      "Type-check passes clean"
-    ],
-    "reviewers": [],
-    "browser_test": true
-  },
+  "browser_test": true,
   "tasks": [
     {
       "id": "t1",
@@ -72,12 +56,10 @@
         "self"
       ],
       "depends_on": [],
-      "acceptance_criteria": null,
-      "verified_by": null,
-      "review_outcome": "pass",
       "output": "Goal: active\u2192in_progress, achieved\u2192completed. Project: active\u2192in_progress. Directive: executing\u2192in_progress. Key Result: achieved\u2192completed.",
       "created": "2026-03-03T00:00:00Z",
-      "completed": "2026-03-03T00:00:00Z"
+      "completed": "2026-03-03T00:00:00Z",
+      "dod": []
     },
     {
       "id": "t2",
@@ -90,12 +72,10 @@
       "depends_on": [
         "t1"
       ],
-      "acceptance_criteria": null,
-      "verified_by": null,
-      "review_outcome": "pass",
       "output": "21 status values migrated (4 in agent-conductor, 17 in sw). 268 done\u2192completed (12+256). 1 stale project fixed (dashboard-glob-reads).",
       "created": "2026-03-03T00:00:00Z",
-      "completed": "2026-03-03T00:00:00Z"
+      "completed": "2026-03-03T00:00:00Z",
+      "dod": []
     },
     {
       "id": "t3",
@@ -108,12 +88,10 @@
       "depends_on": [
         "t1"
       ],
-      "acceptance_criteria": null,
-      "verified_by": null,
-      "review_outcome": "pass",
       "output": "Updated: LifecycleState enum, DirectiveState.status, GoalArea.status, statusColor/statusBgColor, ProjectsPage, DirectivePipeline, OrientationBanner, DirectiveProgress, WorkSummary, CeoBrief, SearchCommandPalette, DashboardPage. All in-progress\u2192in_progress, done\u2192completed for entity statuses.",
       "created": "2026-03-03T00:00:00Z",
-      "completed": "2026-03-03T00:00:00Z"
+      "completed": "2026-03-03T00:00:00Z",
+      "dod": []
     },
     {
       "id": "t4",
@@ -126,12 +104,10 @@
       "depends_on": [
         "t2"
       ],
-      "acceptance_criteria": null,
-      "verified_by": null,
-      "review_outcome": "pass",
       "output": "SKILL.md: executing\u2192in_progress, added explicit instruction to mark projects completed when all tasks done. State-watcher: updated all mapping functions. Goal-watcher: removed done/in-progress legacy aliases.",
       "created": "2026-03-03T00:00:00Z",
-      "completed": "2026-03-03T00:00:00Z"
+      "completed": "2026-03-03T00:00:00Z",
+      "dod": []
     }
   ],
   "created": "2026-03-03T00:00:00Z",

@@ -1,0 +1,36 @@
+{
+  "id": "redesign-pipeline-steps",
+  "title": "Redesign Pipeline Steps",
+  "status": "awaiting_approval",
+  "source": "ceo",
+  "weight": "strategic",
+  "created": "2026-03-03T23:00:00Z",
+  "updated": "2026-03-03T23:22:00Z",
+  "completed": null,
+  "triage": {
+    "action": "create_project",
+    "goal_id": "workflow-orchestration",
+    "project_id": "redesign-pipeline-steps",
+    "task_ids": [],
+    "secondary_goal_ids": [],
+    "rationale": "Redesign brainstorm, audit, casting, and DOD pipeline steps to be more deliberative and mechanically enforceable",
+    "requires_ceo_approval": true
+  },
+  "plan": {
+    "initiatives_count": 5,
+    "plan_artifact": ".context/goals/workflow-orchestration/projects/redesign-pipeline-steps/plan-for-approval.md"
+  },
+  "phases": null,
+  "cast": null,
+  "dod": [
+    "Brainstorm fires on all heavyweight + strategic directives, with deliberation for strategic only",
+    "Audit split into Investigator (pure data) + Architect (design) as two agents",
+    "Auditor upgraded from haiku to opus",
+    "validate-cast.sh mechanically checks casting rules after Morgan's plan",
+    "DOD enforcement in Stop hook blocks if any initiative has unmet DOD criteria",
+    "SKILL.md routing table updated with all new docs",
+    "All changes in SKILL.md, agent definitions, hook scripts, and pipeline docs"
+  ],
+  "report_summary": null,
+  "telemetry": null
+}

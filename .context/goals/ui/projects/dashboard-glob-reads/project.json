@@ -4,6 +4,13 @@
   "goal_id": "ui",
   "status": "completed",
   "priority": "p0",
+  "agent": [
+    "alex"
+  ],
+  "reviewers": [
+    "marcus",
+    "sarah"
+  ],
   "sequence": 1,
   "depends_on_project": "data-model/context-tree-redesign",
   "description": "After the context tree migration, the dashboard server still reads from deleted/renamed paths (state/, inbox/, done/, intelligence/, lessons.md, backlog.md, features/active/done/). Rewrite ALL server, script, MCP, and frontend code to glob source files directly from the new structure. Kill the indexer (index-state.ts) \u2014 dashboard reads goal.json, project.json, directive.json, backlog.json directly.",
@@ -26,51 +33,22 @@
   "dod": [
     {
       "criterion": "Dashboard loads and renders all 3 pages (dashboard, projects, insights) with real data from .context/",
-      "met": false,
-      "verified_by": []
+      "met": false
     },
     {
       "criterion": "Zero references to state/, inbox/, done/, intelligence/, backlog.md, features/ in server/, scripts/, mcp-server/",
-      "met": true,
-      "verified_by": [
-        "alex"
-      ]
+      "met": true
     },
     {
       "criterion": "MCP tools (status, backlog, directive) return correct data from new paths",
-      "met": true,
-      "verified_by": [
-        "alex"
-      ]
+      "met": true
     },
     {
       "criterion": "Foreman scheduler can find and launch directives from directives/ directory",
-      "met": true,
-      "verified_by": [
-        "alex"
-      ]
+      "met": true
     }
   ],
-  "verify": {
-    "checklist": [
-      "Dashboard renders goals with correct active/completed project counts",
-      "Projects page shows project.json tasks with completion percentages",
-      "Directives page lists all directives with correct status from directive.json",
-      "MCP `conductor-status` tool returns goal/project/directive counts matching filesystem",
-      "Foreman discovers pending directives and triggers launch"
-    ],
-    "reviewers": [
-      {
-        "agent": "sarah",
-        "domain": "architecture \u2014 server rewrite, watcher integration, API shape"
-      },
-      {
-        "agent": "marcus",
-        "domain": "ux \u2014 dashboard renders correctly, CEO workflow intact"
-      }
-    ],
-    "browser_test": true
-  },
+  "browser_test": true,
   "tags": [
     "migration",
     "server",
@@ -86,15 +64,10 @@
         "alex"
       ],
       "depends_on": [],
-      "acceptance_criteria": null,
-      "verified_by": [
-        "sarah",
-        "marcus"
-      ],
-      "review_outcome": "pass",
       "output": "Added hasGoalJson, category to GoalRecord schema",
       "created": "2026-03-03T00:00:00Z",
-      "completed": "2026-03-03T00:00:00Z"
+      "completed": "2026-03-03T00:00:00Z",
+      "dod": []
     },
     {
       "id": "t2",
@@ -107,15 +80,10 @@
       "depends_on": [
         "t1"
       ],
-      "acceptance_criteria": null,
-      "verified_by": [
-        "sarah",
-        "marcus"
-      ],
-      "review_outcome": "pass",
       "output": "Full rewrite: reads source files directly, builds FullWorkState via glob pattern",
       "created": "2026-03-03T00:00:00Z",
-      "completed": "2026-03-03T00:00:00Z"
+      "completed": "2026-03-03T00:00:00Z",
+      "dod": []
     },
     {
       "id": "t3",
@@ -128,15 +96,10 @@
       "depends_on": [
         "t2"
       ],
-      "acceptance_criteria": null,
-      "verified_by": [
-        "sarah",
-        "marcus"
-      ],
-      "review_outcome": "pass",
       "output": "Removed ContextWatcher import and instantiation from server/index.ts",
       "created": "2026-03-03T00:00:00Z",
-      "completed": "2026-03-03T00:00:00Z"
+      "completed": "2026-03-03T00:00:00Z",
+      "dod": []
     },
     {
       "id": "t4",
@@ -149,15 +112,10 @@
       "depends_on": [
         "t1"
       ],
-      "acceptance_criteria": null,
-      "verified_by": [
-        "sarah",
-        "marcus"
-      ],
-      "review_outcome": "pass",
       "output": "Full rewrite: reads goal.json, project.json, backlog.json directly",
       "created": "2026-03-03T00:00:00Z",
-      "completed": "2026-03-03T00:00:00Z"
+      "completed": "2026-03-03T00:00:00Z",
+      "dod": []
     },
     {
       "id": "t5",
@@ -171,15 +129,10 @@
         "t1",
         "t2"
       ],
-      "acceptance_criteria": null,
-      "verified_by": [
-        "sarah",
-        "marcus"
-      ],
-      "review_outcome": "pass",
       "output": "Rewrote findInboxWork, findBacklogWork, checkTriggerFired, foremanLaunch",
       "created": "2026-03-03T00:00:00Z",
-      "completed": "2026-03-03T00:00:00Z"
+      "completed": "2026-03-03T00:00:00Z",
+      "dod": []
     },
     {
       "id": "t6",
@@ -192,15 +145,10 @@
       "depends_on": [
         "t2"
       ],
-      "acceptance_criteria": null,
-      "verified_by": [
-        "sarah",
-        "marcus"
-      ],
-      "review_outcome": "pass",
       "output": "Updated parseConductorArtifacts to read flat directives/, intel/ path, added triaged/completed status mapping",
       "created": "2026-03-03T00:00:00Z",
-      "completed": "2026-03-03T00:00:00Z"
+      "completed": "2026-03-03T00:00:00Z",
+      "dod": []
     },
     {
       "id": "t7",
@@ -213,15 +161,10 @@
       "depends_on": [
         "t1"
       ],
-      "acceptance_criteria": null,
-      "verified_by": [
-        "sarah",
-        "marcus"
-      ],
-      "review_outcome": "pass",
       "output": "Rewrote findReadyWork (JSON reads), checkTrigger (directives/ check), launchDirective (lessons/ path), removed markdown backlog parsing",
       "created": "2026-03-03T00:00:00Z",
-      "completed": "2026-03-03T00:00:00Z"
+      "completed": "2026-03-03T00:00:00Z",
+      "dod": []
     },
     {
       "id": "t8",
@@ -232,15 +175,10 @@
         "alex"
       ],
       "depends_on": [],
-      "acceptance_criteria": null,
-      "verified_by": [
-        "sarah",
-        "marcus"
-      ],
-      "review_outcome": "pass",
       "output": "Updated .context/conductor/intelligence -> .context/intel, proposals.log -> intel/proposals.log",
       "created": "2026-03-03T00:00:00Z",
-      "completed": "2026-03-03T00:00:00Z"
+      "completed": "2026-03-03T00:00:00Z",
+      "dod": []
     },
     {
       "id": "t9",
@@ -253,15 +191,10 @@
       "depends_on": [
         "t1"
       ],
-      "acceptance_criteria": null,
-      "verified_by": [
-        "sarah",
-        "marcus"
-      ],
-      "review_outcome": "pass",
       "output": "Full rewrite of status.ts, backlog.ts, directive.ts to read from source files directly",
       "created": "2026-03-03T00:00:00Z",
-      "completed": "2026-03-03T00:00:00Z"
+      "completed": "2026-03-03T00:00:00Z",
+      "dod": []
     },
     {
       "id": "t10",
@@ -272,15 +205,10 @@
         "alex"
       ],
       "depends_on": [],
-      "acceptance_criteria": null,
-      "verified_by": [
-        "sarah",
-        "marcus"
-      ],
-      "review_outcome": "pass",
       "output": "Updated scaffoldContext to create directives/, reports/, intel/, lessons/ instead of conductor/inbox/done/",
       "created": "2026-03-03T00:00:00Z",
-      "completed": "2026-03-03T00:00:00Z"
+      "completed": "2026-03-03T00:00:00Z",
+      "dod": []
     },
     {
       "id": "t11",
@@ -293,15 +221,10 @@
       "depends_on": [
         "t5"
       ],
-      "acceptance_criteria": null,
-      "verified_by": [
-        "sarah",
-        "marcus"
-      ],
-      "review_outcome": "pass",
       "output": "Added hasGoalJson and category to src/stores/types.ts GoalRecord",
       "created": "2026-03-03T00:00:00Z",
-      "completed": "2026-03-03T00:00:00Z"
+      "completed": "2026-03-03T00:00:00Z",
+      "dod": []
     },
     {
       "id": "t12",
@@ -323,15 +246,10 @@
         "t10",
         "t11"
       ],
-      "acceptance_criteria": null,
-      "verified_by": [
-        "sarah",
-        "marcus"
-      ],
-      "review_outcome": "pass",
       "output": "npx tsc --noEmit: clean, npx vite build: clean (1.65s)",
       "created": "2026-03-03T00:00:00Z",
-      "completed": "2026-03-03T00:00:00Z"
+      "completed": "2026-03-03T00:00:00Z",
+      "dod": []
     }
   ],
   "created": "2026-03-03T00:00:00Z",

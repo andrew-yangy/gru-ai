@@ -23,6 +23,7 @@ import {
   Zap,
 } from 'lucide-react';
 import type { WorkItem, SearchResult, FeatureRecord, GoalRecord } from '@/stores/types';
+import { API_BASE } from '@/lib/api';
 
 // ---------------------------------------------------------------------------
 // Type icon helper
@@ -158,7 +159,7 @@ export default function SearchCommandPalette() {
     debounceRef.current = setTimeout(() => {
       const controller = new AbortController();
       abortRef.current = controller;
-      fetch(`http://localhost:4444/api/state/search?q=${encodeURIComponent(q)}`, {
+      fetch(`${API_BASE}/api/state/search?q=${encodeURIComponent(q)}`, {
         signal: controller.signal,
       })
         .then(res => res.json())

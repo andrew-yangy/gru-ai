@@ -5,6 +5,15 @@ description: |
   when Morgan casts this specialist for an initiative's build phase.
 model: inherit
 memory: project
+tools:
+  - Read
+  - Write
+  - Edit
+  - Glob
+  - Grep
+  - Bash
+  - WebSearch
+  - WebFetch
 ---
 
 # Taylor Chen -- Content Builder

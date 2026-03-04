@@ -1,14 +1,423 @@
 {
   "id": "improve-agent-productivity",
-  "title": "Improve Agent Productivity — Reduce Overhead, Enable Parallelism, SDK Migration",
+  "title": "SKILL.md Restructure + Agent Productivity Optimization",
   "goal_id": "workflow-orchestration",
-  "status": "proposed",
+  "status": "completed",
   "priority": "p0",
-  "description": "Strategic initiative to improve agent orchestration productivity. Phased approach: (1) reduce Alex's scope with named subagents, (2) enable parallel execution, (3) optimize token usage, (4) migrate to Claude Agent SDK deterministic orchestration. Awaiting CEO approval.",
+  "agent": [
+    "self"
+  ],
+  "reviewers": [
+    "morgan",
+    "sarah"
+  ],
+  "description": "Two-phase overhaul: (1) Restructure SKILL.md monolith (1390 lines / 75KB) into routing map + modular docs \u2014 enabler for everything else. (2) Optimize agent orchestration: thin Alex, named subagents, parallel execution, token optimization. CC-native first, SDK deferred.",
   "source_directive": "improve-agent-productivity",
-  "tags": ["orchestration", "agent-sdk", "performance", "strategic"],
-  "tasks": [],
-  "created": "2026-03-03T00:00:00Z",
-  "updated": "2026-03-03T00:00:00Z",
-  "completed": null
+  "scope": {
+    "in": [
+      "Split SKILL.md into routing map (<150 lines) + docs/pipeline/*.md + docs/reference/*.md",
+      "Create named subagent definitions (auditor, builder, reviewer) with scoped tools",
+      "Build deterministic shell scripts for mechanical tasks (classify, read-context, checkpoint)",
+      "Enable parallel execution for brainstorm, challenge, and independent initiatives",
+      "Token optimization via tool scoping and model routing across all agents",
+      "Update Alex spawn prompt to reference routing map instead of inlining full SKILL.md"
+    ],
+    "out": [
+      "Changing pipeline logic or step ordering",
+      "Adding new steps or features",
+      "Agent SDK migration (deferred)",
+      "Dashboard changes"
+    ]
+  },
+  "dod": [
+    {
+      "criterion": "SKILL.md is <150 lines with only routing logic + file references",
+      "met": true
+    },
+    {
+      "criterion": "Every step exists in exactly one docs/pipeline/*.md file",
+      "met": true
+    },
+    {
+      "criterion": "All schemas/templates/rules in docs/reference/*.md",
+      "met": true
+    },
+    {
+      "criterion": "Zero content loss \u2014 concatenated docs match original",
+      "met": true
+    },
+    {
+      "criterion": "Named subagent definitions exist with scoped tools",
+      "met": true
+    },
+    {
+      "criterion": "Deterministic scripts handle classification, context, checkpoints",
+      "met": true
+    },
+    {
+      "criterion": "Brainstorm + challenge phases spawn agents in parallel",
+      "met": true
+    },
+    {
+      "criterion": "50%+ reduction in per-agent spawn token overhead",
+      "met": true
+    }
+  ],
+  "browser_test": false,
+  "tags": [
+    "harness-engineering",
+    "skill-architecture",
+    "enabler",
+    "orchestration",
+    "performance"
+  ],
+  "tasks": [
+    {
+      "id": "0.1-extract-pipeline-docs",
+      "title": "Extract pipeline step docs from SKILL.md",
+      "status": "completed",
+      "priority": "p0",
+      "project": "skill-md-restructure",
+      "batch": 0,
+      "complexity": "moderate",
+      "phases": [
+        "design",
+        "clarification",
+        "build",
+        "review"
+      ],
+      "cast": {
+        "auditor": "sarah",
+        "designer": "sarah",
+        "builder": "engineer",
+        "reviewers": [
+          "sarah"
+        ]
+      },
+      "scope": "Analyze SKILL.md and identify natural split boundaries. Extract into 10 docs/pipeline/ files. Steps 0a+0b MUST stay grouped (triage drives routing), Step 5 splits into 3 docs (execution-phases, review-protocol, execution-lifecycle). Checkpoint Protocol \u2192 reference docs.",
+      "active_files": [
+        ".claude/skills/directive/SKILL.md",
+        ".claude/skills/directive/docs/pipeline/"
+      ],
+      "definition_of_done": [
+        "10 pipeline docs exist under docs/pipeline/ covering all steps",
+        "Steps 0a+0b grouped in one doc",
+        "Step 5 split into 3 docs",
+        "Each doc has verification marker comment at top",
+        "Each doc self-contained for its execution phase"
+      ],
+      "dod": [],
+      "agent": []
+    },
+    {
+      "id": "0.2-extract-reference-docs",
+      "title": "Extract reference docs (schemas, templates, rules) from SKILL.md",
+      "status": "completed",
+      "priority": "p0",
+      "project": "skill-md-restructure",
+      "batch": 0,
+      "complexity": "simple",
+      "phases": [
+        "build",
+        "review"
+      ],
+      "cast": {
+        "auditor": "sarah",
+        "builder": "engineer",
+        "reviewers": [
+          "sarah"
+        ]
+      },
+      "scope": "Extract 7 schemas, 5 templates, 4 rules files into docs/reference/ subdirs. Morgan's prompt casting rules + phase definitions become shared reference docs used by both planning and execution pipeline docs.",
+      "active_files": [
+        ".claude/skills/directive/SKILL.md",
+        ".claude/skills/directive/docs/reference/"
+      ],
+      "definition_of_done": [
+        "7 schema files in docs/reference/schemas/",
+        "5 template files in docs/reference/templates/",
+        "4 rules files in docs/reference/rules/",
+        "Morgan's casting rules extracted as shared reference",
+        "Reviewer prompts consolidated into single template"
+      ],
+      "dod": [],
+      "agent": []
+    },
+    {
+      "id": "0.3-build-routing-map",
+      "title": "Build SKILL.md routing map and update Alex spawn prompt",
+      "status": "completed",
+      "priority": "p0",
+      "project": "skill-md-restructure",
+      "batch": 1,
+      "complexity": "moderate",
+      "phases": [
+        "build",
+        "review"
+      ],
+      "cast": {
+        "auditor": "sarah",
+        "builder": "engineer",
+        "reviewers": [
+          "sarah"
+        ]
+      },
+      "scope": "Replace SKILL.md from Step 0b onward with routing table (step ID, purpose, file path, deps). Update Step 0a spawn template from ~68KB inline \u2192 ~500 byte reference. alex-cos.md unchanged.",
+      "active_files": [
+        ".claude/skills/directive/SKILL.md"
+      ],
+      "definition_of_done": [
+        "SKILL.md is <150 lines",
+        "Routing table covers every pipeline doc + dependencies",
+        "Step 0a spawn template references routing map",
+        "Each routing entry includes verification marker",
+        "'How to Use This Map' section for Alex"
+      ],
+      "dod": [],
+      "agent": []
+    },
+    {
+      "id": "0.4-content-integrity-verification",
+      "title": "Verify zero content loss across the restructure",
+      "status": "completed",
+      "priority": "p0",
+      "project": "skill-md-restructure",
+      "batch": 2,
+      "complexity": "simple",
+      "phases": [
+        "build",
+        "review"
+      ],
+      "cast": {
+        "builder": "engineer",
+        "reviewers": [
+          "sarah",
+          "morgan"
+        ]
+      },
+      "scope": "Write verification script checking 58 headings, 7 JSON schemas, ~40 code blocks. Distinguish real headings from template headings inside code blocks. Run and fix any gaps.",
+      "active_files": [
+        ".claude/skills/directive/docs/verify-integrity.sh"
+      ],
+      "definition_of_done": [
+        "Verification script passes with zero MISSING/DUPLICATE headings",
+        "Word count delta <5% between original and concatenated docs",
+        "All JSON schemas accounted for"
+      ],
+      "dod": [],
+      "agent": []
+    },
+    {
+      "id": "1.1-role-subagent-defs",
+      "title": "Create Role-Specific Subagent Definitions",
+      "status": "completed",
+      "priority": "p0",
+      "project": "scope-reduction",
+      "batch": 3,
+      "complexity": "moderate",
+      "phases": [
+        "design",
+        "build",
+        "review"
+      ],
+      "cast": {
+        "auditor": "sarah",
+        "builder": "engineer",
+        "reviewers": [
+          "sarah",
+          "morgan"
+        ]
+      },
+      "scope": "Create auditor.md, builder.md, reviewer.md in .claude/agents/ with scoped tools, appropriate model, and minimal 2-3KB prompts",
+      "active_files": [
+        ".claude/agents/auditor.md",
+        ".claude/agents/builder.md",
+        ".claude/agents/reviewer.md"
+      ],
+      "definition_of_done": [
+        "Three new agent files exist at .claude/agents/auditor.md, builder.md, reviewer.md",
+        "Each file has tools: field restricting to role-appropriate tools only",
+        "Each file has model: field (haiku for auditor, inherit for builder/reviewer)",
+        "Each system prompt is under 3KB",
+        "Prompts include role-specific instructions"
+      ],
+      "dod": [],
+      "agent": []
+    },
+    {
+      "id": "1.2-deterministic-scripts",
+      "title": "Create Deterministic Shell Scripts",
+      "status": "completed",
+      "priority": "p0",
+      "project": "scope-reduction",
+      "batch": 3,
+      "complexity": "simple",
+      "phases": [
+        "build",
+        "review"
+      ],
+      "cast": {
+        "builder": "jordan",
+        "reviewers": [
+          "sarah"
+        ]
+      },
+      "scope": "Create classify-directive.sh, read-context.sh, checkpoint.sh in scripts/ for weight classification, context assembly, and checkpoint CRUD",
+      "active_files": [
+        "scripts/classify-directive.sh",
+        "scripts/read-context.sh",
+        "scripts/checkpoint.sh"
+      ],
+      "definition_of_done": [
+        "Three executable scripts exist in scripts/",
+        "classify-directive.sh accepts directive name, outputs JSON with weight",
+        "read-context.sh accepts role parameter, outputs assembled context",
+        "checkpoint.sh supports init/update-step/update-initiative/read subcommands",
+        "All scripts have usage documentation in comments"
+      ],
+      "dod": [],
+      "agent": []
+    },
+    {
+      "id": "1.3-slim-alex",
+      "title": "Slim Alex's Personality + Add Tools Restriction",
+      "status": "completed",
+      "priority": "p0",
+      "project": "scope-reduction",
+      "batch": 4,
+      "complexity": "simple",
+      "phases": [
+        "build",
+        "review"
+      ],
+      "cast": {
+        "builder": "engineer",
+        "reviewers": [
+          "morgan"
+        ]
+      },
+      "scope": "Add tools: restriction to alex-cos.md (no Write/Edit), trim personality to coordination-only, update modular pipeline docs to reference new role agents",
+      "active_files": [
+        ".claude/agents/alex-cos.md",
+        ".claude/skills/directive/docs/pipeline/"
+      ],
+      "definition_of_done": [
+        "alex-cos.md has tools: field excluding Write and Edit",
+        "alex-cos.md is under 5KB",
+        "Pipeline docs reference subagent_type: auditor/builder/reviewer for generic work"
+      ],
+      "dod": [],
+      "agent": []
+    },
+    {
+      "id": "2.1-parallel-brainstorm",
+      "title": "Parallel Brainstorm Spawning",
+      "status": "completed",
+      "priority": "p0",
+      "project": "parallel-execution",
+      "batch": 5,
+      "complexity": "simple",
+      "phases": [
+        "build",
+        "review"
+      ],
+      "cast": {
+        "builder": "engineer",
+        "reviewers": [
+          "morgan"
+        ]
+      },
+      "scope": "Update pipeline docs for brainstorm and challenge phases to use run_in_background: true, add collection pattern and error handling",
+      "active_files": [
+        ".claude/skills/directive/docs/pipeline/"
+      ],
+      "definition_of_done": [
+        "Brainstorm phase includes run_in_background: true in spawn templates",
+        "Challenge phase includes run_in_background: true",
+        "Collection pattern documented after each parallel spawn section",
+        "Error handling for failed background agents documented"
+      ],
+      "dod": [],
+      "agent": []
+    },
+    {
+      "id": "2.2-parallel-initiatives",
+      "title": "Parallel Initiative Execution",
+      "status": "completed",
+      "priority": "p0",
+      "project": "parallel-execution",
+      "batch": 5,
+      "complexity": "moderate",
+      "phases": [
+        "design",
+        "build",
+        "review"
+      ],
+      "cast": {
+        "designer": "sarah",
+        "builder": "engineer",
+        "reviewers": [
+          "sarah",
+          "morgan"
+        ]
+      },
+      "scope": "Update execution pipeline docs for parallel initiative execution based on non-overlapping active_files, add parallelism analysis, update current.json schema, document pattern",
+      "active_files": [
+        ".claude/skills/directive/docs/pipeline/",
+        ".context/lessons/orchestration.md"
+      ],
+      "definition_of_done": [
+        "Execution pipeline doc includes parallelism analysis logic",
+        "Non-overlapping initiatives spawn with run_in_background: true",
+        "Error recovery documented for failed parallel initiatives",
+        "lessons/orchestration.md updated with parallel execution pattern"
+      ],
+      "dod": [],
+      "agent": []
+    },
+    {
+      "id": "3.1-tools-model-all-agents",
+      "title": "Add Tools and Model Routing to All Existing Agents",
+      "status": "completed",
+      "priority": "p1",
+      "project": "token-optimization",
+      "batch": 6,
+      "complexity": "moderate",
+      "phases": [
+        "build",
+        "review"
+      ],
+      "cast": {
+        "builder": "engineer",
+        "reviewers": [
+          "sarah"
+        ]
+      },
+      "scope": "Add tools: field to all 10 existing agent definitions with role-appropriate restrictions. C-suite gets read-only, specialists get write tools. Biggest single token savings (~60% reduction).",
+      "active_files": [
+        ".claude/agents/sarah-cto.md",
+        ".claude/agents/morgan-coo.md",
+        ".claude/agents/marcus-cpo.md",
+        ".claude/agents/priya-cmo.md",
+        ".claude/agents/alex-cos.md",
+        ".claude/agents/riley-frontend.md",
+        ".claude/agents/jordan-backend.md",
+        ".claude/agents/casey-data.md",
+        ".claude/agents/taylor-content.md",
+        ".claude/agents/sam-qa.md"
+      ],
+      "definition_of_done": [
+        "All 10 agent definitions have tools: field with role-appropriate restrictions",
+        "C-suite agents restricted from Write/Edit unless role requires it",
+        "Priya retains WebSearch/WebFetch",
+        "Sam (QA) has Bash but no Write/Edit",
+        "Token reduction documented"
+      ],
+      "dod": [],
+      "agent": []
+    }
+  ],
+  "created": "2026-03-03T06:30:00Z",
+  "updated": "2026-03-03T19:50:00Z",
+  "completed": "2026-03-03T19:50:00Z"
 }

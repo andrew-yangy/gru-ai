@@ -61,24 +61,29 @@ An autonomous AI company framework. See `.context/vision.md` for the full vision
 - Projects discovered via glob: `goals/*/projects/*/project.json`
 - No indexer or computed state files -- read source files directly
 
-## Three Goals
+## Four Goals
 
 | Goal | Domain |
 |------|--------|
 | `data-model` | Context tree structure, entity schemas, relationships |
 | `workflow-orchestration` | Directive pipeline, skills, agent casting, checkpoint/resume, telemetry, review quality |
 | `ui` | Dashboard app, watchers, visualizations, CEO experience |
+| `game` | Office simulation game — pixel-art CEO interface, React + Canvas 2D, separate from dashboard |
 
 ## Lessons Routing
 
 | Role | Read These |
 |------|-----------|
 | All agents | lessons/agent-behavior.md |
-| Morgan, Alex (planning/execution) | lessons/orchestration.md |
+| Morgan (planning/orchestration) | lessons/orchestration.md |
 | Sarah (review/audit) | lessons/review-quality.md |
 | Engineers | lessons/skill-design.md |
 | Dashboard/state work | lessons/state-management.md |
 | Scenario walkthroughs | lessons/scenarios.md |
+
+## Pipeline Enforcement
+- **ALL work goes through the `/directive` pipeline.** The pipeline is weight-adaptive: lightweight tasks skip Morgan/C-suite/approval and run fast; heavyweight gets the full process. No need to bypass it.
+- NEVER spawn builder/engineer agents directly. Use `/directive` which handles reviews, scope, and completion verification. Bypassing the pipeline = bypassing all guardrails.
 
 ## Git Operations
 NEVER perform git operations without explicit user approval.

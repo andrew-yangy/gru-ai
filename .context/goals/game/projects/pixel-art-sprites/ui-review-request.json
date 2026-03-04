@@ -1,0 +1,33 @@
+{
+  "project_id": "pixel-art-sprites",
+  "type": "ui-review",
+  "status": "pending",
+  "requested_by": "alex",
+  "date": "2026-03-04",
+  "route": "/game",
+  "description": "Verify pixel-art sprites render correctly in the office simulation game at /game (HQ). Both character sprites and environment sprites have been replaced from text/emoji placeholders to programmatic Canvas 2D drawings.",
+  "checklist": [
+    "Navigate to /game -- office grid loads with all 10 tile types visible",
+    "Five agent desks show pixel-art sitting figures (not letters A/S/M/X/P)",
+    "Agent colors are distinguishable: Alex=blue, Sarah=purple, Morgan=green, Marcus=orange, Priya=pink",
+    "Floor tiles show subtle grout-line grid pattern (faint cross dividing into quadrants)",
+    "Wall tiles show brick bond pattern with baseboard stripe at bottom",
+    "CEO desk shows mahogany desk with monitor and gold star accents",
+    "Conference tiles show wood table with 6 chair indicator squares",
+    "Whiteboard shows frame with colored sticky notes and marker tray",
+    "Mailbox shows blue post box with red flag",
+    "Bell shows stacked-rect dome shape with handle",
+    "Server room shows dark rack with vent lines and green/amber LED dots",
+    "Door shows wooden door with panels and gold doorknob",
+    "Zoom in (scroll wheel) -- pixel art scales crisply at 2x and 4x (no blurring)",
+    "Pan (click + drag) still works",
+    "Click on interactive tiles still opens side panel",
+    "Hover highlights still appear on interactive tiles"
+  ],
+  "marcus_review_notes": [
+    "CEO desk has no status/sprite system (intentional -- it is the player's desk)",
+    "No chair-back behind sitting characters (cosmetic gap for future polish)",
+    "Floor grout lines may appear thick at 4x zoom (known, not a blocker)",
+    "Conference tile shows no occupancy state (acceptable for v1)"
+  ]
+}

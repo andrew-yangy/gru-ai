@@ -1,0 +1,94 @@
+{
+  "initiatives": [
+    {
+      "id": "brainstorm-expansion",
+      "baseline": "Brainstorm exists in 00-delegation-and-triage.md (strategic process section, 13 occurrences). Currently fires for strategic only. No deliberation round. Brainstorm participants are C-suite only (Sarah, Marcus, Priya). Brainstorm prompt template is 26 lines, schema is 13 lines. Heavyweight process section already has a brainstorm paragraph referencing 'same brainstorm process as strategic' but without the full spawn pattern.",
+      "active_files": [
+        ".claude/skills/directive/docs/pipeline/00-delegation-and-triage.md",
+        ".claude/skills/directive/docs/reference/templates/brainstorm-prompt.md",
+        ".claude/skills/directive/docs/reference/schemas/brainstorm-output.md",
+        ".claude/skills/directive/docs/pipeline/05-morgan-planning.md"
+      ],
+      "dead_code": [],
+      "findings": "The heavyweight process section (line 117-121 of 00-delegation-and-triage.md) already says brainstorm is 'mandatory for heavyweight' and references the same process as strategic. But the implementation is inconsistent: the strategic section has detailed spawn patterns with `model: sonnet` and `run_in_background: true` code blocks, while the heavyweight section only has a paragraph summary. The brainstorm prompt template has no deliberation/rebuttal mechanism. The schema has no rebuttal fields. The auditor is not listed as a participant anywhere in the brainstorm sections.",
+      "recommended_approach": "1. Unify the heavyweight brainstorm section to use the same detailed spawn pattern as strategic (don't just reference it — include it or extract to a shared section). 2. Add deliberation round to brainstorm-prompt.md with a conditional: 'If this is a strategic directive, after collecting initial proposals, share all proposals with each agent and ask for one rebuttal.' 3. Add rebuttal fields to brainstorm-output.md schema. 4. Add auditor to the participant list in both strategic and heavyweight sections of 00-delegation-and-triage.md. 5. Add strategic-only deliberation instructions to the triage doc.",
+      "follow_ups": [
+        {
+          "action": "Consider extracting brainstorm spawn pattern into a shared section referenced by both strategic and heavyweight, to avoid duplication",
+          "risk": "low",
+          "rationale": "DRY improvement, no behavioral change",
+          "files": [".claude/skills/directive/docs/pipeline/00-delegation-and-triage.md"]
+        }
+      ]
+    },
+    {
+      "id": "audit-investigation-design-split",
+      "baseline": "Current audit is a single step (06-technical-audit.md, 30 lines). Uses one agent with auditor.md (model: haiku, 61 lines). Auditor prompt template (53 lines) combines investigation + design recommendation in one output. Audit output schema (28 lines) has both `active_files`/`dead_code` (investigation) and `recommended_approach` (design) in one flat structure. No investigator.md or architect-prompt.md exist.",
+      "active_files": [
+        ".claude/skills/directive/docs/pipeline/06-technical-audit.md",
+        ".claude/skills/directive/docs/reference/templates/auditor-prompt.md",
+        ".claude/skills/directive/docs/reference/schemas/audit-output.md",
+        ".claude/agents/auditor.md"
+      ],
+      "dead_code": [],
+      "findings": "The auditor.md has `model: haiku` which the directive explicitly calls a 'false economy'. The auditor prompt template asks for both investigation AND recommended approach in one pass. The audit output schema mixes data fields (baseline, active_files, dead_code) with design fields (recommended_approach, follow_ups). The pipeline doc (06-technical-audit.md) says 'Group initiatives by auditor' which still applies but needs to be adapted — the investigator groups by initiative scope, while the architect gets the investigator's output per-initiative. The architect role should be filled by the cast's named auditor (e.g., sarah) rather than creating a new agent definition.",
+      "recommended_approach": "1. Create investigator.md as a new agent definition (model: opus, tools: Read/Glob/Grep/Bash, strict scanner instructions). 2. Create investigator-prompt.md template with pure data-gathering instructions (no recommendations). 3. Create investigation-output.md schema (baseline, active_files, dead_code, findings — no recommended_approach). 4. Create architect-prompt.md template that takes investigation output + Morgan plan as input and produces design recommendations. 5. Update audit-output.md to become the architect's output schema (recommended_approach, follow_ups, informed by investigation data). 6. Update 06-technical-audit.md to describe the two-agent sequential flow: spawn investigator first, parse output, then spawn architect with investigation data. 7. Change auditor.md model from haiku to opus.",
+      "follow_ups": [
+        {
+          "action": "Rename auditor.md to investigator.md or keep both — need to decide naming convention",
+          "risk": "low",
+          "rationale": "Naming only, no behavioral impact. Recommend: keep auditor.md as-is (backward compat) and create investigator.md as new. Auditor.md becomes the fallback for simple initiatives that don't need the full split.",
+          "files": [".claude/agents/auditor.md", ".claude/agents/investigator.md"]
+        },
+        {
+          "action": "Consider whether simple initiatives (1-2 phases) still use the single-agent audit pattern or always go through investigator+architect",
+          "risk": "medium",
+          "rationale": "Forcing two agents for a simple bug fix is wasteful. Recommend: investigator+architect for moderate+ complexity, single auditor for simple.",
+          "files": [".claude/skills/directive/docs/pipeline/06-technical-audit.md"]
+        }
+      ]
+    },
+    {
+      "id": "casting-validation-script",
+      "baseline": "No validate-cast.sh exists. Casting rules are documented in casting-rules.md (77 lines) and in the Morgan prompt template (164 lines). Morgan's plan JSON is parsed in 05-morgan-planning.md but no validation step follows. The existing hook pattern (enforce-completion.sh, 152 lines) uses jq for JSON parsing and outputs pass/block decisions.",
+      "active_files": [
+        ".claude/skills/directive/docs/pipeline/05-morgan-planning.md",
+        ".claude/skills/directive/docs/reference/rules/casting-rules.md"
+      ],
+      "dead_code": [],
+      "findings": "The casting rules document has clear mechanical checks that can be encoded: (1) every initiative has an auditor, (2) builder != reviewer, (3) complex initiatives have C-suite reviewers, (4) agents don't review their own behavior. Currently Morgan applies these rules via LLM judgment alone. The existing hook pattern (enforce-completion.sh) provides a good template: bash + jq, reads JSON from stdin/file, outputs JSON with pass/fail. The 05-morgan-planning.md pipeline doc will need a new paragraph after 'Parse Morgan's response as JSON' saying 'Pipe parsed JSON through validate-cast.sh'.",
+      "recommended_approach": "1. Create validate-cast.sh in .claude/hooks/ following the enforce-completion.sh pattern (bash + jq). 2. Validation checks: (a) every initiative[].cast.auditor is non-empty, (b) initiative[].cast.builder is NOT in initiative[].cast.reviewers, (c) for complex initiatives (phases.length >= 5), at least one reviewer is C-suite (sarah/marcus/morgan/priya), (d) optional: warn if builder is reviewing changes to its own agent .md file. 3. Output JSON: {valid: true/false, violations: [{initiative_id, rule, message}]}. 4. Update 05-morgan-planning.md to include validation step.",
+      "follow_ups": []
+    },
+    {
+      "id": "dod-enforcement-hook",
+      "baseline": "enforce-completion.sh (152 lines) checks: agents_spawned, review_artifacts_written, digest written, plan-for-approval artifact. Zero DOD checking. The dod_verification field structure is already defined in reviewer.md (line 37-40) and 09-execute-initiatives.md (line 230-235). Checkpoint schema (checkpoint.md, 45 lines) has initiatives[].review_findings but no dod_verification field documented.",
+      "active_files": [
+        ".claude/hooks/enforce-completion.sh",
+        ".claude/skills/directive/docs/reference/schemas/checkpoint.md"
+      ],
+      "dead_code": [],
+      "findings": "The dod_verification output structure already exists in the reviewer agent template and the review phase instructions. Reviewers are already supposed to output dod_verification with criteria array + all_met boolean. The gap is: (1) enforce-completion.sh doesn't read or check dod_verification from the checkpoint, (2) checkpoint.md schema doesn't document where dod_verification should be stored, (3) the pipeline doesn't write dod_verification to the checkpoint after review phase completes. Need to ensure the review phase (09-execute-initiatives.md) writes dod_verification to the checkpoint, then enforce-completion.sh reads it.",
+      "recommended_approach": "1. Add dod_verification field to checkpoint.md schema under initiatives[]: {dod_verification: {criteria: [{criterion, met, evidence}], all_met: boolean}}. 2. Ensure 09-execute-initiatives.md writes dod_verification to checkpoint after review phase (may need to verify this is already happening). 3. Extend enforce-completion.sh: for heavyweight/strategic, after existing checks, iterate checkpoint.initiatives where status=completed, check that dod_verification exists and all_met is true. Block with specific messages if any initiative has unmet DOD. 4. Keep existing enforcement checks intact.",
+      "follow_ups": [
+        {
+          "action": "Verify that the review phase in 09-execute-initiatives.md actually writes dod_verification to the checkpoint — if not, add that step",
+          "risk": "medium",
+          "rationale": "If dod_verification isn't being written to checkpoint by the review phase, the Stop hook will never see it and the enforcement is toothless",
+          "files": [".claude/skills/directive/docs/pipeline/09-execute-initiatives.md"]
+        }
+      ]
+    },
+    {
+      "id": "routing-table-and-docs-sync",
+      "baseline": "SKILL.md routing table has 13 entries in reference docs tables (7 schemas, 5 templates, 3 rules). Pipeline steps table has 11 entries. All current cross-references are valid.",
+      "active_files": [
+        ".claude/skills/directive/SKILL.md"
+      ],
+      "dead_code": [],
+      "findings": "SKILL.md routing table needs new entries for investigator-prompt.md, architect-prompt.md, investigation-output.md. validate-cast.sh should be added to a new 'hooks' section in the routing table or listed in the rules section. Step numbering is currently clean (0b, 0, 1, 2, 2b, 3, 3b, 4, 4b-4c, 5, 6-7). The audit split doesn't change step numbering — it just splits 3b into 3b-i (investigator) and 3b-a (architect), or describes two sub-steps within 3b.",
+      "recommended_approach": "1. Add three new rows to the schemas table: investigation-output.md, (and note that audit-output.md is now the architect's output). 2. Add two new rows to the templates table: investigator-prompt.md, architect-prompt.md. 3. Add validate-cast.sh to the reference docs — perhaps under a new 'Hooks' section. 4. Verify all cross-references in modified pipeline docs still resolve correctly.",
+      "follow_ups": []
+    }
+  ]
+}

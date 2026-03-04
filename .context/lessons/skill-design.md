@@ -1,7 +1,7 @@
 # Lessons: Skill Design & Pipeline
 
 > How the directive pipeline works, common design pitfalls.
-> Relevant to: Alex (execution), Morgan (planning)
+> Relevant to: orchestrator (execution), Morgan (planning)
 
 ## Pipeline Rules
 

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, FolderKanban, Monitor, Settings, PanelLeftClose, PanelLeft, Lightbulb, ScrollText, FileText, Archive, Search, Users } from 'lucide-react';
+import { LayoutDashboard, Building2, FolderKanban, Monitor, Settings, PanelLeftClose, PanelLeft, Lightbulb, ScrollText, FileText, Archive, Search, Users } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
@@ -9,6 +9,7 @@ import { useDashboardStore } from '@/stores/dashboard-store';
 
 const navItems = [
   { to: '/', icon: LayoutDashboard, label: 'Dashboard', end: true },
+  { to: '/game', icon: Building2, label: 'HQ' },
   { to: '/org', icon: Users, label: 'Team' },
   { to: '/projects', icon: FolderKanban, label: 'Projects' },
   { to: '/sessions', icon: Monitor, label: 'Sessions' },

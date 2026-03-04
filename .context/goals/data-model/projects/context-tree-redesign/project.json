@@ -4,6 +4,15 @@
   "goal_id": "data-model",
   "status": "completed",
   "priority": "p0",
+  "agent": [
+    "alex",
+    "engineer",
+    "self"
+  ],
+  "reviewers": [
+    "morgan",
+    "sarah"
+  ],
   "description": "Complete redesign of the .context/ directory structure. Three-tier hierarchy (Goal > Project > Task), embedded tasks in project.json, flat directives with triage linking, kill state/indexer, co-locate context with entities. Definitive spec from 4 brainstorm rounds.",
   "source_directive": "context-tree-redesign",
   "scope": {
@@ -21,46 +30,18 @@
   "dod": [
     {
       "criterion": "All goal.json, project.json, directive.json, backlog.json files conform to SPEC.md schemas",
-      "met": true,
-      "verified_by": [
-        "morgan"
-      ]
+      "met": true
     },
     {
       "criterion": "Zero stale path references in SKILL.md and agent .md files",
-      "met": true,
-      "verified_by": [
-        "sarah"
-      ]
+      "met": true
     },
     {
       "criterion": "3-agent review (path audit, data integrity, SPEC compliance) passes",
-      "met": true,
-      "verified_by": [
-        "sarah",
-        "marcus",
-        "morgan"
-      ]
+      "met": true
     }
   ],
-  "verify": {
-    "checklist": [
-      "All entity JSON files validate against SPEC.md Section 2 schemas",
-      "Zero stale path references across .claude/ directory (grep returns 0)",
-      "Every active/pending project has dod and verify fields populated"
-    ],
-    "reviewers": [
-      {
-        "agent": "sarah",
-        "domain": "architecture \u2014 schema compliance and structural integrity"
-      },
-      {
-        "agent": "morgan",
-        "domain": "process \u2014 SPEC compliance, entity completeness"
-      }
-    ],
-    "browser_test": false
-  },
+  "browser_test": false,
   "tags": [],
   "tasks": [
     {
@@ -72,15 +53,10 @@
         "self"
       ],
       "depends_on": [],
-      "acceptance_criteria": null,
-      "verified_by": [
-        "sarah",
-        "morgan"
-      ],
-      "review_outcome": "pass",
       "output": "SPEC.md created with full schemas for Goal, Project, Task, Directive, Backlog",
       "created": "2026-03-03T00:00:00Z",
-      "completed": "2026-03-03T00:00:00Z"
+      "completed": "2026-03-03T00:00:00Z",
+      "dod": []
     },
     {
       "id": "t2",
@@ -93,15 +69,10 @@
       "depends_on": [
         "t1"
       ],
-      "acceptance_criteria": null,
-      "verified_by": [
-        "sarah",
-        "morgan"
-      ],
-      "review_outcome": "pass",
       "output": "3 goals (data-model, workflow-orchestration, ui), 18 projects, 35 directives migrated. Branch: directive/context-tree-redesign",
       "created": "2026-03-03T00:00:00Z",
-      "completed": "2026-03-03T00:00:00Z"
+      "completed": "2026-03-03T00:00:00Z",
+      "dod": []
     },
     {
       "id": "t3",
@@ -114,15 +85,10 @@
       "depends_on": [
         "t2"
       ],
-      "acceptance_criteria": null,
-      "verified_by": [
-        "sarah",
-        "morgan"
-      ],
-      "review_outcome": "pass",
       "output": "All 6 SKILL.md + 8 agent files updated. Fixed: lessons.md\u2192lessons/*.md, backlog.md\u2192backlog.json, features/\u2192projects/, intelligence/\u2192intel/",
       "created": "2026-03-03T00:00:00Z",
-      "completed": "2026-03-03T00:00:00Z"
+      "completed": "2026-03-03T00:00:00Z",
+      "dod": []
     },
     {
       "id": "t4",
@@ -135,15 +101,10 @@
       "depends_on": [
         "t2"
       ],
-      "acceptance_criteria": null,
-      "verified_by": [
-        "sarah",
-        "morgan"
-      ],
-      "review_outcome": "pass",
       "output": "CLAUDE.md created with context tree structure and lessons routing table",
       "created": "2026-03-03T00:00:00Z",
-      "completed": "2026-03-03T00:00:00Z"
+      "completed": "2026-03-03T00:00:00Z",
+      "dod": []
     },
     {
       "id": "t5",
@@ -160,15 +121,10 @@
         "t3",
         "t4"
       ],
-      "acceptance_criteria": null,
-      "verified_by": [
-        "sarah",
-        "morgan"
-      ],
-      "review_outcome": "pass",
       "output": "3-agent review: Sarah (path audit, 80+ stale refs found+fixed), Marcus (data integrity, PASS), Morgan (SPEC compliance, 3 blocking issues found+fixed)",
       "created": "2026-03-03T00:00:00Z",
-      "completed": "2026-03-03T00:00:00Z"
+      "completed": "2026-03-03T00:00:00Z",
+      "dod": []
     },
     {
       "id": "t6",
@@ -181,15 +137,10 @@
       "depends_on": [
         "t5"
       ],
-      "acceptance_criteria": null,
-      "verified_by": [
-        "sarah",
-        "morgan"
-      ],
-      "review_outcome": "pass",
       "output": "SPEC.md updated (agent: string\u2192array, verified_by: string\u2192array). All project.json files migrated: context-tree-redesign, dashboard-glob-reads, team-org-dashboard, improve-session-subagent-ui.",
       "created": "2026-03-03T00:00:00Z",
-      "completed": "2026-03-03T00:00:00Z"
+      "completed": "2026-03-03T00:00:00Z",
+      "dod": []
     }
   ],
   "created": "2026-03-03T00:00:00Z",

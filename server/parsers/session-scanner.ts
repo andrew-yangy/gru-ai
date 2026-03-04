@@ -1,4 +1,6 @@
 import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 const PROMPT_TAIL_SIZE = 65536;
 const HEAD_SIZE = 16384;
@@ -99,21 +101,24 @@ export function extractInitialPrompt(filepath: string): string | undefined {
 
 // --- Named agent detection ---
 
-/** Known named agents in the conductor system */
-const KNOWN_AGENTS: Record<string, { name: string; role: string }> = {
-  // C-suite
-  'alex': { name: 'Alex', role: 'Chief of Staff' },
-  'sarah': { name: 'Sarah', role: 'CTO' },
-  'morgan': { name: 'Morgan', role: 'COO' },
-  'marcus': { name: 'Marcus', role: 'CPO' },
-  'priya': { name: 'Priya', role: 'CMO' },
-  // Specialists
-  'riley': { name: 'Riley', role: 'Frontend Developer' },
-  'jordan': { name: 'Jordan', role: 'Backend Developer' },
-  'casey': { name: 'Casey', role: 'Data Engineer' },
-  'taylor': { name: 'Taylor', role: 'Content Builder' },
-  'sam': { name: 'Sam', role: 'QA Engineer' },
+/** Known named agents in the conductor system (loaded from agent-registry.json) */
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const registryPath = path.resolve(__dirname, '../../.claude/agent-registry.json');
+const registryData = JSON.parse(fs.readFileSync(registryPath, 'utf-8')) as {
+  agents: Array<{ id: string; name: string; role: string }>;
 };
+
+const KNOWN_AGENTS: Record<string, { name: string; role: string }> = {};
+for (const agent of registryData.agents) {
+  if (agent.id !== 'ceo') {
+    KNOWN_AGENTS[agent.id] = { name: agent.name.split(' ')[0], role: agent.role };
+  }
+}
+// Generic roles (from subagent_type, not personality-driven -- not in registry)
+KNOWN_AGENTS['builder'] = { name: 'Builder', role: 'Engineer' };
+KNOWN_AGENTS['reviewer'] = { name: 'Reviewer', role: 'Code Reviewer' };
+KNOWN_AGENTS['auditor'] = { name: 'Auditor', role: 'Technical Auditor' };
+KNOWN_AGENTS['investigator'] = { name: 'Investigator', role: 'Codebase Scanner' };
 
 /**
  * Extract a named agent identity from the initial prompt of a subagent.
@@ -190,6 +195,137 @@ export function extractAgentIdentityFromFile(filepath: string): { name: string; 
     }
   }
   return undefined;
+}
+
+// --- Parent session cross-reference for subagent type detection ---
+
+/** Cache of parent file → (agentId → subagent_type) mappings */
+const parentAgentMapCache = new Map<string, { mtime: number; map: Map<string, string> }>();
+
+/**
+ * Scan a parent session JSONL for Agent tool_use/tool_result pairs.
+ * Returns a map of agentId → subagent_type (e.g. "a4df5875a493548ce" → "alex").
+ * Results are cached per parent file and invalidated on mtime change.
+ */
+export function extractSubagentTypesFromParent(parentFilePath: string): Map<string, string> {
+  // Check cache
+  let stat: fs.Stats;
+  try {
+    stat = fs.statSync(parentFilePath);
+  } catch {
+    return new Map();
+  }
+
+  const cached = parentAgentMapCache.get(parentFilePath);
+  if (cached && cached.mtime === stat.mtimeMs) {
+    return cached.map;
+  }
+
+  const result = new Map<string, string>();
+
+  // Scan the file in chunks from the beginning. Agent tool calls can be anywhere
+  // but are typically early in the session. We scan up to 2MB.
+  const MAX_SCAN = 2 * 1024 * 1024;
+  let fd: number | null = null;
+  try {
+    fd = fs.openSync(parentFilePath, 'r');
+    const scanSize = Math.min(MAX_SCAN, stat.size);
+    let offset = 0;
+    let partial = '';
+
+    // Track pending Agent tool_use entries: tool_use_id → subagent_type
+    const pendingToolCalls = new Map<string, string>();
+
+    while (offset < scanSize) {
+      const chunkSize = Math.min(65536, scanSize - offset);
+      const buffer = Buffer.allocUnsafe(chunkSize);
+      fs.readSync(fd, buffer, 0, chunkSize, offset);
+      offset += chunkSize;
+
+      const content = partial + buffer.toString('utf-8');
+      const lines = content.split('\n');
+      // Last line may be partial — save for next chunk
+      partial = lines.pop() ?? '';
+
+      for (const line of lines) {
+        const trimmed = line.trim();
+        if (!trimmed) continue;
+
+        // Quick pre-filter to avoid parsing every line
+        if (!trimmed.includes('"Agent"') && !trimmed.includes('agentId')) continue;
+
+        try {
+          const entry = JSON.parse(trimmed);
+          const blocks = entry?.message?.content;
+          if (!Array.isArray(blocks)) continue;
+
+          for (const block of blocks) {
+            // Agent tool_use → capture subagent_type keyed by tool_use id
+            if (block.type === 'tool_use' && block.name === 'Agent' && block.input?.subagent_type) {
+              pendingToolCalls.set(block.id, block.input.subagent_type);
+            }
+
+            // tool_result → match agentId to pending tool call
+            if (block.type === 'tool_result' && typeof block.tool_use_id === 'string') {
+              const subagentType = pendingToolCalls.get(block.tool_use_id);
+              if (!subagentType) continue;
+
+              // Extract agentId from the result text
+              const resultText = typeof block.content === 'string'
+                ? block.content
+                : Array.isArray(block.content)
+                  ? block.content.map((b: { text?: string }) => b.text ?? '').join('')
+                  : '';
+
+              const match = resultText.match(/agentId:\s*(\w+)/);
+              if (match) {
+                result.set(match[1], subagentType);
+                pendingToolCalls.delete(block.tool_use_id);
+              }
+            }
+          }
+        } catch {
+          // skip malformed
+        }
+      }
+    }
+
+    fs.closeSync(fd);
+    fd = null;
+  } catch {
+    if (fd !== null) {
+      try { fs.closeSync(fd); } catch { /* ignore */ }
+    }
+  }
+
+  parentAgentMapCache.set(parentFilePath, { mtime: stat.mtimeMs, map: result });
+  return result;
+}
+
+/**
+ * Look up agent identity for a subagent by checking the parent session's Agent tool calls.
+ * Returns { name, role } if the subagent was spawned with a known subagent_type, undefined otherwise.
+ */
+export function resolveAgentFromParent(
+  parentFilePath: string,
+  childAgentId: string
+): { name: string; role: string } | undefined {
+  const typeMap = extractSubagentTypesFromParent(parentFilePath);
+  const subagentType = typeMap.get(childAgentId);
+  if (!subagentType) return undefined;
+
+  // Check known agents (normalize: subagent_type may include suffix like "alex" from "alex-cos")
+  const normalized = subagentType.toLowerCase().split('-')[0];
+  return KNOWN_AGENTS[normalized] ?? KNOWN_AGENTS[subagentType.toLowerCase()];
+}
+
+/**
+ * Look up a known agent by its CLI agent-setting name (e.g. "riley", "sarah").
+ * Returns { name, role } if known, undefined otherwise.
+ */
+export function resolveAgentFromSetting(agentSetting: string): { name: string; role: string } | undefined {
+  const normalized = agentSetting.toLowerCase().split('-')[0];
+  return KNOWN_AGENTS[normalized] ?? KNOWN_AGENTS[agentSetting.toLowerCase()];
 }
 
 export function isSystemContent(text: string): boolean {

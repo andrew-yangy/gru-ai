@@ -7,6 +7,7 @@
     "module": "ESNext",
     "types": ["vite/client"],
     "skipLibCheck": true,
+    "resolveJsonModule": true,
 
     /* Bundler mode */
     "moduleResolution": "bundler",
@@ -29,5 +30,5 @@
       "@/*": ["./src/*"]
     }
   },
-  "include": ["src"]
+  "include": ["src", ".claude/agent-registry.json"]
 }

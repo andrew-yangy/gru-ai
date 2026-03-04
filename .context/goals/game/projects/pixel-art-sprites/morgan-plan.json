@@ -1,0 +1,66 @@
+{
+  "goal": "Game Phase 2, Project 2 — Programmatic Pixel Art Sprites",
+  "goal_folder": "game",
+  "challenges": {
+    "risks": [
+      "Per-zoom-level sprite caching multiplies offscreen canvas memory with no proven need — Canvas 2D drawImage scales efficiently at runtime; caching at N discrete zoom levels is premature optimization that adds complexity before a frame-drop is observed.",
+      "16x24 pixel arrays with H/K/S/P palette keys for 6+ agents is substantial upfront design surface. The palette abstraction layer (hair, skin, shirt, pants as separate keys) adds indirection before value is proven — misdesigning it means refactoring all sprite definitions later.",
+      "Furniture scope is broad (8 distinct types: desks, chairs, monitors, whiteboards, mailbox, bell, plants) at pixel scales where detail collapses. Getting 8 types visually readable at 16-32px could easily consume 2-3x estimated build time through iteration."
+    ],
+    "over_engineering_flags": [
+      "Per-zoom caching: simplify to per-entity-type offscreen canvas at 1x scale only; add zoom-level variants only if benchmarking reveals actual frame drops.",
+      "Palette key system (H/K/S/P): ship 6 hardcoded per-agent sprite variants first; extract the palette abstraction layer only when agent appearance becomes configurable at runtime."
+    ],
+    "recommendation": "Proceed with simplification — use hardcoded per-agent palettes instead of the H/K/S/P key system; cache at 1x only; combine furniture and floor/wall textures into a single environment-sprites initiative to prevent 3-way merge conflicts on renderer.ts."
+  },
+  "initiatives": [
+    {
+      "id": "character-sprites",
+      "title": "Programmatic Character Sprites",
+      "priority": "P0",
+      "complexity": "complex",
+      "phases": ["build", "review"],
+      "user_scenario": "The CEO opens the office and sees recognizable pixel-art figures at each desk — Alex in blue, Sarah in purple, Morgan in green, Marcus in orange, Priya in pink — instead of single-letter placeholders.",
+      "cast": {
+        "auditor": "riley",
+        "builder": "riley",
+        "reviewers": ["marcus"]
+      },
+      "scope": "Audit the existing TILE_RENDERERS dispatch table, agentNameAt lookup, and current ctx.fillText character rendering in engine/renderer.ts. Define 16x24 pixel-array templates for all 6 named agents (Alex, Sarah, Morgan, Marcus, Priya, plus a generic fallback) using hardcoded per-agent color schemes — no H/K/S/P abstraction layer yet. Integrate sprite rendering into TILE_RENDERERS so all character drawing goes through the dispatch table. Add per-entity-type offscreen canvas caching at 1x scale so sprites are pre-rendered and reused per frame. No animation frames.",
+      "verify": "npx tsc --noEmit && npx vite build",
+      "definition_of_done": [
+        "All 6 named agents render as 16x24 pixel-art sprites — no letter placeholders (A, S, M, etc.) remain in the office view",
+        "Each agent has a visually distinct color scheme: Alex=blue, Sarah=purple, Morgan=green, Marcus=orange, Priya=pink, generic fallback=gray",
+        "Sprite rendering is wired into the TILE_RENDERERS dispatch table — zero ad-hoc rendering bypasses the dispatch pattern",
+        "Per-entity-type offscreen canvas cache is implemented — each sprite variant is pre-rendered once and reused each frame",
+        "No external asset files (PNG, SVG) exist — all sprite data is defined in TypeScript as pixel arrays",
+        "Zoom, pan, click, and hover functionality from Project 1 remain fully functional",
+        "npx tsc --noEmit && npx vite build complete with zero errors"
+      ]
+    },
+    {
+      "id": "environment-sprites",
+      "title": "Furniture Sprites and Tile Textures",
+      "priority": "P1",
+      "complexity": "moderate",
+      "phases": ["build", "review"],
+      "user_scenario": "The CEO sees a visually rich office with textured floors, subtle walls, and recognizable furniture shapes — desks, chairs, monitors, a whiteboard, mailbox, bell, and plants — replacing the flat color fills from Project 1.",
+      "cast": {
+        "auditor": "riley",
+        "builder": "riley",
+        "reviewers": ["marcus"]
+      },
+      "scope": "Using audit findings from the character-sprites initiative (no separate codebase scan needed), replace flat color fills for all furniture tile types with procedural Canvas path drawings: desk (surface + legs), chair (seat + back), monitor (screen + stand), whiteboard (frame + writing surface), mailbox (box + slot), bell (dome), plant (pot + foliage). Replace flat floor and wall tiles with subtle texture passes — a light grid or grout pattern for floors, a baseboard stripe for walls. All renderers integrate with the existing TILE_RENDERERS dispatch table. No external assets, no animation.",
+      "verify": "npx tsc --noEmit && npx vite build",
+      "definition_of_done": [
+        "All 7 furniture tile types render with recognizable procedural shapes using Canvas paths: desk, chair, monitor, whiteboard, mailbox, bell, plant",
+        "Floor tiles display a subtle texture (grid lines, grout seams, or equivalent) — no flat solid fills",
+        "Wall tiles display a subtle texture (baseboard stripe, panel lines, or equivalent) — no flat solid fills",
+        "All furniture and tile renderers are wired into TILE_RENDERERS dispatch table — zero rendering bypasses the dispatch pattern",
+        "No external asset files (PNG, SVG) exist — all drawing is programmatic Canvas 2D paths",
+        "Zoom, pan, click, and hover functionality from Project 1 remain fully functional",
+        "npx tsc --noEmit && npx vite build complete with zero errors"
+      ]
+    }
+  ]
+}

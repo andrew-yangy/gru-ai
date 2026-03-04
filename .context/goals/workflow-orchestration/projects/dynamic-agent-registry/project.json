@@ -1,0 +1,53 @@
+{
+  "id": "dynamic-agent-registry",
+  "title": "Dynamic Agent Registry — Single Source of Truth",
+  "goal_id": "workflow-orchestration",
+  "status": "completed",
+  "priority": "p1",
+  "agent": ["jordan", "riley"],
+  "reviewers": ["sarah", "morgan"],
+  "description": "Remove hardcoded agent lists from UI, game, and scanner by creating a canonical agent-registry.json that all consumers read from.",
+  "source_directive": null,
+  "tags": ["refactor", "registry", "agents", "config"],
+  "tasks": [
+    {
+      "id": "create-agent-registry",
+      "title": "Create canonical agent-registry.json",
+      "status": "completed",
+      "agent": ["jordan"],
+      "dod": [
+        { "criterion": ".claude/agent-registry.json exists and is valid JSON parseable by jq", "met": true },
+        { "criterion": "Registry contains entries for all 10 named agents + CEO + devon", "met": true },
+        { "criterion": "4 game agents (sarah, morgan, marcus, priya) have game field with palette, seatId, position, color", "met": true },
+        { "criterion": "Teams array with 4 team definitions present", "met": true }
+      ]
+    },
+    {
+      "id": "wire-ui-and-scanner",
+      "title": "Wire React UI, game, session cards, and server scanner to agent-registry.json",
+      "status": "completed",
+      "agent": ["riley"],
+      "dod": [
+        { "criterion": "agent-config.ts derives all data from agent-registry.json — no hardcoded agent literals", "met": true },
+        { "criterion": "session-scanner.ts KNOWN_AGENTS built from agent-registry.json at module load", "met": true },
+        { "criterion": "game/types.ts OFFICE_AGENTS and AGENT_CHAR_MAP derived from registry", "met": true },
+        { "criterion": "Session card badge colors (KanbanCard, SessionCard, SessionTree) use shared registry-derived functions", "met": true },
+        { "criterion": "npm run type-check passes with zero errors", "met": true },
+        { "criterion": "Existing TypeScript interfaces (AgentConfig, TeamConfig, AgentDesk) still satisfied", "met": true }
+      ]
+    },
+    {
+      "id": "wire-shell-and-cli",
+      "title": "Wire validate-cast.sh and CLI init to agent-registry.json",
+      "status": "completed",
+      "agent": ["jordan"],
+      "dod": [
+        { "criterion": "validate-cast.sh reads CSUITE and AGENT_FILES from agent-registry.json via jq", "met": true },
+        { "criterion": "cli/commands/init.ts ALL_AGENTS derived from agent-registry.json", "met": true },
+        { "criterion": "validate-cast.sh exits gracefully if agent-registry.json not found", "met": true }
+      ]
+    }
+  ],
+  "created": "2026-03-04T00:00:00Z",
+  "updated": "2026-03-04T00:00:00Z"
+}

@@ -3,7 +3,9 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Terminal, GitBranch, HardDrive, ChevronDown, ChevronRight, Clock, MessageSquare, Users, Hash, User, Bot } from 'lucide-react';
 import { cn, timeAgo, sessionStatusLabel, terminalLabel } from '@/lib/utils';
+import { API_BASE } from '@/lib/api';
 import type { Session, SessionActivity } from '@/stores/types';
+import { agentBadgeColor } from '@/components/org/agent-config';
 import QuickActions from '@/components/shared/QuickActions';
 import ActivityLine from '@/components/shared/ActivityLine';
 
@@ -45,21 +47,11 @@ function shortCwd(cwd?: string): string | null {
   return parts.slice(-2).join('/');
 }
 
-/** Color for named agent badges */
-function agentBadgeColor(name?: string): string {
-  switch (name?.toLowerCase()) {
-    case 'alex': return 'bg-blue-500/15 text-blue-400 border-blue-500/30';
-    case 'sarah': return 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30';
-    case 'morgan': return 'bg-purple-500/15 text-purple-400 border-purple-500/30';
-    case 'marcus': return 'bg-amber-500/15 text-amber-400 border-amber-500/30';
-    case 'priya': return 'bg-pink-500/15 text-pink-400 border-pink-500/30';
-    default: return 'bg-secondary text-muted-foreground border-border';
-  }
-}
+// agentBadgeColor imported from agent-config (registry-derived)
 
 async function handleFocus(paneId: string) {
   try {
-    await fetch('http://localhost:4444/api/actions/focus-session', {
+    await fetch( `${API_BASE}/api/actions/focus-session`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ paneId }),

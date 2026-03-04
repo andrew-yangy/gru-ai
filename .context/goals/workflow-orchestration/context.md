@@ -9,6 +9,7 @@
 - Review quality: DOD verification, corrections cross-referencing, adversarial checklists
 - Pre-build clarification loops for complex processes
 - Lessons capture and consolidation
+- Agent productivity: spawn overhead, token optimization, parallel execution, deterministic helpers
 
 ## Review Quality Context
 Ensures the review pipeline catches real issues — not just "does the code compile" but "does this do what the CEO actually meant." The review system is the CEO's last line of defense against work that technically passes but misses the point.
@@ -23,8 +24,24 @@ A CEO correction to separate Agent Conductor from Platform was marked "DONE" aft
 - Static C-suite, ephemeral engineers
 - Challenge mode: agents push back with reasoning, not blind followers
 
+## Agent Productivity Context (merged from agent-productivity goal)
+
+**Architecture Decision: CC-Native First** (March 2026)
+After deep research (Claude Agent SDK, OpenAI Swarm, LangGraph, CrewAI, harness engineering), the team decided:
+- CC-native optimization first — all improvements use Claude Code's existing subagent system (included in CC plan, no API costs)
+- Agent SDK deferred — revisit when API cost model makes sense or CC-native hits limits
+- Agent Teams skipped — experimental, 3-7x token cost, wrong model for our C-suite pattern
+- External frameworks skipped — CrewAI/LangGraph/AutoGen add unnecessary complexity
+
+**Key findings**: 50K→5K tokens/spawn possible with proper isolation. Promise.all() for independent agents. Deterministic shell for mechanical tasks, LLM for intelligence.
+
+**3 Active Projects** (CEO approved):
+1. Scope Reduction — thin Alex + named subagents (auditor/builder/reviewer) + deterministic scripts
+2. Parallel Execution — concurrent brainstorm, independent initiatives, dependency tracking
+3. Token Optimization — tool scoping, model routing (haiku for audit, sonnet for build)
+
 ## Origin
-Consolidates orchestration features from the original "agent-conductor" goal and all review quality work from the "conductor-review-quality" goal.
+Consolidates orchestration features from the original "agent-conductor" goal, review quality work from "conductor-review-quality" goal, and agent productivity work from "agent-productivity" goal.
 
 # Research: Agent Orchestration Framework Comparison
 

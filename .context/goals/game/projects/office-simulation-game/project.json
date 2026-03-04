@@ -1,0 +1,175 @@
+{
+  "id": "office-simulation-game",
+  "title": "Office Simulation Game as Primary CEO Interface",
+  "goal_id": "game",
+  "status": "in_progress",
+  "priority": "P0",
+  "agent": [
+    "riley"
+  ],
+  "reviewers": [
+    "marcus"
+  ],
+  "description": "Pixel-art office simulation game serving as the primary CEO interface. Phase 1 (interaction design prototype) is complete. Remaining phases: art/engine, state integration, action layer, demo/polish.",
+  "source_directive": "office-simulation-game",
+  "scope": {
+    "in": [
+      "Top-down office grid layout with interactive furniture and agent desks",
+      "Side panel showing real data from Zustand store when items are clicked",
+      "Game route at /game with sidebar navigation link",
+      "Live agent status indicators driven by session data",
+      "Context-specific panels for whiteboard (directives), mailbox (reports), CEO desk (approvals)"
+    ],
+    "out": [
+      "Canvas rendering (Phase 2)",
+      "Pixel art assets (Phase 2)",
+      "Drag-and-drop agent assignment (Phase 4)",
+      "Sound effects (Phase 5)",
+      "CEO character movement (Phase 2+)"
+    ]
+  },
+  "dod": [
+    {
+      "criterion": "Route /game exists and renders GamePage component",
+      "met": true
+    },
+    {
+      "criterion": "Office layout renders grid with 5 agent desks, CEO desk, conference, whiteboard, mailbox, bell",
+      "met": true
+    },
+    {
+      "criterion": "Clicking agent desk shows name, role, status from Zustand store",
+      "met": true
+    },
+    {
+      "criterion": "Clicking whiteboard shows directives, mailbox shows reports",
+      "met": true
+    },
+    {
+      "criterion": "Type-check and build pass with zero errors",
+      "met": true
+    }
+  ],
+  "browser_test": true,
+  "tasks": [
+    {
+      "id": "game-types",
+      "title": "Game type definitions and constants",
+      "status": "completed",
+      "agent": [
+        "riley"
+      ],
+      "dod": [
+        {
+          "criterion": "TileType, AgentStatus, AgentDesk, SelectedItem types defined",
+          "met": true
+        },
+        {
+          "criterion": "OFFICE_AGENTS array with 5 agents",
+          "met": true
+        }
+      ]
+    },
+    {
+      "id": "office-layout",
+      "title": "20x14 ASCII office layout grid",
+      "status": "completed",
+      "agent": [
+        "riley"
+      ],
+      "dod": [
+        {
+          "criterion": "Grid defines all required zones",
+          "met": true
+        },
+        {
+          "criterion": "Parser converts chars to TileType",
+          "met": true
+        }
+      ]
+    },
+    {
+      "id": "office-grid-component",
+      "title": "OfficeGrid CSS grid renderer",
+      "status": "completed",
+      "agent": [
+        "riley"
+      ],
+      "dod": [
+        {
+          "criterion": "Renders 280 tiles with correct colors",
+          "met": true
+        },
+        {
+          "criterion": "Interactive tiles have hover/select states",
+          "met": true
+        },
+        {
+          "criterion": "Agent desks show colored dots and initials",
+          "met": true
+        }
+      ]
+    },
+    {
+      "id": "side-panel",
+      "title": "Context-sensitive side panel",
+      "status": "completed",
+      "agent": [
+        "riley"
+      ],
+      "dod": [
+        {
+          "criterion": "8 sub-panels for different tile types",
+          "met": true
+        },
+        {
+          "criterion": "Real data from Zustand store",
+          "met": true
+        },
+        {
+          "criterion": "Graceful null handling",
+          "met": true
+        }
+      ]
+    },
+    {
+      "id": "game-header",
+      "title": "Dark game-style header bar",
+      "status": "completed",
+      "agent": [
+        "riley"
+      ],
+      "dod": [
+        {
+          "criterion": "Shows HQ branding, date, status counts",
+          "met": true
+        },
+        {
+          "criterion": "Live counts from session data",
+          "met": true
+        }
+      ]
+    },
+    {
+      "id": "router-sidebar",
+      "title": "Route and sidebar integration",
+      "status": "completed",
+      "agent": [
+        "riley"
+      ],
+      "dod": [
+        {
+          "criterion": "/game route in router.tsx",
+          "met": true
+        },
+        {
+          "criterion": "HQ nav link in sidebar",
+          "met": true
+        }
+      ]
+    }
+  ],
+  "created": "2026-03-04T00:00:00Z",
+  "updated": "2026-03-04T00:00:00Z",
+  "completed": null
+}

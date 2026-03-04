@@ -103,7 +103,8 @@ export const useDashboardStore = create<DashboardStore>((set) => ({
 
   deleteTeam: async (teamName) => {
     try {
-      const res = await fetch(`http://localhost:4444/api/teams/${encodeURIComponent(teamName)}`, {
+      const { API_BASE } = await import('@/lib/api');
+      const res = await fetch(`${API_BASE}/api/teams/${encodeURIComponent(teamName)}`, {
         method: 'DELETE',
       });
       if (!res.ok) {

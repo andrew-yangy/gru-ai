@@ -1,7 +1,11 @@
 /**
  * Static configuration for the conductor's named agents.
  * This defines the org hierarchy, display properties, and team groupings.
+ *
+ * Data is sourced from the canonical agent-registry.json.
  */
+
+import registry from '../../../.claude/agent-registry.json';
 
 export interface AgentConfig {
   id: string;
@@ -31,216 +35,56 @@ export interface TeamConfig {
 }
 
 // ---------------------------------------------------------------------------
-// C-Suite Agents
+// Agent configs derived from registry (excludes CEO — he has his own export)
 // ---------------------------------------------------------------------------
 
-export const AGENT_CONFIGS: AgentConfig[] = [
-  {
-    id: 'sarah',
-    name: 'Sarah Chen',
-    title: 'CTO',
-    role: 'Chief Technology Officer',
-    description: 'Architecture, security, code quality, technology intelligence',
-    reportsTo: 'ceo',
-    domains: ['Architecture', 'Security', 'Code Quality', 'Tech Intelligence'],
-    color: 'text-violet-400',
-    bgColor: 'bg-violet-500/15',
-    borderColor: 'border-violet-500/40',
-    dotColor: 'bg-violet-500',
-    isCsuite: true,
-  },
-  {
-    id: 'marcus',
-    name: 'Marcus Rivera',
-    title: 'CPO',
-    role: 'Chief Product Officer',
-    description: 'Product strategy, UX, feature prioritization, market intelligence',
-    reportsTo: 'ceo',
-    domains: ['Product Strategy', 'UX', 'Prioritization', 'Market Intelligence'],
-    color: 'text-blue-400',
-    bgColor: 'bg-blue-500/15',
-    borderColor: 'border-blue-500/40',
-    dotColor: 'bg-blue-500',
-    isCsuite: true,
-  },
-  {
-    id: 'morgan',
-    name: 'Morgan Park',
-    title: 'COO',
-    role: 'Chief Operating Officer',
-    description: 'Orchestration, planning, casting, ecosystem intelligence',
-    reportsTo: 'ceo',
-    domains: ['Planning', 'Casting', 'Sequencing', 'Ecosystem Intelligence'],
-    color: 'text-emerald-400',
-    bgColor: 'bg-emerald-500/15',
-    borderColor: 'border-emerald-500/40',
-    dotColor: 'bg-emerald-500',
-    isCsuite: true,
-  },
-  {
-    id: 'priya',
-    name: 'Priya Sharma',
-    title: 'CMO',
-    role: 'Chief Marketing Officer',
-    description: 'Growth, SEO, positioning, growth intelligence',
-    reportsTo: 'ceo',
-    domains: ['Growth', 'SEO', 'Positioning', 'Growth Intelligence'],
-    color: 'text-amber-400',
-    bgColor: 'bg-amber-500/15',
-    borderColor: 'border-amber-500/40',
-    dotColor: 'bg-amber-500',
-    isCsuite: true,
-  },
-  {
-    id: 'alex',
-    name: 'Alex Rivera',
-    title: 'CoS',
-    role: 'Chief of Staff',
-    description: 'Execution, delegation, CEO summaries, directive orchestration',
-    reportsTo: 'ceo',
-    domains: ['Execution', 'Delegation', 'Reporting'],
-    color: 'text-sky-400',
-    bgColor: 'bg-sky-500/15',
-    borderColor: 'border-sky-500/40',
-    dotColor: 'bg-sky-500',
-    isCsuite: true,
-  },
-
-  // -------------------------------------------------------------------------
-  // Specialist Agents (builders — display-only for now)
-  // -------------------------------------------------------------------------
-  {
-    id: 'riley',
-    name: 'Riley Kim',
-    title: 'FE',
-    role: 'Frontend Developer',
-    description: 'React, Tailwind, component architecture, UI implementation',
-    reportsTo: 'sarah',
-    domains: ['React', 'Tailwind', 'Components', 'UI'],
-    color: 'text-pink-400',
-    bgColor: 'bg-pink-500/15',
-    borderColor: 'border-pink-500/40',
-    dotColor: 'bg-pink-500',
-    isCsuite: false,
-  },
-  {
-    id: 'jordan',
-    name: 'Jordan Okafor',
-    title: 'BE',
-    role: 'Backend Developer',
-    description: 'Server, API, database, infrastructure implementation',
-    reportsTo: 'sarah',
-    domains: ['Server', 'API', 'Database', 'Infra'],
-    color: 'text-teal-400',
-    bgColor: 'bg-teal-500/15',
-    borderColor: 'border-teal-500/40',
-    dotColor: 'bg-teal-500',
-    isCsuite: false,
-  },
-  {
-    id: 'casey',
-    name: 'Casey Liu',
-    title: 'DE',
-    role: 'Data Engineer',
-    description: 'Data pipelines, indexing, state management, parsers',
-    reportsTo: 'sarah',
-    domains: ['Pipelines', 'Indexing', 'State', 'Parsers'],
-    color: 'text-cyan-400',
-    bgColor: 'bg-cyan-500/15',
-    borderColor: 'border-cyan-500/40',
-    dotColor: 'bg-cyan-500',
-    isCsuite: false,
-  },
-  {
-    id: 'taylor',
-    name: 'Taylor Reeves',
-    title: 'CB',
-    role: 'Content Builder',
-    description: 'MDX, copywriting, SEO content, documentation',
-    reportsTo: 'priya',
-    domains: ['MDX', 'Copywriting', 'SEO Content', 'Docs'],
-    color: 'text-orange-400',
-    bgColor: 'bg-orange-500/15',
-    borderColor: 'border-orange-500/40',
-    dotColor: 'bg-orange-500',
-    isCsuite: false,
-  },
-  {
-    id: 'sam',
-    name: 'Sam Nakamura',
-    title: 'QA',
-    role: 'QA Engineer',
-    description: 'Testing, validation, quality assurance, edge cases',
-    reportsTo: 'sarah',
-    domains: ['Testing', 'Validation', 'QA', 'Edge Cases'],
-    color: 'text-lime-400',
-    bgColor: 'bg-lime-500/15',
-    borderColor: 'border-lime-500/40',
-    dotColor: 'bg-lime-500',
-    isCsuite: false,
-  },
-];
+export const AGENT_CONFIGS: AgentConfig[] = registry.agents
+  .filter((a) => a.id !== 'ceo')
+  .map((a) => ({
+    id: a.id,
+    name: a.name,
+    title: a.title,
+    role: a.role,
+    description: a.description,
+    reportsTo: a.reportsTo,
+    domains: a.domains,
+    color: a.color,
+    bgColor: a.bgColor,
+    borderColor: a.borderColor,
+    dotColor: a.dotColor,
+    isCsuite: a.isCsuite,
+  }));
 
 // ---------------------------------------------------------------------------
-// Team Definitions (display-only — cosmetic groupings, not operational)
+// Team Definitions (display-only -- cosmetic groupings, not operational)
 // ---------------------------------------------------------------------------
 
-export const TEAM_CONFIGS: TeamConfig[] = [
-  {
-    id: 'platform',
-    name: 'Platform',
-    description: 'Infrastructure, backend services, data pipelines',
-    leadAgentId: 'sarah',
-    memberAgentIds: ['sarah', 'jordan', 'casey'],
-    color: 'text-violet-400',
-    bgColor: 'bg-violet-500/10',
-    borderColor: 'border-violet-500/30',
-  },
-  {
-    id: 'product',
-    name: 'Product',
-    description: 'Frontend, UX, quality assurance',
-    leadAgentId: 'marcus',
-    memberAgentIds: ['marcus', 'riley', 'sam'],
-    color: 'text-blue-400',
-    bgColor: 'bg-blue-500/10',
-    borderColor: 'border-blue-500/30',
-  },
-  {
-    id: 'growth',
-    name: 'Growth',
-    description: 'Content, SEO, marketing, positioning',
-    leadAgentId: 'priya',
-    memberAgentIds: ['priya', 'taylor'],
-    color: 'text-amber-400',
-    bgColor: 'bg-amber-500/10',
-    borderColor: 'border-amber-500/30',
-  },
-  {
-    id: 'operations',
-    name: 'Operations',
-    description: 'Planning, orchestration, execution',
-    leadAgentId: 'morgan',
-    memberAgentIds: ['morgan', 'alex'],
-    color: 'text-emerald-400',
-    bgColor: 'bg-emerald-500/10',
-    borderColor: 'border-emerald-500/30',
-  },
-];
+export const TEAM_CONFIGS: TeamConfig[] = registry.teams.map((t) => ({
+  id: t.id,
+  name: t.name,
+  description: t.description,
+  leadAgentId: t.leadAgentId,
+  memberAgentIds: t.memberAgentIds,
+  color: t.color,
+  bgColor: t.bgColor,
+  borderColor: t.borderColor,
+}));
+
+const ceoEntry = registry.agents.find((a) => a.id === 'ceo')!;
 
 export const CEO_CONFIG: AgentConfig = {
-  id: 'ceo',
-  name: 'CEO',
-  title: 'CEO',
-  role: 'Chief Executive Officer',
-  description: 'Sets direction, reviews proposals, approves work',
-  reportsTo: null,
-  domains: ['Strategy', 'Direction', 'Approval'],
-  color: 'text-foreground',
-  bgColor: 'bg-foreground/10',
-  borderColor: 'border-foreground/30',
-  dotColor: 'bg-foreground',
-  isCsuite: true,
+  id: ceoEntry.id,
+  name: ceoEntry.name,
+  title: ceoEntry.title,
+  role: ceoEntry.role,
+  description: ceoEntry.description,
+  reportsTo: ceoEntry.reportsTo,
+  domains: ceoEntry.domains,
+  color: ceoEntry.color,
+  bgColor: ceoEntry.bgColor,
+  borderColor: ceoEntry.borderColor,
+  dotColor: ceoEntry.dotColor,
+  isCsuite: ceoEntry.isCsuite,
 };
 
 export function getAgentConfig(name: string): AgentConfig | undefined {
@@ -258,4 +102,33 @@ export function getTeamMembers(teamId: string): AgentConfig[] {
   return team.memberAgentIds
     .map(id => getAgentConfig(id))
     .filter((a): a is AgentConfig => a !== undefined);
+}
+
+// ---------------------------------------------------------------------------
+// Session badge colors (derived from registry — replaces hardcoded switches)
+// ---------------------------------------------------------------------------
+
+const GENERIC_BADGE = 'bg-slate-500/15 text-slate-400 border-slate-500/30';
+const GENERIC_ROLES = new Set(['builder', 'reviewer', 'auditor', 'investigator']);
+
+/** Badge color for a named agent in session cards */
+export function agentBadgeColor(name?: string): string {
+  if (!name) return 'bg-secondary text-muted-foreground border-border';
+  const agent = getAgentConfig(name);
+  if (agent) return `${agent.bgColor} ${agent.color} ${agent.borderColor}`;
+  if (GENERIC_ROLES.has(name.toLowerCase())) return GENERIC_BADGE;
+  return 'bg-secondary text-muted-foreground border-border';
+}
+
+/** Left border accent color for a named agent in kanban cards */
+export function agentBorderAccent(name?: string): string {
+  if (!name) return '';
+  const agent = getAgentConfig(name);
+  if (agent) {
+    // Extract color from borderColor (e.g. "border-violet-500/40" → "border-l-violet-500/60")
+    const base = agent.borderColor.replace('border-', 'border-l-').replace(/\/\d+$/, '/60');
+    return base;
+  }
+  if (GENERIC_ROLES.has(name.toLowerCase())) return 'border-l-slate-500/60';
+  return '';
 }

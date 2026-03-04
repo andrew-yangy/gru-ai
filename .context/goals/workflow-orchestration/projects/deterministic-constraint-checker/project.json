@@ -1,165 +1,162 @@
 {
   "id": "deterministic-constraint-checker",
-  "title": "Deterministic constraint checker for directive pipeline",
+  "title": "Pipeline enforcement via Claude Code hooks",
   "goal_id": "workflow-orchestration",
-  "status": "proposed",
+  "status": "completed",
   "priority": "p0",
+  "agent": [
+    "self"
+  ],
+  "reviewers": [
+    "morgan",
+    "sarah"
+  ],
   "sequence": 2,
-  "depends_on_project": "workflow-orchestration/skill-md-restructure",
-  "description": "Replace prose-based ALWAYS rules and reviewer checklists with deterministic, machine-checkable constraints. Build a constraint system: (1) constraint definitions as structured data (pattern, severity, remediation), (2) a checker script that validates directive outputs against constraints, (3) integration into the pipeline as a mandatory pre-review gate, (4) escalation ladder (warn \u2192 block \u2192 critical). Not a custom ESLint plugin \u2014 a standalone checker that reads constraint definitions and validates file changes / plan JSON / code output.",
+  "depends_on_project": "workflow-orchestration/improve-agent-productivity",
+  "description": "Two Claude Code hooks that mechanically enforce pipeline constraints. (1) Stop hook: reads checkpoint file at completion, validates required agents were spawned, review artifacts exist, digest was written. Derives requirements from directive weight \u2014 lightweight passes trivially. (2) Scope enforcement: PreToolUse hook in Alex's agent frontmatter blocks Edit/Write to source code, forcing delegation to engineer agents. Replaces 15+ ALWAYS/NEVER prompt rules with mechanical enforcement. ~130 lines of bash total.",
   "source_directive": "harness-engineering-adoption",
   "scope": {
     "in": [
-      "Constraint definition format (JSON): pattern, severity, remediation text, applies_to",
-      "Checker script (TypeScript) that loads constraints and validates against git diff, plan JSON, reviewer JSON",
-      "Seed constraints: standing corrections from preferences.md, ALWAYS rules from SKILL.md, known footguns from lessons.md",
-      "Pipeline integration: mandatory check between build and review steps",
-      "Escalation ladder: info (log only) \u2192 warn (report in digest) \u2192 block (fail review) \u2192 critical (halt directive)",
-      "Clear output format showing which constraints passed/failed with remediation steps"
+      "Stop hook (~100 lines bash): read checkpoint, derive requirements from weight, check reviewers spawned + audit done + digest written + phases completed",
+      "Scope enforcement hook (~30 lines bash): PreToolUse deny on Edit|Write for non-.context/ non-.claude/ paths in Alex's frontmatter",
+      "Add enforcement sub-object to checkpoint schema: agents_spawned, review_artifacts_written",
+      "Update checkpoint.sh to support the new enforcement fields",
+      "Remove ALWAYS/NEVER rules from pipeline docs that are now mechanically enforced",
+      "Hook placement: Stop + scope in alex-cos.md frontmatter (orchestrator-only)"
     ],
     "out": [
-      "Custom ESLint plugin infrastructure",
-      "Runtime code analysis (AST parsing, type checking)",
-      "Modifying existing ESLint config",
-      "Constraint UI in dashboard"
+      "Per-step validation hooks (PostToolUse on every Read/Write) \u2014 over-engineered for current scale",
+      "Separate enforcement state file \u2014 checkpoint already tracks what we need",
+      "State file tamper protection \u2014 not worth the complexity",
+      "SubagentStart/SubagentStop tracking hooks \u2014 checkpoint covers this",
+      "Morgan plan JSON validation hook \u2014 Alex can just retry the parse",
+      "Digest structure validation hook \u2014 Stop hook checks existence is enough",
+      "TypeScript constraint checker script \u2014 bash hooks are simpler and external",
+      "Constraint definition format / escalation ladder \u2014 replaced by direct hook logic",
+      "correction-to-code-pipeline \u2014 depends on constraint system we're not building"
     ]
   },
   "dod": [
     {
-      "criterion": "Constraint definition format documented with 3+ example constraints",
-      "met": false,
-      "verified_by": []
+      "criterion": "Stop hook blocks Alex from completing when no reviewer agents were spawned for initiatives that require review",
+      "met": true
     },
     {
-      "criterion": "Checker script runs against a git diff and returns structured pass/fail results",
-      "met": false,
-      "verified_by": []
+      "criterion": "Stop hook blocks when no digest was written to .context/reports/",
+      "met": true
     },
     {
-      "criterion": "All 4 standing corrections from preferences.md are encoded as constraints",
-      "met": false,
-      "verified_by": []
+      "criterion": "Stop hook passes trivially for lightweight directives (no review/audit required)",
+      "met": true
     },
     {
-      "criterion": "Pipeline invokes checker before review step \u2014 failures block review",
-      "met": false,
-      "verified_by": []
+      "criterion": "Scope enforcement blocks Alex from writing to source code files",
+      "met": true
     },
     {
-      "criterion": "Escalation ladder works: info constraints don't block, critical constraints halt",
-      "met": false,
-      "verified_by": []
+      "criterion": "Scope enforcement allows Alex to write to .context/ and .claude/ paths",
+      "met": true
+    },
+    {
+      "criterion": "Checkpoint schema includes enforcement fields (agents_spawned, review_artifacts)",
+      "met": true
+    },
+    {
+      "criterion": "At least 5 ALWAYS/NEVER rules removed from pipeline docs (replaced by hooks)",
+      "met": true
     }
   ],
-  "verify": {
-    "checklist": [
-      "Run checker against a known-violating diff \u2014 confirms it catches violations",
-      "Run checker against a clean diff \u2014 confirms no false positives",
-      "Verify pipeline integration: build step output passes through checker before reaching reviewer",
-      "Verify escalation: info constraint only logs, block constraint fails review, critical halts"
-    ],
-    "reviewers": [
-      {
-        "agent": "sarah",
-        "domain": "architecture \u2014 script correctness, constraint format sanity, no over-engineering"
-      },
-      {
-        "agent": "morgan",
-        "domain": "process \u2014 pipeline flow preserved, escalation ladder makes sense"
-      }
-    ],
-    "browser_test": false
-  },
+  "browser_test": false,
   "tags": [
     "harness-engineering",
     "quality-gates",
-    "automation"
+    "enforcement",
+    "hooks"
   ],
   "tasks": [
     {
       "id": "t1",
-      "title": "Design constraint definition format and escalation ladder",
-      "status": "pending",
-      "phase": "design",
-      "agent": [
-        "sarah"
+      "title": "Build Stop hook \u2014 master completion validator",
+      "status": "completed",
+      "phases": [
+        "build",
+        "review"
       ],
-      "depends_on": [],
-      "acceptance_criteria": null,
-      "verified_by": null,
-      "review_outcome": null,
-      "output": null,
-      "created": "2026-03-03",
-      "completed": null
+      "cast": {
+        "builder": "engineer",
+        "reviewers": [
+          "sarah"
+        ]
+      },
+      "scope": "Write .claude/hooks/enforce-completion.sh (~100 lines). Read checkpoint file, derive requirements from weight in directive.json (case statement: lightweight=no review required, medium+=auditor+reviewer+digest, heavyweight+=challenger+plan-for-approval). Check agents_spawned, review artifacts, digest existence. Exit 2 to block, exit 0 to allow. Include second-attempt passthrough to prevent infinite loops.",
+      "depends_on": [
+        "t2"
+      ],
+      "dod": [],
+      "agent": []
     },
     {
       "id": "t2",
-      "title": "Seed constraint definitions from standing corrections, ALWAYS rules, and lessons.md footguns",
-      "status": "pending",
-      "phase": "build",
-      "agent": [],
-      "depends_on": [
-        "t1"
+      "title": "Add enforcement fields to checkpoint schema + update checkpoint.sh",
+      "status": "completed",
+      "phases": [
+        "build",
+        "review"
       ],
-      "acceptance_criteria": null,
-      "verified_by": null,
-      "review_outcome": null,
-      "output": null,
-      "created": "2026-03-03",
-      "completed": null
+      "cast": {
+        "builder": "engineer",
+        "reviewers": [
+          "sarah"
+        ]
+      },
+      "scope": "Add enforcement sub-object to checkpoint.json schema: { agents_spawned: [], review_artifacts_written: [] }. Add checkpoint.sh subcommands: track-agent <directive> <agent-type>, track-artifact <directive> <path>. Update pipeline docs to call these after agent spawns and review completions.",
+      "depends_on": [],
+      "dod": [],
+      "agent": []
     },
     {
       "id": "t3",
-      "title": "Build checker script \u2014 load constraints, validate against git diff + plan JSON + reviewer JSON",
-      "status": "pending",
-      "phase": "build",
-      "agent": [],
-      "depends_on": [
-        "t1"
+      "title": "Build scope enforcement hook \u2014 block Alex from writing source code",
+      "status": "completed",
+      "phases": [
+        "build",
+        "review"
       ],
-      "acceptance_criteria": null,
-      "verified_by": null,
-      "review_outcome": null,
-      "output": null,
-      "created": "2026-03-03",
-      "completed": null
+      "cast": {
+        "builder": "engineer",
+        "reviewers": [
+          "sarah"
+        ]
+      },
+      "scope": "Write .claude/hooks/enforce-orchestrator-scope.sh (~30 lines). PreToolUse hook for Edit|Write. Allow .context/, .claude/, ~/.claude/ paths. Deny everything else with clear message: 'Orchestrator cannot modify source code. Spawn an engineer agent.' Add to alex-cos.md frontmatter hooks section.",
+      "depends_on": [],
+      "dod": [],
+      "agent": []
     },
     {
       "id": "t4",
-      "title": "Integrate checker into pipeline as pre-review gate in step docs",
-      "status": "pending",
-      "phase": "build",
-      "agent": [],
+      "title": "Remove ALWAYS/NEVER rules replaced by hooks from pipeline docs",
+      "status": "completed",
+      "phases": [
+        "build",
+        "review"
+      ],
+      "cast": {
+        "builder": "engineer",
+        "reviewers": [
+          "morgan"
+        ]
+      },
+      "scope": "Grep pipeline docs for ALWAYS/NEVER rules. Remove ones now mechanically enforced (review required, audit required, digest required, don't write source code). Keep rules that hooks can't enforce (include personality files, include verify command, etc). Count before/after.",
       "depends_on": [
+        "t1",
         "t3"
       ],
-      "acceptance_criteria": null,
-      "verified_by": null,
-      "review_outcome": null,
-      "output": null,
-      "created": "2026-03-03",
-      "completed": null
-    },
-    {
-      "id": "t5",
-      "title": "Test against known-good and known-bad diffs \u2014 validate catch rate and false positive rate",
-      "status": "pending",
-      "phase": "test",
-      "agent": [
-        "sarah"
-      ],
-      "depends_on": [
-        "t4"
-      ],
-      "acceptance_criteria": null,
-      "verified_by": null,
-      "review_outcome": null,
-      "output": null,
-      "created": "2026-03-03",
-      "completed": null
+      "dod": [],
+      "agent": []
     }
   ],
-  "created": "2026-03-03",
-  "updated": "2026-03-03",
-  "completed": null
+  "created": "2026-03-03T06:30:00Z",
+  "updated": "2026-03-03T21:00:00Z",
+  "completed": "2026-03-03T21:00:00Z"
 }

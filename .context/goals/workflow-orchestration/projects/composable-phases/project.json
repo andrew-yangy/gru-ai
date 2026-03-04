@@ -4,6 +4,12 @@
   "goal_id": "workflow-orchestration",
   "status": "completed",
   "priority": "p0",
+  "agent": [
+    "self"
+  ],
+  "reviewers": [
+    "sarah"
+  ],
   "description": "Replaced 7 rigid process types with a composable phase system. Morgan evaluates complexity per directive and designs the process dynamically.",
   "source_directive": null,
   "tags": [],

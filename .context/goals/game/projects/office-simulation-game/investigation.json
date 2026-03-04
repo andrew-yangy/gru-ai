@@ -1,0 +1,44 @@
+{
+  "initiatives": [
+    {
+      "id": "game-office-layout",
+      "baseline": "src/components/game/ directory exists but is empty. No game route in router.tsx. No game-related components exist anywhere in the codebase.",
+      "active_files": [
+        "src/router.tsx",
+        "src/components/game/GamePage.tsx",
+        "src/components/game/OfficeGrid.tsx",
+        "src/components/game/SidePanel.tsx",
+        "src/components/game/GameHeader.tsx",
+        "src/components/game/types.ts"
+      ],
+      "dead_code": [],
+      "findings": "The game directory exists at src/components/game/ but contains zero files. Router at src/router.tsx uses react-router-dom with lazy loading pattern — all pages are wrapped in SuspenseWrapper. AppLayout provides sidebar + header + main content area via Outlet. The game page should follow the same pattern: lazy-loaded, added as a route under AppLayout. Zustand store at src/stores/dashboard-store.ts exports useDashboardStore with sessions, teams, projects, directiveState, goalInventory, workState (goals, features, backlogs, conductor). Sessions have agentName, agentRole, status fields. DirectiveState has directiveName, status, initiatives. All existing pages use Tailwind CSS + shadcn/ui components. The lib/api.ts exports API_BASE and WS_URL for data fetching.",
+      "constraints": [
+        "Must follow existing lazy-loading pattern in router.tsx (lazy() + SuspenseWrapper)",
+        "Must use Tailwind CSS + shadcn/ui for consistency with existing dashboard",
+        "useDashboardStore provides all state — no need for new stores",
+        "AppLayout provides sidebar/header — game route lives inside it as a child route",
+        "Session.agentName and Session.agentRole identify C-suite agents",
+        "DirectiveState and workState fields on the store provide directive/goal data",
+        "API_BASE from @/lib/api for any HTTP fetches needed"
+      ]
+    },
+    {
+      "id": "game-state-integration",
+      "baseline": "Store already provides all needed data. Sessions have agentName/agentRole/status. DirectiveState has directive progress. workState has goals/features/backlogs/conductor data including reports and lessons.",
+      "active_files": [
+        "src/components/game/GamePage.tsx",
+        "src/components/game/OfficeGrid.tsx",
+        "src/components/game/SidePanel.tsx",
+        "src/components/game/types.ts"
+      ],
+      "dead_code": [],
+      "findings": "Session status values: 'working', 'waiting-approval', 'waiting-input', 'done', 'paused', 'idle', 'error'. Agent identification: Session.agentName (e.g., 'Sarah'), Session.agentRole (e.g., 'CTO'). Known C-suite agents: Alex/CoS, Sarah/CTO, Morgan/COO, Marcus/CPO, Priya/CMO. DashboardPage already computes active/attention counts from sessions. workState.conductor.directives provides DirectiveRecord[], workState.conductor.reports provides ArtifactRecord[] for mailbox. workState.goals.goals provides GoalRecord[] for wall chart. The existing DashboardPage pattern of fetching workState on mount should be replicated or shared.",
+      "constraints": [
+        "Session matching to agent desks must handle agentName being optional (not all sessions have named agents)",
+        "workState may be null on initial load — game must handle loading state",
+        "Depends on game-office-layout initiative completing first — builds on those components"
+      ]
+    }
+  ]
+}

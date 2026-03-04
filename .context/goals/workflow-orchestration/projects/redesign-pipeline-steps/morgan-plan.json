@@ -1,0 +1,130 @@
+{
+  "goal": "Redesign Pipeline Steps",
+  "goal_folder": "workflow-orchestration",
+  "challenges": {
+    "risks": [
+      "Changing the brainstorm and audit steps mid-flight could break active directives in progress — need to ensure backward compatibility with existing checkpoint schemas",
+      "Two-agent audit split doubles audit token cost per directive — for heavyweight directives running frequently this adds up (~$0.60/directive extra)",
+      "DOD enforcement in the Stop hook depends on checkpoint data fidelity — if engineers or reviewers don't write DOD verification to checkpoint, the hook silently passes"
+    ],
+    "over_engineering_flags": [
+      "The rebuttal round for strategic directives adds ~20K tokens per directive. Strategic directives are rare (1-2/month) so total cost is negligible, but the mechanism needs to be simple — one round, fixed format, no iteration"
+    ],
+    "recommendation": "Proceed as-is — the brainstorm synthesis + CEO answers gave clear direction on all three design questions. No simplification needed."
+  },
+  "initiatives": [
+    {
+      "id": "brainstorm-expansion",
+      "title": "Expand Brainstorm: Trigger, Deliberation, and Auditor Participation",
+      "priority": "P0",
+      "complexity": "moderate",
+      "phases": ["design", "build", "review"],
+      "user_scenario": "When the CEO issues a heavyweight directive, the team automatically brainstorms approaches before Morgan plans — and for strategic directives, agents see each other's proposals and write rebuttals before Alex synthesizes.",
+      "cast": {
+        "auditor": "morgan",
+        "designer": "sarah",
+        "builder": "taylor",
+        "reviewers": ["morgan"]
+      },
+      "scope": "Three changes to the brainstorm system: (1) Update 00-delegation-and-triage.md to fire brainstorm on all heavyweight + strategic directives, not just strategic. (2) Add a deliberation round to the brainstorm prompt template — after initial proposals, agents see all proposals and write one rebuttal. This deliberation round fires ONLY for strategic directives (not heavyweight). (3) Add the auditor agent to the brainstorm participant list so codebase feasibility informs approach exploration. Update brainstorm-prompt.md, brainstorm-output.md schema (add rebuttal fields), and the heavyweight process section in 00-delegation-and-triage.md.",
+      "verify": "grep -q 'heavyweight' /Users/yangyang/Repos/agent-conductor/.claude/skills/directive/docs/pipeline/00-delegation-and-triage.md && echo 'pass'",
+      "definition_of_done": [
+        "00-delegation-and-triage.md heavyweight process section includes brainstorm phase with same spawn pattern as strategic",
+        "brainstorm-prompt.md includes deliberation round instructions with clear 'strategic only' gating",
+        "brainstorm-output.md schema includes rebuttal fields (rebuttals array with agent, target_agent, critique, alternative)",
+        "Brainstorm participant list in triage doc includes auditor alongside C-suite agents",
+        "Heavyweight brainstorm does NOT include deliberation round — synthesis only"
+      ]
+    },
+    {
+      "id": "audit-investigation-design-split",
+      "title": "Split Audit into Investigator + Architect (Two Agents)",
+      "priority": "P0",
+      "complexity": "complex",
+      "phases": ["design", "clarification", "build", "review"],
+      "user_scenario": "When the pipeline reaches the audit step, Alex spawns an Investigator agent (pure data: scan files, measure baselines, flag dead code) and then an Architect agent (reads investigation output + Morgan's plan, recommends technical approach) — producing clean, separated outputs that prevent investigation findings from anchoring the design.",
+      "cast": {
+        "auditor": "sarah",
+        "designer": "sarah",
+        "builder": "taylor",
+        "reviewers": ["morgan", "sarah"]
+      },
+      "scope": "Split 06-technical-audit.md into a two-agent sequential flow. Create investigator-prompt.md and architect-prompt.md templates. Create investigation-output.md schema (baselines, active files, dead code — pure data, no recommendations). Update audit-output.md to become the architect's output schema (recommended approach, informed by investigation data). Update auditor.md agent definition: change model from haiku to opus. Create a new investigator.md agent definition (model: opus, tools: Read/Glob/Grep/Bash, pure scanner role). The architect role is filled by the named auditor from Morgan's cast (e.g., sarah) — not a new agent definition. Update 06-technical-audit.md pipeline doc to describe the two-agent sequential flow.",
+      "verify": "test -f /Users/yangyang/Repos/agent-conductor/.claude/skills/directive/docs/reference/templates/investigator-prompt.md && test -f /Users/yangyang/Repos/agent-conductor/.claude/skills/directive/docs/reference/templates/architect-prompt.md && echo 'pass'",
+      "definition_of_done": [
+        "06-technical-audit.md describes two-agent sequential flow: Investigator first, then Architect",
+        "investigator-prompt.md template exists with instructions for pure data gathering (scan, measure, flag — no recommendations)",
+        "architect-prompt.md template exists with instructions to read investigation output + Morgan's plan and produce design recommendations",
+        "investigation-output.md schema exists with baseline, active_files, dead_code, findings fields (no recommended_approach)",
+        "audit-output.md schema updated to reference investigation data as input and focus on recommended_approach and design",
+        "auditor.md model changed from haiku to opus",
+        "New investigator.md agent definition exists with model: opus and scanner-only tools"
+      ]
+    },
+    {
+      "id": "casting-validation-script",
+      "title": "Create validate-cast.sh for Mechanical Casting Validation",
+      "priority": "P0",
+      "complexity": "moderate",
+      "phases": ["design", "build", "review"],
+      "user_scenario": "After Morgan outputs her plan JSON, Alex pipes it through validate-cast.sh which mechanically checks that every initiative has an auditor, builder is not the same as reviewer, and complex initiatives have appropriate reviewers — blocking the pipeline if rules are violated.",
+      "cast": {
+        "auditor": "morgan",
+        "builder": "casey",
+        "reviewers": ["morgan"]
+      },
+      "scope": "Create validate-cast.sh as a new bash script in .claude/hooks/. It reads Morgan's plan JSON from stdin and validates: (1) every initiative has an auditor field, (2) builder is not in the reviewers array, (3) reviewers are not reviewing their own behavior/prompts (no agent reviewing changes to its own .md file), (4) complex initiatives (5+ phases) have at least one C-suite reviewer. Output pass/fail with specific violation messages. Update 05-morgan-planning.md to describe the validation step after parsing Morgan's JSON.",
+      "verify": "test -f /Users/yangyang/Repos/agent-conductor/.claude/hooks/validate-cast.sh && echo 'pass'",
+      "definition_of_done": [
+        "validate-cast.sh exists in .claude/hooks/ and is executable",
+        "Script validates: auditor present, builder != reviewer, complex work has C-suite reviewer",
+        "Script outputs JSON with pass/fail status and violation list",
+        "05-morgan-planning.md updated to include validation step after Morgan's JSON is parsed",
+        "Script uses jq for JSON parsing (consistent with enforce-completion.sh pattern)"
+      ]
+    },
+    {
+      "id": "dod-enforcement-hook",
+      "title": "Extend Stop Hook for Initiative-Level DOD Enforcement",
+      "priority": "P0",
+      "complexity": "moderate",
+      "phases": ["design", "build", "review"],
+      "user_scenario": "When the directive pipeline reaches the wrapup phase, the Stop hook reads each initiative's DOD from the checkpoint and verifies the reviewer marked every criterion as met — blocking completion if any DOD criteria are unverified.",
+      "cast": {
+        "auditor": "morgan",
+        "builder": "casey",
+        "reviewers": ["morgan"]
+      },
+      "scope": "Extend enforce-completion.sh to add initiative-level DOD checking. For heavyweight and strategic directives, the hook reads the checkpoint's initiatives array. For each initiative with status 'complete', it checks that dod_verification exists and every DOD criterion is marked as met. If any initiative is missing dod_verification or has unmet criteria, the hook blocks with specific violation messages listing which initiative and which DOD items are unverified. Also update the checkpoint schema (checkpoint.md) to document the dod_verification field structure that reviewers must write.",
+      "verify": "grep -q 'dod_verification' /Users/yangyang/Repos/agent-conductor/.claude/hooks/enforce-completion.sh && echo 'pass'",
+      "definition_of_done": [
+        "enforce-completion.sh checks dod_verification for each completed initiative in checkpoint",
+        "Hook blocks if any completed initiative has unmet or missing DOD verification",
+        "Violation messages specify which initiative and which DOD criteria are unverified",
+        "checkpoint.md schema documents the dod_verification field structure",
+        "Existing enforcement checks (agents spawned, artifacts written) remain unchanged"
+      ]
+    },
+    {
+      "id": "routing-table-and-docs-sync",
+      "title": "Update SKILL.md Routing Table and Cross-References",
+      "priority": "P1",
+      "complexity": "simple",
+      "phases": ["build", "review"],
+      "user_scenario": "When an agent reads SKILL.md to navigate the pipeline, the routing table correctly lists all new docs (investigator-prompt.md, architect-prompt.md, investigation-output.md, validate-cast.sh) and cross-references are consistent across all pipeline and reference docs.",
+      "cast": {
+        "auditor": "morgan",
+        "builder": "taylor",
+        "reviewers": ["morgan"]
+      },
+      "scope": "Update SKILL.md routing table to include new reference docs (investigator-prompt.md, architect-prompt.md, investigation-output.md). Add validate-cast.sh to the routing table. Verify all cross-references in pipeline docs point to correct file paths. Ensure the pipeline step numbering is consistent after the audit split.",
+      "verify": "grep -q 'investigator-prompt' /Users/yangyang/Repos/agent-conductor/.claude/skills/directive/SKILL.md && echo 'pass'",
+      "definition_of_done": [
+        "SKILL.md reference docs table includes investigator-prompt.md, architect-prompt.md, investigation-output.md",
+        "SKILL.md reference docs table includes validate-cast.sh",
+        "All pipeline doc cross-references (links to ../reference/ files) are valid",
+        "Pipeline step numbering is consistent with the two-agent audit flow"
+      ]
+    }
+  ]
+}

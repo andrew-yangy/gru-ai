@@ -1,0 +1,11 @@
+{
+  "id": "game",
+  "title": "Game — Office Simulation as Primary CEO Interface",
+  "status": "in_progress",
+  "category": "framework",
+  "description": "A pixel-art office simulation game that serves as the primary CEO interface for agent-conductor. The CEO manages their AI company by playing the game — walking around an office, assigning agents, approving directives, reviewing work. Dashboard remains as power-user fallback. Built with React + Canvas 2D, consuming the same Zustand store and WebSocket data as the dashboard.",
+  "created": "2026-03-04T00:00:00Z",
+  "updated": "2026-03-04T00:00:00Z",
+  "kpis": [],
+  "okrs": []
+}

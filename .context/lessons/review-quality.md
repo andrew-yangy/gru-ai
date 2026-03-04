@@ -22,8 +22,8 @@
 
 ## Incomplete "Done" Items
 
-- **"Done" in the backlog != actually wired in.** The Chief of Staff pattern was marked Done: alex-cos.md created, lessons documented, SKILL.md footnote added. But the `/directive` skill was never modified to actually SPAWN Alex. The pieces existed but the integration point was missing. Root cause: the backlog checked off deliverables (files created) without checking the user-facing behavior (does `/directive` actually delegate?). Fix: DOD for integration work must include "invoke the feature and verify end-to-end" — not just "files exist."
-- **Backlog items should have a "verify" step.** Like the verify command for code (`npm run type-check`), process changes need a verification action: "Run `/directive test` and confirm Alex is spawned, CEO session stays clean." Without this, reviewers check the files but not the flow.
+- **"Done" in the backlog != actually wired in.** Integration work was once marked Done (files created, lessons documented, SKILL.md updated) but the skill was never modified to actually use the new pattern. The pieces existed but the integration point was missing. Root cause: the backlog checked off deliverables (files created) without checking the user-facing behavior (does the feature actually work end-to-end?). Fix: DOD for integration work must include "invoke the feature and verify end-to-end" — not just "files exist."
+- **Backlog items should have a "verify" step.** Like the verify command for code (`npm run type-check`), process changes need a verification action: "Run `/directive test` and confirm the pipeline executes end-to-end." Without this, reviewers check the files but not the flow.
 
 ## Verify artifact_paths
 

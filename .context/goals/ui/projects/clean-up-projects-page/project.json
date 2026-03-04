@@ -1,9 +1,15 @@
 {
   "id": "clean-up-projects-page",
-  "title": "Clean up projects page — fix layout and data display issues",
+  "title": "Clean up projects page \u2014 fix layout and data display issues",
   "goal_id": "ui",
   "status": "completed",
   "priority": "p1",
+  "agent": [
+    "self"
+  ],
+  "reviewers": [
+    "sarah"
+  ],
   "description": "Fixed layout and data display issues on the dashboard projects page.",
   "source_directive": "clean-up-projects-page",
   "tags": [],

@@ -1,9 +1,15 @@
 {
   "id": "context-system-redesign",
-  "title": "Cross-reference system — directive.json, feature DOD, backlog links, reverse reference maps",
+  "title": "Cross-reference system \u2014 directive.json, feature DOD, backlog links, reverse reference maps",
   "goal_id": "data-model",
   "status": "completed",
   "priority": "p0",
+  "agent": [
+    "self"
+  ],
+  "reviewers": [
+    "sarah"
+  ],
   "description": "Added companion directive.json files for all directives, source_directive/source_backlog/dod/report/refs fields to features, and reverse reference computation (directive->features, goal->directives).",
   "source_directive": "context-system-redesign",
   "tags": [],

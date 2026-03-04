@@ -3,6 +3,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { Clock, DollarSign, Zap, Pause } from 'lucide-react';
+import { API_BASE } from '@/lib/api';
 
 interface SchedulerConfig {
   enabled: boolean;
@@ -62,7 +63,7 @@ export default function SchedulerCard() {
   const [toggling, setToggling] = useState(false);
 
   const fetchState = useCallback(() => {
-    fetch('http://localhost:4444/api/scheduler')
+    fetch( `${API_BASE}/api/scheduler`)
       .then(r => r.json())
       .then(data => setState(data))
       .catch(() => setState(null));
@@ -78,7 +79,7 @@ export default function SchedulerCard() {
   const handleToggle = async (enabled: boolean) => {
     setToggling(true);
     try {
-      await fetch('http://localhost:4444/api/scheduler/toggle', {
+      await fetch( `${API_BASE}/api/scheduler/toggle`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ enabled }),

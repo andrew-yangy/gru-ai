@@ -1,0 +1,40 @@
+{
+  "version": 1,
+  "directive_name": "office-simulation-game",
+  "directive_path": ".context/directives/office-simulation-game.md",
+  "started_at": "2026-03-03T23:35:19Z",
+  "updated_at": "2026-03-03T23:53:13Z",
+  "current_step": "step-7",
+  "planning": {
+    "morgan_plan": null,
+    "ceo_approval": null,
+    "worktree_path": null
+  },
+  "initiatives": [
+    {
+      "id": "game-state-integration",
+      "status": "skipped",
+      "current_phase": null
+    }
+  ],
+  "enforcement": {
+    "agents_spawned": [
+      "morgan",
+      "investigator",
+      "sarah",
+      "marcus",
+      "riley"
+    ],
+    "review_artifacts_written": [
+      ".context/goals/game/projects/office-simulation-game/game-office-layout/review.md",
+      ".context/reports/office-simulation-game-phase1-2026-03-04.md",
+      ".context/goals/game/projects/office-simulation-game/plan-for-approval.md"
+    ]
+  },
+  "wrapup": {
+    "okrs_persisted": false,
+    "follow_ups_processed": false,
+    "digest_path": null,
+    "lessons_updated": false
+  }
+}

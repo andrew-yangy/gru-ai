@@ -2,8 +2,10 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { GitBranch, Clock, HardDrive, Terminal, MessageSquare, CornerDownRight, User } from 'lucide-react';
 import { cn, timeAgo, sessionStatusLabel, terminalLabel } from '@/lib/utils';
+import { API_BASE } from '@/lib/api';
 import ActivityLine from '@/components/shared/ActivityLine';
 import QuickActions from '@/components/shared/QuickActions';
+import { agentBadgeColor, agentBorderAccent } from '@/components/org/agent-config';
 import type { Session, SessionActivity, TeamTask } from '@/stores/types';
 
 interface KanbanCardProps {
@@ -46,33 +48,11 @@ function formatFileSize(bytes: number): string {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
-/** Color for named agent badges */
-function agentBadgeColor(name?: string): string {
-  switch (name?.toLowerCase()) {
-    case 'alex': return 'bg-blue-500/15 text-blue-400 border-blue-500/30';
-    case 'sarah': return 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30';
-    case 'morgan': return 'bg-purple-500/15 text-purple-400 border-purple-500/30';
-    case 'marcus': return 'bg-amber-500/15 text-amber-400 border-amber-500/30';
-    case 'priya': return 'bg-pink-500/15 text-pink-400 border-pink-500/30';
-    default: return 'bg-secondary text-muted-foreground border-border';
-  }
-}
-
-/** Left border accent color for named agents */
-function agentBorderColor(name?: string): string {
-  switch (name?.toLowerCase()) {
-    case 'alex': return 'border-l-blue-500/60';
-    case 'sarah': return 'border-l-emerald-500/60';
-    case 'morgan': return 'border-l-purple-500/60';
-    case 'marcus': return 'border-l-amber-500/60';
-    case 'priya': return 'border-l-pink-500/60';
-    default: return '';
-  }
-}
+// agentBadgeColor and agentBorderAccent imported from agent-config (registry-derived)
 
 async function handleFocus(paneId: string) {
   try {
-    await fetch('http://localhost:4444/api/actions/focus-session', {
+    await fetch( `${API_BASE}/api/actions/focus-session`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ paneId }),
@@ -277,7 +257,7 @@ export default function KanbanCard({
   );
 
   const cardClassName = cn(
-    isNamedAgent && `border-l-2 ${agentBorderColor(session.agentName)}`,
+    isNamedAgent && `border-l-2 ${agentBorderAccent(session.agentName)}`,
     isSubagent && !isNamedAgent && 'border-l-2 border-l-border/50 ml-3',
     isSubagent && isNamedAgent && 'ml-3',
   );

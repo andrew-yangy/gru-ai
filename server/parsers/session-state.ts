@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import type { SessionActivity } from '../types.js';
-import { projectLabel, extractInitialPrompt, extractLatestPrompt, cleanPromptText, isSystemContent, extractAgentIdentityFromFile } from './session-scanner.js';
+import { projectLabel, extractInitialPrompt, extractLatestPrompt, cleanPromptText, isSystemContent, extractAgentIdentityFromFile, resolveAgentFromParent, resolveAgentFromSetting } from './session-scanner.js';
 import type { LastEntryType } from './session-scanner.js';
 
 // --- Constants ---
@@ -44,6 +44,7 @@ interface RawEntry {
   subtype?: string;
   sessionId?: string;
   agentId?: string;
+  agentSetting?: string;
   timestamp?: string;
   cwd?: string;
   version?: string;
@@ -179,6 +180,27 @@ export function bootstrapFromTail(filePath: string): SessionFileState | null {
       state.agentRole = identity.role;
     }
 
+    // Fallback: for subagent files without detected identity, cross-reference
+    // the parent session's Agent tool calls to find the subagent_type
+    if (!state.agentName) {
+      const subagentsIdx = filePath.indexOf('/subagents/');
+      if (subagentsIdx !== -1) {
+        // Extract parent session directory and derive parent JSONL path
+        const parentDir = filePath.slice(0, subagentsIdx);
+        const parentSessionId = path.basename(parentDir);
+        const parentJsonl = path.join(path.dirname(parentDir), `${parentSessionId}.jsonl`);
+        // Extract child agentId from filename (agent-{id}.jsonl)
+        const childFilename = path.basename(filePath);
+        const childAgentId = childFilename.replace(/^agent-/, '').replace(/\.jsonl$/, '');
+
+        const parentIdentity = resolveAgentFromParent(parentJsonl, childAgentId);
+        if (parentIdentity) {
+          state.agentName = parentIdentity.name;
+          state.agentRole = parentIdentity.role;
+        }
+      }
+    }
+
     fileStates.set(filePath, state);
     return state;
   } catch {
@@ -256,6 +278,52 @@ export function initializeAllFileStates(claudeHome: string): Map<string, Discove
 }
 
 /**
+ * Recursively collect agent-*.jsonl files from a subagents/ directory.
+ * Handles nested subagents (sub-sub-agents spawned by subagents).
+ */
+function collectSubagentFiles(
+  dir: string,
+  parentSessionId: string,
+  project: string,
+  projectDir: string,
+  result: Map<string, DiscoveredFile>,
+): void {
+  let entries: fs.Dirent[];
+  try {
+    entries = fs.readdirSync(dir, { withFileTypes: true });
+  } catch {
+    return;
+  }
+
+  for (const entry of entries) {
+    if (entry.isFile() && entry.name.endsWith('.jsonl') && entry.name.startsWith('agent-')) {
+      if (entry.name.startsWith('agent-acompact-')) continue;
+
+      const agentId = entry.name.replace(/^agent-/, '').replace(/\.jsonl$/, '');
+      const filePath = path.join(dir, entry.name);
+      result.set(filePath, {
+        filePath,
+        sessionId: `${parentSessionId}:${agentId}`,
+        project,
+        projectDir,
+        isSubagent: true,
+        parentSessionId,
+        agentId,
+      });
+
+      // Check for nested subagents under {agent-id}/subagents/
+      const nestedSubagentsDir = path.join(dir, '..', agentId, 'subagents');
+      collectSubagentFiles(nestedSubagentsDir, parentSessionId, project, projectDir, result);
+    }
+
+    // Also recurse into any subdirectories that contain subagents/
+    if (entry.isDirectory() && entry.name === 'subagents') {
+      collectSubagentFiles(path.join(dir, entry.name), parentSessionId, project, projectDir, result);
+    }
+  }
+}
+
+/**
  * Discover all .jsonl session files under ~/.claude/projects/.
  */
 export function discoverSessionFiles(claudeHome: string): Map<string, DiscoveredFile> {
@@ -300,36 +368,13 @@ export function discoverSessionFiles(claudeHome: string): Map<string, Discovered
       });
     }
 
-    // Subagent .jsonl files under {uuid}/subagents/
+    // Subagent .jsonl files under {uuid}/subagents/ (recursive for nested subagents)
     for (const entry of entries) {
       if (!entry.isDirectory()) continue;
 
-      const subagentsDir = path.join(projectPath, entry.name, 'subagents');
-      let subEntries: fs.Dirent[];
-      try {
-        subEntries = fs.readdirSync(subagentsDir, { withFileTypes: true });
-      } catch {
-        continue;
-      }
-
       const parentSessionId = entry.name;
-
-      for (const sub of subEntries) {
-        if (!sub.isFile() || !sub.name.endsWith('.jsonl') || !sub.name.startsWith('agent-')) continue;
-        if (sub.name.startsWith('agent-acompact-')) continue;
-
-        const agentId = sub.name.replace(/^agent-/, '').replace(/\.jsonl$/, '');
-        const filePath = path.join(subagentsDir, sub.name);
-        result.set(filePath, {
-          filePath,
-          sessionId: `${parentSessionId}:${agentId}`,
-          project: label,
-          projectDir,
-          isSubagent: true,
-          parentSessionId,
-          agentId,
-        });
-      }
+      const subagentsDir = path.join(projectPath, entry.name, 'subagents');
+      collectSubagentFiles(subagentsDir, parentSessionId, label, projectDir, result);
     }
   }
 
@@ -426,6 +471,15 @@ function processEntry(state: SessionFileState, entry: RawEntry): void {
   if (entry.version) state.version = entry.version;
   if (entry.slug) state.slug = entry.slug;
   if (entry.timestamp) state.lastActivityAt = entry.timestamp;
+
+  // CLI-spawned agents: extract agent identity from agentSetting field
+  if (entry.type === 'agent-setting' && entry.agentSetting && !state.agentName) {
+    const identity = resolveAgentFromSetting(entry.agentSetting);
+    if (identity) {
+      state.agentName = identity.name;
+      state.agentRole = identity.role;
+    }
+  }
 
   // Extract tasksId from entries that reference tasks directories
   const entryStr = JSON.stringify(entry);

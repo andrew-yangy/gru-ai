@@ -112,3 +112,8 @@
 ::-webkit-scrollbar-thumb:hover {
   background: hsl(220 10% 28%);
 }
+
+@keyframes slideUp {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}

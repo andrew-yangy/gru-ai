@@ -1,7 +1,7 @@
 # Lessons: Orchestration Patterns
 
 > How to coordinate agents, sequence work, manage resources.
-> Relevant to: Morgan (planning), Alex (execution)
+> Relevant to: Morgan (planning), orchestrator (execution)
 
 ## Scoping Philosophy
 
@@ -24,16 +24,30 @@
 - **Always verify with Chrome MCP after building UI.** Building without visual testing is shipping untested code. Take screenshots, find issues, fix them in a loop.
 - **After building, spawn reviewers to find gaps.** Sarah for code quality, Marcus for UX, then fix what they find. Don't stop after one pass.
 
+## Parallel Execution Patterns
+
+- **Parallelism is safe ONLY when active_files don't overlap.** Two initiatives touching the same file will cause merge conflicts or overwrites. The audit's `active_files` array is the source of truth for overlap detection.
+- **Always group by priority tier first — never run P1 in parallel with P0.** Priority ordering exists for a reason (P0 may establish patterns that P1 depends on). Parallelism is only within-tier.
+- **Background agent failures don't cascade — each initiative is independent.** If one parallel initiative crashes, the others continue. Mark the failed one and move on.
+- **Collection pattern: spawn all -> TaskOutput each -> aggregate results.** Use `run_in_background: true` for each parallel agent, then collect with TaskOutput per agent ID. Same pattern applies to brainstorm and challenge phases.
+- **Timeout: 10 minutes per initiative before marking failed.** Long-running agents may be stuck. Don't wait indefinitely — mark as failed and continue.
+- **Brainstorm and challenge agents are always parallel.** These are lightweight, independent, advisory calls. Use `run_in_background: true` + collect pattern. Failed brainstorm/challenge agents never block the pipeline.
+
+## Enforcement Architecture Decisions
+
+- **Explicit pipeline steps beat shell hook enforcement.** We tried Stop hooks (enforce-completion.sh) and scope hooks (enforce-orchestrator-scope.sh) as bash scripts on the orchestrator agent. Problems: hooks require bash permission (fails for background agents), add maintenance overhead, and are opaque. Better: an explicit Step 5b (Review Verification) in the pipeline that the LLM executes as part of the normal flow. The checkpoint file tracks everything needed — just check it.
+- **Don't track observable actions when you can check outcomes.** Checking "did the checkpoint reach step-5?" is a single jq query. Outcome checks beat action tracking.
+- **Correction-to-code pipeline deferred.** Auto-escalating CEO corrections to enforced constraints requires a constraint definition format and checker infrastructure we decided not to build. The simpler path: CEO adds corrections to preferences.md, agents read preferences.md.
+
 ## Multi-Codebase Directives
 
 - **Directives spanning multiple repos need explicit coordination.** The work-state-management directive touched both `sw/` (context tree, SKILL.md) and `agent-conductor/` (dashboard). Worktree isolates only one repo. The agent-conductor changes were made directly (no worktree) — acceptable for this case but risky for larger changes. Consider: separate branches per repo, or a script that creates worktrees in both.
 
 ## Context Window Management
 
-- **CEO session should delegate, not implement.** The CEO's context window is the most valuable resource. Filling it with implementation details (file edits, lint errors, agent prompts) prevents strategic thinking. The Chief of Staff pattern solves this: Alex handles orchestration and returns a clean summary. CEO reviews outcomes, not intermediate steps.
-- **Chief of Staff pattern: main session = CEO, Alex = executor.** Alex reads directives, spawns agents, collects results, and returns structured summaries (Done / Changes / Needs CEO Eyes / Next). The CEO session stays clean for decisions and browser verification.
-- **Chrome MCP tools only work in the main session — visual verification bounces back.** Alex (and all spawned agents) cannot use browser tools. When UI work needs verification, Alex includes specific instructions in "Needs CEO Eyes": URLs, elements to click, expected behavior. The CEO handles the browser checks. Plan accordingly: never assign Chrome work to subagents.
-- **Context-shielded delegation preserves CEO attention.** Each directive fills 50-100K tokens of context. Running 3 directives in one CEO session means the CEO loses the ability to think strategically by the third. Delegating to Alex means 3 directives = 3 clean summaries in the CEO session, each consuming ~2K tokens.
+- **CEO session should delegate, not implement.** The CEO's context window is the most valuable resource. Filling it with implementation details (file edits, lint errors, agent prompts) prevents strategic thinking. For medium/heavy directives, launch a dedicated CLI session (`claude -p "/directive {name}"`) — this keeps the CEO session clean for decisions and browser verification.
+- **Chrome MCP tools only work in the main session — visual verification bounces back.** CLI-spawned sessions and subagents cannot use browser tools. When UI work needs verification, the directive digest includes specific instructions: URLs, elements to click, expected behavior. The CEO handles the browser checks. Plan accordingly: never assign Chrome work to non-interactive sessions.
+- **Context-shielded delegation preserves CEO attention.** Each directive fills 50-100K tokens of context. Running 3 directives in one CEO session means the CEO loses the ability to think strategically by the third. Launching separate CLI sessions means 3 directives = 3 clean summaries, each consuming ~2K tokens when reported back.
 
 ## Batch Directive Execution
 

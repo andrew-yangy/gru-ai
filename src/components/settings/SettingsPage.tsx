@@ -2,8 +2,7 @@ import { useState } from 'react';
 import { useDashboardStore } from '@/stores/dashboard-store';
 import { Switch } from '@/components/ui/switch';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-
-const API_BASE = 'http://localhost:4444';
+import { API_BASE } from '@/lib/api';
 
 export default function SettingsPage() {
   const notificationConfig = useDashboardStore((s) => s.notificationConfig);

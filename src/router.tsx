@@ -15,6 +15,7 @@ const SettingsPage = lazy(() => import('@/components/settings/SettingsPage'));
 const ArtifactsPage = lazy(() => import('@/components/artifacts/ArtifactsPage'));
 const OrgPage = lazy(() => import('@/components/org/OrgPage'));
 const AgentDetailPage = lazy(() => import('@/components/org/AgentDetailPage'));
+const GamePage = lazy(() => import('@/components/game/GamePage'));
 
 // eslint-disable-next-line react-refresh/only-export-components
 function PageLoader() {
@@ -46,6 +47,7 @@ export const router = createBrowserRouter([
       { path: 'plans', element: <SuspenseWrapper><PlansPage /></SuspenseWrapper> },
       { path: 'artifacts', element: <SuspenseWrapper><ArtifactsPage /></SuspenseWrapper> },
       { path: 'settings', element: <SuspenseWrapper><SettingsPage /></SuspenseWrapper> },
+      { path: 'game', element: <SuspenseWrapper><GamePage /></SuspenseWrapper> },
     ],
   },
 ]);

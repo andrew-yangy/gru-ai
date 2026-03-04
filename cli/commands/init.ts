@@ -11,7 +11,19 @@ const CLI_ROOT = path.resolve(__dirname, '..');
 const REPO_ROOT = path.resolve(CLI_ROOT, '..');
 const TEMPLATES_DIR = path.join(CLI_ROOT, 'templates');
 
-const ALL_AGENTS = ['sarah-cto', 'morgan-coo', 'marcus-cpo', 'priya-cmo', 'alex-cos'] as const;
+// Read C-suite agents from the canonical registry (excluding CEO)
+const registryPath = path.resolve(CLI_ROOT, '..', '.claude', 'agent-registry.json');
+let ALL_AGENTS: string[];
+try {
+  const registryData = JSON.parse(fs.readFileSync(registryPath, 'utf-8'));
+  ALL_AGENTS = registryData.agents
+    .filter((a: any) => a.isCsuite && a.id !== 'ceo' && a.agentFile)
+    .map((a: any) => a.agentFile.replace('.md', ''));
+} catch {
+  // Fallback if registry is not found or unreadable
+  console.warn('  Warning: agent-registry.json not found, using fallback agent list');
+  ALL_AGENTS = ['sarah-cto', 'morgan-coo', 'marcus-cpo', 'priya-cmo'];
+}
 const ALL_SKILLS = ['directive', 'scout', 'healthcheck', 'report'] as const;
 
 interface InitConfig {
@@ -278,7 +290,7 @@ export async function runInit(flags: Record<string, string | boolean>): Promise<
 
   // Validate agents
   const invalidAgents = config.agents.filter(
-    (a) => !ALL_AGENTS.includes(a as (typeof ALL_AGENTS)[number])
+    (a) => !ALL_AGENTS.includes(a)
   );
   if (invalidAgents.length > 0) {
     console.error(`  Error: Unknown agents: ${invalidAgents.join(', ')}`);

@@ -356,13 +356,11 @@ function checkTrigger(trigger: string, projectPath: string): boolean {
 // ---------------------------------------------------------------------------
 
 function launchDirective(work: ReadyWork, projectPath: string): void {
-  const agentDef = '/Users/yangyang/Repos/agent-conductor/.claude/agents/alex-cos.md';
-
   let prompt: string;
   if (work.source === 'inbox') {
-    prompt = `You are Alex Rivera, Chief of Staff. Read your agent definition at ${agentDef} first. Then execute the directive at ${work.path}. Also read the lessons in /Users/yangyang/Repos/agent-conductor/.context/lessons/ before starting.`;
+    prompt = `/directive ${work.name}`;
   } else {
-    prompt = `You are Alex Rivera, Chief of Staff. Read your agent definition at ${agentDef} first. Also read the lessons in /Users/yangyang/Repos/agent-conductor/.context/lessons/. The backlog item "${work.name}" has its trigger met (${work.trigger ?? 'unknown'}). Create a directive for it and execute. Backlog file: ${work.path}`;
+    prompt = `/directive Execute backlog item "${work.name}" in goal "${work.goal}" (trigger: ${work.trigger ?? 'unknown'}). Backlog file: ${work.path}`;
   }
 
   console.log(`[foreman] Launching: ${work.name} (${work.priority}, ${work.source})`);

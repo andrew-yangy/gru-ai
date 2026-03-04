@@ -1,0 +1,72 @@
+{
+  "directive": "office-simulation-game",
+  "created": "2026-03-04T12:00:00Z",
+  "initiatives": [
+    {
+      "id": "game-office-layout",
+      "title": "Office Layout Grid + Interactive Furniture",
+      "pages": [
+        {
+          "url": "http://localhost:4444/game",
+          "description": "The game office view — a top-down grid layout with clickable furniture and agent desks",
+          "checks": [
+            {
+              "action": "navigate",
+              "target": "http://localhost:4444/game",
+              "expected": "Page loads showing a dark 'HQ' header bar and a grid of colored tiles representing an office floor plan",
+              "critical": true
+            },
+            {
+              "action": "verify-element",
+              "target": "Grid with colored tiles — stone/gray for walls, amber for desks, blue for conference, white for whiteboard",
+              "expected": "A 20x14 grid is visible with distinct tile colors for different furniture types",
+              "critical": true
+            },
+            {
+              "action": "verify-text",
+              "target": "Agent initials on desk tiles: A (Alex), S (Sarah), M (Morgan), X (Marcus), P (Priya)",
+              "expected": "Five desk tiles show single-letter initials with colored identity dots",
+              "critical": true
+            },
+            {
+              "action": "click",
+              "target": "Any agent desk tile (e.g., the tile with 'S' for Sarah)",
+              "expected": "Right side panel opens showing 'Sarah' as title, 'CTO' role, and status information",
+              "critical": true
+            },
+            {
+              "action": "click",
+              "target": "The whiteboard tile (white tile with 'W' on the right wall)",
+              "expected": "Side panel shows 'Directives' header and lists any active directives from the store",
+              "critical": true
+            },
+            {
+              "action": "click",
+              "target": "The mailbox tile (red tile with envelope icon near bottom-left)",
+              "expected": "Side panel shows 'Reports' header and lists recent reports or 'No reports available'",
+              "critical": true
+            },
+            {
+              "action": "click",
+              "target": "The CEO desk tile (yellow tile with star icon, top-right area)",
+              "expected": "Side panel shows 'CEO Desk' with pending approvals count and active directive info",
+              "critical": true
+            },
+            {
+              "action": "verify-element",
+              "target": "Game header bar with 'HQ', current date, and status counts",
+              "expected": "Dark header shows 'HQ' on left, today's date in center, and 'X active / Y idle' counts on right",
+              "critical": false
+            },
+            {
+              "action": "verify-element",
+              "target": "Sidebar 'HQ' nav link with Building2 icon",
+              "expected": "Second item in sidebar (after Dashboard) labeled 'HQ' with a building icon, clickable",
+              "critical": true
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

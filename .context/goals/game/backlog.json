@@ -1,0 +1,10 @@
+[
+  {
+    "id": "agent-process-stats-in-game",
+    "title": "Show agent CPU/memory usage on desk tiles in the game",
+    "priority": "P2",
+    "description": "Each agent's desk tile shows a tiny CPU/memory bar (like a mini system monitor) with real data from the actual Claude processes. Scrape process stats (ps aux or /proc) for agent PIDs on the server, push over WebSocket alongside session status, render as small bars or sparklines on desk tiles in the Canvas renderer. Makes the office feel alive and gives the CEO a glance at resource usage.",
+    "depends_on": "game-phase2-data-bridge",
+    "added": "2026-03-04"
+  }
+]

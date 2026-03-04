@@ -4,6 +4,7 @@ import { cn } from '@/lib/utils';
 import { BookOpen, ChevronRight, Loader2, RefreshCw } from 'lucide-react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import type { LessonRecord } from '@/stores/types';
+import { API_BASE } from '@/lib/api';
 
 function LessonCard({ lesson }: { lesson: LessonRecord }) {
   const [expanded, setExpanded] = useState(false);
@@ -19,7 +20,7 @@ function LessonCard({ lesson }: { lesson: LessonRecord }) {
     setExpanded(true);
     setLoading(true);
     setError(null);
-    fetch(`http://localhost:4444/api/state/artifact-content?path=${encodeURIComponent(lesson.filePath)}`)
+    fetch(`${API_BASE}/api/state/artifact-content?path=${encodeURIComponent(lesson.filePath)}`)
       .then(r => {
         if (!r.ok) throw new Error(`Failed to load: ${r.status}`);
         return r.text();

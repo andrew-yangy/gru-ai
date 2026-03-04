@@ -4,6 +4,7 @@ import { cn } from '@/lib/utils';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Badge } from '@/components/ui/badge';
 import SessionCard from './SessionCard';
+import { agentBadgeColor } from '@/components/org/agent-config';
 import type { ProjectGroup, Session, SessionActivity } from '@/stores/types';
 
 interface SessionTreeProps {
@@ -26,17 +27,7 @@ function statusPriority(status: Session['status']): number {
   }
 }
 
-/** Color for named agent badges */
-function agentBadgeColor(name?: string): string {
-  switch (name?.toLowerCase()) {
-    case 'alex': return 'bg-blue-500/15 text-blue-400 border-blue-500/30';
-    case 'sarah': return 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30';
-    case 'morgan': return 'bg-purple-500/15 text-purple-400 border-purple-500/30';
-    case 'marcus': return 'bg-amber-500/15 text-amber-400 border-amber-500/30';
-    case 'priya': return 'bg-pink-500/15 text-pink-400 border-pink-500/30';
-    default: return 'bg-secondary text-muted-foreground border-border';
-  }
-}
+// agentBadgeColor imported from agent-config (registry-derived)
 
 export default function SessionTree({
   projects,
