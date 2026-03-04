@@ -125,6 +125,83 @@ function rgbToHsl(r: number, g: number, b: number): [number, number, number] {
 }
 
 /**
+ * Selectively colorize a character sprite — only recolors clothing pixels while
+ * preserving skin tones, hair, and outlines. Uses HSL analysis to detect:
+ * - Skin: warm hue (10-50°), moderate saturation, mid lightness → keep original
+ * - Outlines: very dark (L < 0.15) → keep original
+ * - Desaturated gray (S < 0.08) → keep original
+ * - Everything else (clothing, accessories) → colorize to target hue
+ */
+export function selectiveColorizeSprite(
+  sprite: SpriteData,
+  targetColor: { h: number; s: number; b: number; c: number },
+): SpriteData {
+  const result: SpriteData = []
+
+  for (const row of sprite) {
+    const newRow: string[] = []
+    for (const pixel of row) {
+      if (pixel === '') {
+        newRow.push('')
+        continue
+      }
+
+      const r = parseInt(pixel.slice(1, 3), 16)
+      const g = parseInt(pixel.slice(3, 5), 16)
+      const bv = parseInt(pixel.slice(5, 7), 16)
+      const [origH, origS, origL] = rgbToHsl(r, g, bv)
+
+      // Keep outlines and very dark pixels
+      if (origL < 0.15) {
+        newRow.push(pixel)
+        continue
+      }
+
+      // Keep very desaturated pixels (grays, whites)
+      if (origS < 0.08) {
+        newRow.push(pixel)
+        continue
+      }
+
+      // Keep skin-tone pixels: warm hue (10-50°), moderate saturation, mid lightness
+      const isSkin = origH >= 10 && origH <= 50 && origS >= 0.15 && origS <= 0.85 && origL >= 0.25 && origL <= 0.85
+      if (isSkin) {
+        newRow.push(pixel)
+        continue
+      }
+
+      // Keep hair-colored pixels: very dark but colored (browns/blacks)
+      if (origL < 0.30 && origS < 0.40) {
+        newRow.push(pixel)
+        continue
+      }
+
+      // Clothing pixel → colorize with target hue
+      const satFrac = targetColor.s / 100
+      let lightness = origL
+
+      // Apply contrast
+      if (targetColor.c !== 0) {
+        const factor = (100 + targetColor.c) / 100
+        lightness = 0.5 + (lightness - 0.5) * factor
+      }
+
+      // Apply brightness
+      if (targetColor.b !== 0) {
+        lightness = lightness + targetColor.b / 200
+      }
+
+      lightness = Math.max(0, Math.min(1, lightness))
+      const hex = hslToHex(targetColor.h, satFrac, lightness)
+      newRow.push(hex)
+    }
+    result.push(newRow)
+  }
+
+  return result
+}
+
+/**
  * Adjust a sprite's colors by shifting HSL values (default mode for furniture).
  *
  * H slider (-180 to +180): rotates hue

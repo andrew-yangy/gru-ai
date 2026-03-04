@@ -3,6 +3,7 @@
 // ---------------------------------------------------------------------------
 
 import type { SpriteData } from './pixel-types'
+import type { LoadedCharacterData } from './sprites/spriteData'
 import { setWallSprites } from './wallTiles'
 import { setFloorSprites } from './floorTiles'
 import { setCharacterTemplates } from './sprites/spriteData'
@@ -146,19 +147,13 @@ export async function loadFloorAssets(src = '/assets/office/room-builder.png'): 
   }
 }
 
-// ── Character Sprites (char_0..5.png: 112x96, 7 frames x 3 dirs) ──
-
-interface LoadedCharacterData {
-  down: SpriteData[]
-  up: SpriteData[]
-  right: SpriteData[]
-}
+// ── Character Sprites (old: char_0..5.png, new: LimeZu Modern Interiors) ──
 
 export async function loadCharacterAssets(basePath = '/assets/characters'): Promise<void> {
   try {
     const characters: LoadedCharacterData[] = []
 
-    for (let i = 0; i < 6; i++) {
+    for (let i = 0; i < 12; i++) {
       const img = await loadImage(`${basePath}/char_${i}.png`)
       const canvas = document.createElement('canvas')
       canvas.width = img.width
@@ -206,7 +201,7 @@ export function loadAllAssets(): void {
   loaded = true
   loadWallAssets()
   loadFloorAssets()
-  loadCharacterAssets()
+  loadCharacterAssets() // char_0..11.png for all agents
   loadTilesetCache() // Load room-builder.png tiles for direct TMX rendering
   loadLimeZuSprites().then((sprites) => {
     if (sprites) {

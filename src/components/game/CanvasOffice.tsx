@@ -46,8 +46,7 @@ export default function CanvasOffice({
   useEffect(() => {
     const state = new OfficeState(OFFICE_LAYOUT)
     for (const agent of OFFICE_AGENTS) {
-      // addAgent(id, preferredPalette, preferredHueShift, preferredSeatId, skipSpawnEffect)
-      state.addAgent(agent.id, agent.palette, 0, agent.seatId, true)
+      state.addAgent(agent.id, agent.palette, agent.hueShift, agent.seatId, true)
     }
     stateRef.current = state
     loadAllAssets()

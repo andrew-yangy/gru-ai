@@ -94,7 +94,7 @@
       "borderColor": "border-pink-500/40",
       "dotColor": "bg-pink-500",
       "isCsuite": false,
-      "game": null
+      "game": { "palette": 6, "seatId": "seat-6", "position": { "row": 14, "col": 14 }, "color": "pink" }
     },
     {
       "id": "jordan",
@@ -110,7 +110,7 @@
       "borderColor": "border-teal-500/40",
       "dotColor": "bg-teal-500",
       "isCsuite": false,
-      "game": null
+      "game": { "palette": 7, "seatId": "seat-7", "position": { "row": 17, "col": 5 }, "color": "teal" }
     },
     {
       "id": "casey",
@@ -126,7 +126,7 @@
       "borderColor": "border-cyan-500/40",
       "dotColor": "bg-cyan-500",
       "isCsuite": false,
-      "game": null
+      "game": { "palette": 8, "seatId": "seat-8", "position": { "row": 17, "col": 8 }, "color": "cyan" }
     },
     {
       "id": "taylor",
@@ -142,7 +142,7 @@
       "borderColor": "border-orange-500/40",
       "dotColor": "bg-orange-500",
       "isCsuite": false,
-      "game": null
+      "game": { "palette": 9, "seatId": "seat-9", "position": { "row": 17, "col": 11 }, "color": "orange" }
     },
     {
       "id": "sam",
@@ -158,7 +158,7 @@
       "borderColor": "border-lime-500/40",
       "dotColor": "bg-lime-500",
       "isCsuite": false,
-      "game": null
+      "game": { "palette": 10, "seatId": "seat-10", "position": { "row": 17, "col": 14 }, "color": "lime" }
     },
     {
       "id": "devon",
@@ -174,7 +174,7 @@
       "borderColor": "border-indigo-500/40",
       "dotColor": "bg-indigo-500",
       "isCsuite": false,
-      "game": null
+      "game": { "palette": 11, "seatId": "seat-11", "position": { "row": 20, "col": 5 }, "color": "indigo" }
     }
   ],
   "teams": [

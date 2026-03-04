@@ -27,12 +27,13 @@ export interface SelectedItem {
   position: { row: number; col: number };
 }
 
-/** C-suite agent definition */
+/** Agent definition for game presence */
 export interface AgentDesk {
   id: number;
   agentName: string;
   agentRole: string;
   palette: number;
+  hueShift: number;
   seatId: string;
   position: { row: number; col: number };
   color: string;
@@ -46,6 +47,7 @@ export const OFFICE_AGENTS: AgentDesk[] = registry.agents
     agentName: a.name.split(' ')[0],
     agentRole: a.title,
     palette: a.game!.palette,
+    hueShift: (a.game as Record<string, unknown>).hueShift as number ?? 0,
     seatId: a.game!.seatId,
     position: { row: a.game!.position.row, col: a.game!.position.col },
     color: a.game!.color,
