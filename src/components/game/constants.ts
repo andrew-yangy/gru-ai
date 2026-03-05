@@ -96,6 +96,28 @@ export const NOTIFICATION_NOTE_2_START_SEC = 0.1
 export const NOTIFICATION_NOTE_DURATION_SEC = 0.18
 export const NOTIFICATION_VOLUME = 0.14
 
+// ── Name Labels & Status Indicators ─────────────────────────
+export const NAME_LABEL_FONT = 'bold 8px monospace'
+export const NAME_LABEL_BG = 'rgba(0, 0, 0, 0.7)'
+export const NAME_LABEL_TEXT_COLOR = '#ffffff'
+export const NAME_LABEL_PADDING_X = 3
+export const NAME_LABEL_PADDING_Y = 2
+export const NAME_LABEL_BORDER_RADIUS = 2
+export const NAME_LABEL_VERTICAL_OFFSET_PX = 28
+/** Extra offset when character is sitting (typing state) */
+export const NAME_LABEL_SITTING_OFFSET_PX = 10
+
+export const STATUS_DOT_RADIUS = 3
+export const STATUS_DOT_BORDER_WIDTH = 1.5
+export const STATUS_DOT_BORDER_COLOR = '#ffffff'
+export const STATUS_DOT_GAP_PX = 3
+/** Colors for each agent status */
+export const STATUS_COLOR_WORKING = '#22c55e'
+export const STATUS_COLOR_IDLE = '#9ca3af'
+export const STATUS_COLOR_WAITING = '#eab308'
+export const STATUS_COLOR_ERROR = '#ef4444'
+export const STATUS_COLOR_OFFLINE = '#4b5563'
+
 // ── Game Logic ───────────────────────────────────────────────
 export const MAX_DELTA_TIME_SEC = 0.1
 export const WAITING_BUBBLE_DURATION_SEC = 2.0
@@ -111,3 +133,9 @@ export const CHARACTER_HIT_HALF_WIDTH = 8
 export const CHARACTER_HIT_HEIGHT = 24
 export const TOOL_OVERLAY_VERTICAL_OFFSET = 32
 export const PULSE_ANIMATION_DURATION_SEC = 1.5
+/** Debounce delay (seconds) before applying a status change to prevent jitter from rapid updates */
+export const STATUS_CHANGE_DEBOUNCE_SEC = 0.5
+/** Minimum linger time (seconds) after task completion before routing to break room */
+export const LINGER_MIN_SEC = 2.0
+/** Maximum linger time (seconds) after task completion before routing to break room */
+export const LINGER_MAX_SEC = 5.0

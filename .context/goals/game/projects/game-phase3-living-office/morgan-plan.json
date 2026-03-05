@@ -1,0 +1,176 @@
+{
+  "goal": "Game Phase 3 — Living Office",
+  "goal_folder": "game",
+  "challenges": {
+    "risks": [
+      "Scope is massive — 8 requirements spanning rendering fixes, real-time data binding, player controls, spatial AI, interactive UI, and research. Even with simplification, this is 3-4 weeks of work and risks context sprawl across initiatives that touch the same files (CanvasOffice.tsx, officeState.ts, renderer.ts).",
+      "Real-time data binding + spatial behavior + smooth movement creates a tight coupling triangle. If Zustand updates trigger spatial routing which triggers movement which triggers rendering, any performance issue cascades. Debounce/smoothing strategy needs to be right on the first pass or everything feels broken.",
+      "CEO player-controlled character is a game-within-a-game — WASD input, click-to-move, camera follow, collision detection. This is a significant feature that could easily consume as much effort as the entire spatial behavior system."
+    ],
+    "over_engineering_flags": [
+      "Requirement 8 (Research & Future) asks to 'plan day/night cycle, weather, achievements' — this is speculative design work that produces documents nobody reads. Reduce to a lightweight research note, not a full design spec.",
+      "Full context-aware spatial routing (requirement 5) with per-tool room mapping is complex. A simpler version — agents go to their desk when coding, meeting room when in multi-agent sessions, break room when idle — covers 90% of the visual value without needing a tool-to-room routing table.",
+      "Clickable rooms showing 'room activity summary' (requirement 7) implies a new UI component with aggregated state. Clickable agents and desks are high-value; clickable rooms can be a tooltip, not a panel."
+    ],
+    "recommendation": "Simplify (spatial routing to 4 simple rules instead of full tool-mapping; research requirement as a brief note file not a design doc; clickable rooms as tooltip not panel). Still delivers all 8 requirements but at ~60% of the complexity."
+  },
+  "initiatives": [
+    {
+      "id": "z-sort-rendering-fix",
+      "title": "Fix Z-Sort and Rendering Order",
+      "priority": "P0",
+      "complexity": "simple",
+      "phases": ["build", "review"],
+      "user_scenario": "Characters no longer clip behind chairs they should be in front of — the office looks correct from all angles.",
+      "cast": { "auditor": "riley", "builder": "riley", "reviewers": ["sarah"] },
+      "scope": "Fix FurnitureInstance.zY in layoutSerializer.ts so up-facing chairs render behind seated characters. Audit all ZDrawable sorting in renderer.ts for edge cases. Verify fix across all 25 seat positions.",
+      "verify": "npm run type-check && npm run build",
+      "definition_of_done": [
+        "FurnitureInstance.zY correctly computed in layoutSerializer.ts so characters in up-facing chairs render in front",
+        "All 25 seats visually verified — no character-behind-furniture clipping",
+        "No regressions in existing z-sort for desks, monitors, and other furniture"
+      ]
+    },
+    {
+      "id": "data-binding-agent-state",
+      "title": "Bind Game Characters to Real System State",
+      "priority": "P0",
+      "complexity": "moderate",
+      "phases": ["build", "review"],
+      "user_scenario": "When an agent starts a session, the CEO sees that agent's sprite change behavior in the game — typing when coding, reading when reviewing, idle when no session is active.",
+      "cast": { "auditor": "riley", "builder": "riley", "reviewers": ["sarah"] },
+      "scope": "Replace the mock/random agent state mapping in GamePage.tsx with real Zustand store bindings. Map session states to CharacterState. Add debounce/smoothing layer so rapid state changes don't cause jittery sprite transitions.",
+      "verify": "npm run type-check && npm run build",
+      "definition_of_done": [
+        "Agent sprites reflect real session state from Zustand store (working/idle/error)",
+        "State transitions are debounced — rapid updates don't cause visual jitter",
+        "GamePage.tsx no longer uses mock/random agent status generation",
+        "Context data (current task name, session info) available on Character object for later use by HUD/panels"
+      ]
+    },
+    {
+      "id": "character-identity-status",
+      "title": "Character Identity, Names, and Status Indicators",
+      "priority": "P0",
+      "complexity": "moderate",
+      "phases": ["build", "review"],
+      "user_scenario": "Each agent sprite has their name floating above them and a small status icon so the CEO can glance at the office and know who is doing what.",
+      "cast": { "auditor": "riley", "builder": "riley", "reviewers": ["sarah", "marcus"] },
+      "scope": "Add agent name labels rendered above each character sprite in the canvas render pass. Add status indicator icons as a post-character render pass. Match agent genders to persona definitions. Simple canvas fillText for names, small sprite/shape for indicators.",
+      "verify": "npm run type-check && npm run build",
+      "definition_of_done": [
+        "Agent names displayed above character sprites, legible at default zoom",
+        "Status indicators visible above heads: spinner (working), zzz (idle), exclamation (error), speech bubble (in discussion)",
+        "Agent sprite genders match persona definitions from agent-registry.json",
+        "Indicators animate smoothly using game loop, not React effects"
+      ]
+    },
+    {
+      "id": "ceo-player-character",
+      "title": "CEO Player-Controlled Character",
+      "priority": "P1",
+      "complexity": "moderate",
+      "phases": ["build", "review"],
+      "user_scenario": "The CEO controls a character in the office with WASD keys or click-to-move, walking around to inspect agents and furniture.",
+      "cast": { "auditor": "riley", "builder": "riley", "reviewers": ["sarah", "marcus"] },
+      "scope": "Add CEO character to agent-registry.json. CEO is player-controlled — no session state. WASD keyboard input, click-to-move via A* pathfinding, camera follow. Uses existing Character FSM.",
+      "verify": "npm run type-check && npm run build",
+      "definition_of_done": [
+        "CEO character appears in office with distinct sprite",
+        "WASD keys move CEO character tile-by-tile with walking animation",
+        "Click-to-move sends CEO to clicked tile via A* pathfinding",
+        "Camera smoothly follows CEO character",
+        "CEO character collides with walls and furniture correctly",
+        "CEO has no session-state binding (special-cased as player, not agent)"
+      ]
+    },
+    {
+      "id": "spatial-behavior",
+      "title": "Context-Aware Spatial Behavior for Agents",
+      "priority": "P1",
+      "complexity": "moderate",
+      "phases": ["build", "review"],
+      "user_scenario": "When an agent starts a coding session they walk to their desk; when they join a discussion they walk to the meeting room; when idle they wander to the break room.",
+      "cast": { "auditor": "riley", "builder": "riley", "reviewers": ["sarah"] },
+      "scope": "Define room zones as tile-coordinate ranges on existing 32x32 map. Implement 4 routing rules: coding → own desk, multi-agent session → meeting room, infra tools → server room, idle → break room. Add linger timer on Character (game loop). Busy indicator for multi-task agents.",
+      "verify": "npm run type-check && npm run build",
+      "definition_of_done": [
+        "Room zones defined as tile-coordinate ranges (desks, meeting, server, break)",
+        "Agents route to contextually appropriate room based on current session type",
+        "Agents linger at location 2-5s after short tasks before moving",
+        "Movement uses existing A* pathfinding — no teleporting",
+        "Busy indicator shown when agent has multiple concurrent tasks"
+      ]
+    },
+    {
+      "id": "smooth-movement",
+      "title": "Smooth Movement and Animation Transitions",
+      "priority": "P1",
+      "complexity": "moderate",
+      "phases": ["build", "review"],
+      "user_scenario": "Agents walk smoothly between tiles with natural speed instead of teleporting.",
+      "cast": { "auditor": "riley", "builder": "riley", "reviewers": ["sarah"] },
+      "scope": "Ensure character movement is interpolated smoothly. All movement timers in game loop. Fix any teleporting behavior. Coordinate with spatial-behavior initiative.",
+      "verify": "npm run type-check && npm run build",
+      "definition_of_done": [
+        "Characters interpolate smoothly between tiles during movement",
+        "Walking speed feels natural",
+        "All movement timers use game loop deltaTime, zero React useEffect timers",
+        "Direction-facing updates smoothly during multi-tile paths"
+      ]
+    },
+    {
+      "id": "game-hud",
+      "title": "Enhanced Game HUD Header",
+      "priority": "P1",
+      "complexity": "simple",
+      "phases": ["build", "review"],
+      "user_scenario": "Above the game canvas, a sleek dark bar shows current date/time, notification badges, and quick-access buttons.",
+      "cast": { "auditor": "riley", "builder": "riley", "reviewers": ["marcus"] },
+      "scope": "Enhance GameHeader.tsx with date/time, notification badges, quick-access buttons. Dark themed HTML bar above canvas. Data from existing Zustand store.",
+      "verify": "npm run type-check && npm run build",
+      "definition_of_done": [
+        "GameHeader shows current date/time",
+        "Notification badges show counts for active sessions and pending directives",
+        "Quick-access buttons open relevant SidePanel views",
+        "Dark theme consistent with game aesthetic",
+        "Data sourced from existing Zustand store"
+      ]
+    },
+    {
+      "id": "interactive-elements",
+      "title": "Clickable Agents, Desks, and Rooms",
+      "priority": "P1",
+      "complexity": "moderate",
+      "phases": ["build", "review"],
+      "user_scenario": "The CEO clicks on an agent to see details, clicks on a desk for reports, and hovers over a room for a tooltip of activity.",
+      "cast": { "auditor": "riley", "builder": "riley", "reviewers": ["marcus"] },
+      "scope": "Extend click handler in CanvasOffice.tsx. Click-on-agent opens SidePanel (existing). Click-on-desk shows agent reports. Hover-on-room shows tooltip. Follow getCharacterAt pattern for furniture hit detection.",
+      "verify": "npm run type-check && npm run build",
+      "definition_of_done": [
+        "Clicking an agent sprite opens agent detail in SidePanel",
+        "Clicking a desk/furniture item shows associated agent reports",
+        "Hovering over a room zone shows tooltip with room name and current occupants",
+        "Hit detection follows existing getCharacterAt pattern",
+        "No click conflicts (priority: agent > furniture > room)"
+      ]
+    },
+    {
+      "id": "research-game-patterns",
+      "title": "Research Game UX Patterns and Future Features Note",
+      "priority": "P2",
+      "complexity": "simple",
+      "phases": ["research"],
+      "user_scenario": "A concise research note captures patterns from claw-empire and pixel-agents plus a plan for future features.",
+      "cast": { "auditor": "riley", "builder": "riley", "reviewers": [] },
+      "scope": "Study claw-empire and pixel-agents for game UX patterns. Produce brief research note covering stealable patterns, day/night feasibility, weather, conversations, achievements. Max 2 pages.",
+      "verify": "test -f .context/goals/game/research-game-patterns.md",
+      "definition_of_done": [
+        "Research note created at .context/goals/game/research-game-patterns.md",
+        "Covers claw-empire and pixel-agents pattern analysis",
+        "Includes feasibility notes for day/night, weather, conversations, achievements",
+        "Max 2 pages — concise and actionable"
+      ]
+    }
+  ]
+}

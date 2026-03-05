@@ -37,6 +37,8 @@ export interface AgentDesk {
   seatId: string;
   position: { row: number; col: number };
   color: string;
+  /** True for the CEO / player-controlled character */
+  isPlayer: boolean;
 }
 
 /** Agents with game presence, derived from the canonical agent-registry.json */
@@ -51,6 +53,7 @@ export const OFFICE_AGENTS: AgentDesk[] = registry.agents
     seatId: a.game!.seatId,
     position: { row: a.game!.position.row, col: a.game!.position.col },
     color: a.game!.color,
+    isPlayer: !!(a.game as Record<string, unknown>).isPlayer,
   }));
 
 /** Map from grid character code to agent name (kept for compat) */

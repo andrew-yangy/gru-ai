@@ -12,11 +12,15 @@ import {
   CHARACTER_SITTING_OFFSET_PX,
   CHARACTER_HIT_HALF_WIDTH,
   CHARACTER_HIT_HEIGHT,
+  STATUS_CHANGE_DEBOUNCE_SEC,
+  LINGER_MIN_SEC,
+  LINGER_MAX_SEC,
 } from '../constants'
-import type { Character, Seat, FurnitureInstance, TileType as TileTypeVal, OfficeLayout, PlacedFurniture } from '../pixel-types'
+import type { Character, Seat, FurnitureInstance, TileType as TileTypeVal, OfficeLayout, PlacedFurniture, AgentStatus, SessionInfo } from '../pixel-types'
 import { createCharacter, updateCharacter } from './characters'
 import { matrixEffectSeeds } from './matrixEffect'
 import { isWalkable, getWalkableTiles, findPath } from '../layout/tileMap'
+import { chooseDestination } from './roomZones'
 import {
   createDefaultLayout,
   layoutToTileMap,
@@ -538,6 +542,130 @@ export class OfficeState {
     }
   }
 
+  /**
+   * Set the full agent status with debounce/smoothing. Instead of immediately
+   * flipping isActive, this queues the status change with a short delay. If the
+   * status reverts within the delay window, the transition is cancelled — this
+   * prevents jittery sprite flipping from rapid working/idle/working oscillation.
+   *
+   * The actual application of the pending status happens in update() each frame.
+   */
+  setAgentStatus(id: number, status: AgentStatus): void {
+    const ch = this.characters.get(id)
+    if (!ch) return
+
+    // Store the raw status for rendering/display regardless of debounce
+    const previousStatus = ch.agentStatus
+
+    // If status hasn't changed, clear any pending transition and bail
+    if (status === previousStatus) {
+      ch.pendingStatus = null
+      ch.statusChangeTimer = 0
+      return
+    }
+
+    // If a pending status is already queued and this new status matches the
+    // current (committed) status, cancel the pending transition — the status
+    // reverted before the debounce window elapsed
+    if (ch.pendingStatus !== null && status === previousStatus) {
+      ch.pendingStatus = null
+      ch.statusChangeTimer = 0
+      return
+    }
+
+    // Queue the new status for debounced application
+    ch.pendingStatus = status
+    ch.statusChangeTimer = STATUS_CHANGE_DEBOUNCE_SEC
+  }
+
+  /** Update session context data on a character (task name, tool name) */
+  setAgentSessionInfo(id: number, info: SessionInfo): void {
+    const ch = this.characters.get(id)
+    if (!ch) return
+    ch.sessionInfo = info
+  }
+
+  /**
+   * Apply a committed status change to a character. This is the internal
+   * method called when the debounce timer expires (or on immediate application).
+   */
+  private applyAgentStatus(ch: Character, status: AgentStatus): void {
+    const previousStatus = ch.agentStatus
+    ch.agentStatus = status
+    ch.hasError = status === 'error'
+
+    // Derive isActive from status
+    const wasActive = ch.isActive
+    const nowActive = status === 'working' || status === 'waiting'
+    ch.isActive = nowActive
+
+    // Map status → appropriate currentTool hint for animation selection
+    // (characters.ts uses currentTool to choose typing vs reading animation)
+    if (status === 'waiting') {
+      // Waiting agents show reading animation (looking at screen, waiting)
+      ch.currentTool = 'Read'
+    } else if (status === 'working' && !ch.currentTool) {
+      // Working agents with no specific tool default to typing
+      ch.currentTool = null
+    }
+
+    if (!nowActive && wasActive) {
+      // Went inactive — use the sentinel to skip long seat rest
+      ch.seatTimer = -1
+      ch.path = []
+      ch.moveProgress = 0
+
+      // Start linger timer — agent stays at desk before routing to break room
+      if (previousStatus === 'working' && (status === 'idle' || status === 'offline')) {
+        ch.lingerTimer = LINGER_MIN_SEC + Math.random() * (LINGER_MAX_SEC - LINGER_MIN_SEC)
+      }
+    }
+
+    // Route agent to contextually appropriate room (skip player-controlled)
+    if (!ch.isPlayerControlled && !ch.isSubagent) {
+      this.routeAgent(ch, status)
+    }
+
+    this.rebuildFurnitureInstances()
+  }
+
+  /**
+   * Route an agent to the appropriate room zone based on status and session context.
+   * Called after status changes are committed.
+   */
+  private routeAgent(ch: Character, status: AgentStatus): void {
+    // If lingering after task completion, don't route yet (update() handles it)
+    if (ch.lingerTimer > 0) return
+
+    const result = chooseDestination(ch, status, ch.sessionInfo)
+
+    if (!result) {
+      // null means stay put or go to desk
+      if (status === 'working') {
+        // Working at desk — send to seat
+        ch.routingZone = null
+        if (ch.seatId) {
+          const seat = this.seats.get(ch.seatId)
+          if (seat && (ch.tileCol !== seat.seatCol || ch.tileRow !== seat.seatRow)) {
+            this.sendToSeat(ch.id)
+          }
+        }
+      }
+      return
+    }
+
+    ch.routingZone = result.zoneId
+    this.walkToTile(ch.id, result.waypoint.col, result.waypoint.row)
+  }
+
+  /** Set the busy flag on an agent (multiple concurrent sessions) */
+  setAgentBusy(id: number, busy: boolean): void {
+    const ch = this.characters.get(id)
+    if (ch) {
+      ch.isBusy = busy
+    }
+  }
+
   /** Rebuild furniture instances with auto-state applied (active agents turn electronics ON) */
   rebuildFurnitureInstances(): void {
     // Collect tiles where active agents face desks
@@ -643,6 +771,32 @@ export class OfficeState {
   }
 
   update(dt: number): void {
+    // Tick status debounce timers and apply pending status changes
+    for (const ch of this.characters.values()) {
+      if (ch.pendingStatus !== null && ch.statusChangeTimer > 0) {
+        ch.statusChangeTimer -= dt
+        if (ch.statusChangeTimer <= 0) {
+          // Debounce window elapsed — commit the pending status
+          const pending = ch.pendingStatus
+          ch.pendingStatus = null
+          ch.statusChangeTimer = 0
+          this.applyAgentStatus(ch, pending)
+        }
+      }
+
+      // Tick linger timer — when it expires, route the agent to their destination
+      if (ch.lingerTimer > 0) {
+        ch.lingerTimer -= dt
+        if (ch.lingerTimer <= 0) {
+          ch.lingerTimer = 0
+          // Now route the agent if they're still idle/offline
+          if (!ch.isPlayerControlled && !ch.isSubagent) {
+            this.routeAgent(ch, ch.agentStatus)
+          }
+        }
+      }
+    }
+
     const toDelete: number[] = []
     for (const ch of this.characters.values()) {
       // Handle matrix effect animation
@@ -684,6 +838,94 @@ export class OfficeState {
 
   getCharacters(): Character[] {
     return Array.from(this.characters.values())
+  }
+
+  /** Get the agent (character id) assigned to a given seat, or null */
+  getAgentAtSeat(seatId: string): number | null {
+    for (const ch of this.characters.values()) {
+      if (ch.seatId === seatId && ch.matrixEffect !== 'despawn') return ch.id
+    }
+    return null
+  }
+
+  /** Find which seat is closest to a tile position (within 2 tiles). Returns seat uid or null. */
+  findSeatNearTile(col: number, row: number): string | null {
+    let bestId: string | null = null
+    let bestDist = Infinity
+    for (const [uid, seat] of this.seats) {
+      const d = Math.abs(seat.seatCol - col) + Math.abs(seat.seatRow - row)
+      if (d < bestDist && d <= 2) {
+        bestDist = d
+        bestId = uid
+      }
+    }
+    return bestId
+  }
+
+  /**
+   * Identify what interactive element is at a world pixel position.
+   * Checks GID layers to determine if there's furniture/desk/server at the tile.
+   * Returns a description of the tile content, or null for empty floor.
+   */
+  getTileInfoAt(worldX: number, worldY: number): { type: 'desk' | 'furniture' | 'server' | 'conference' | 'wall'; col: number; row: number; seatId?: string; agentId?: number } | null {
+    const col = Math.floor(worldX / TILE_SIZE)
+    const row = Math.floor(worldY / TILE_SIZE)
+
+    if (col < 0 || col >= this.layout.cols || row < 0 || row >= this.layout.rows) return null
+
+    const idx = row * this.layout.cols + col
+    const gidLayers = this.layout.gidLayers
+    if (!gidLayers || gidLayers.length === 0) return null
+
+    // Check floor layer for wall
+    const floorGid = gidLayers[0]?.[idx] ?? 0
+    // Wall GIDs from office-layout.ts
+    const WALL_GIDS = new Set([12, 24, 26, 28, 40, 42, 56, 57, 58, 146, 162, 177, 178, 185, 193, 194, 201])
+    if (WALL_GIDS.has(floorGid)) return { type: 'wall', col, row }
+
+    // Check furniture/tables/laptop layers (indices 1-3) for non-zero GIDs
+    const furnitureGid = gidLayers[1]?.[idx] ?? 0
+    const tablesGid = gidLayers[2]?.[idx] ?? 0
+    const laptopGid = gidLayers[3]?.[idx] ?? 0
+
+    const hasFurniture = furnitureGid !== 0 || tablesGid !== 0 || laptopGid !== 0
+
+    if (!hasFurniture) return null
+
+    // Determine type based on proximity to seats (desks are near seats)
+    const nearSeatId = this.findSeatNearTile(col, row)
+    if (nearSeatId) {
+      const agentId = this.getAgentAtSeat(nearSeatId) ?? undefined
+      return { type: 'desk', col, row, seatId: nearSeatId, agentId }
+    }
+
+    // Check if it's in a conference-like area (tables layer with desk GIDs)
+    // Conference tables use GIDs 709-730 range
+    if (tablesGid >= 709 && tablesGid <= 730) {
+      return { type: 'conference', col, row }
+    }
+
+    // Server rack detection (GIDs 885, 1021, 1022, 1037, 1038)
+    if (furnitureGid === 885 || furnitureGid === 1021 || furnitureGid === 1022 || furnitureGid === 1037 || furnitureGid === 1038) {
+      return { type: 'server', col, row }
+    }
+
+    return { type: 'furniture', col, row }
+  }
+
+  /**
+   * Get all agents currently in a room zone.
+   * Returns array of { id, agentName } for characters whose tile position falls within the zone bounds.
+   */
+  getAgentsInZone(colMin: number, rowMin: number, colMax: number, rowMax: number): Array<{ id: number; agentName: string }> {
+    const result: Array<{ id: number; agentName: string }> = []
+    for (const ch of this.characters.values()) {
+      if (ch.matrixEffect === 'despawn') continue
+      if (ch.tileCol >= colMin && ch.tileCol <= colMax && ch.tileRow >= rowMin && ch.tileRow <= rowMax) {
+        result.push({ id: ch.id, agentName: '' }) // agentName resolved by caller via AGENT_ID_TO_NAME
+      }
+    }
+    return result
   }
 
   /** Get character at pixel position (for hit testing). Returns id or null. */

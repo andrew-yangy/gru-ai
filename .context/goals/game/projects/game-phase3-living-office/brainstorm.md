@@ -67,3 +67,10 @@ The CEO character needs adding, but how should it behave?
 - **(A)** 3 locations only: own desk (working), meeting room (discussing/planning), idle wander. Fastest to ship.
 - **(B)** 5 locations: + CEO office (when talking to CEO) + break room (when truly idle vs working-idle). More meaningful but needs room zone definitions.
 - **(C)** Full context-aware: agent goes to server room when running infra tools, design room when doing UI work, etc. Requires threading tool/task context into spatial decisions. Significantly more complex.
+
+## CEO Answers
+
+- **Q1**: (B) Simple dark bar above canvas — richer GameHeader with date/time, notifications, quick buttons
+- **Q2**: (C) Player-controlled CEO — WASD/click-to-move, the player IS the CEO walking around
+- **Q3**: (C) Full context-aware routing — agents go to contextually relevant rooms based on current tool/task
+- **Layout**: Use zone definitions on existing 32x32 map (carve lobby into server room, break room, etc.) rather than redesigning the Tiled layout

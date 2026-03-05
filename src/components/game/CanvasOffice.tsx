@@ -4,25 +4,62 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { OFFICE_LAYOUT } from './office-layout'
-import { OFFICE_AGENTS, type AgentStatus } from './types'
+import { OFFICE_AGENTS } from './types'
+import type { AgentStatus, SessionInfo } from './pixel-types'
 import { OfficeState } from './engine/officeState'
-import { renderFrame, type SelectionRenderState } from './engine/renderer'
+import { renderFrame, type SelectionRenderState, type IdentityOverlay } from './engine/renderer'
 import { TILE_SIZE } from './pixel-types'
-import { MAX_DELTA_TIME_SEC, ZOOM_MIN, ZOOM_MAX } from './constants'
+import { MAX_DELTA_TIME_SEC, ZOOM_MIN, ZOOM_MAX, CAMERA_FOLLOW_LERP, CAMERA_FOLLOW_SNAP_THRESHOLD } from './constants'
 import { loadAllAssets, onTilesetReady } from './asset-loader'
+import { CharacterState } from './pixel-types'
+import { ROOM_ZONES, getZoneAt } from './engine/roomZones'
 
-// Build id → agentName lookup
-const AGENT_ID_TO_NAME = new Map(OFFICE_AGENTS.map((a) => [a.id, a.agentName]))
+// Build id -> agentName lookup (CEO shows as "You")
+const AGENT_ID_TO_NAME = new Map(
+  OFFICE_AGENTS.map((a) => [a.id, a.isPlayer ? 'You' : a.agentName])
+)
+// Build agentName -> id reverse lookup
+const AGENT_NAME_TO_ID = new Map(OFFICE_AGENTS.map((a) => [a.agentName, a.id]))
+// Build id -> real agentName (not "You") for item click resolution
+const AGENT_ID_TO_REAL_NAME = new Map(OFFICE_AGENTS.map((a) => [a.id, a.agentName]))
+
+// Find the player-controlled CEO agent
+const CEO_AGENT = OFFICE_AGENTS.find((a) => a.isPlayer) ?? null
+const CEO_ID = CEO_AGENT?.id ?? null
+
+/** Tooltip state for room hover */
+interface TooltipState {
+  x: number
+  y: number
+  roomName: string
+  agents: string[]
+}
+
+/** Item click info passed up to GamePage */
+export interface ClickedItem {
+  type: 'desk' | 'furniture' | 'server' | 'conference' | 'wall'
+  col: number
+  row: number
+  agentName?: string
+}
 
 interface CanvasOfficeProps {
   onAgentClick?: (agentName: string) => void
+  onItemClick?: (item: ClickedItem | null) => void
   agentStatuses: Record<string, AgentStatus>
+  /** Per-agent session context (task name, active tool) for Character.sessionInfo */
+  agentSessionInfos?: Record<string, SessionInfo>
+  /** Per-agent busy flag (multiple active sessions) */
+  agentBusyMap?: Record<string, boolean>
   selectedAgentName?: string | null
 }
 
 export default function CanvasOffice({
   onAgentClick,
+  onItemClick,
   agentStatuses,
+  agentSessionInfos,
+  agentBusyMap: _agentBusyMap,
   selectedAgentName,
 }: CanvasOfficeProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -37,10 +74,11 @@ export default function CanvasOffice({
     startPanX: number
     startPanY: number
   } | null>(null)
-  const propsRef = useRef({ onAgentClick, agentStatuses, selectedAgentName })
-  propsRef.current = { onAgentClick, agentStatuses, selectedAgentName }
+  const propsRef = useRef({ onAgentClick, onItemClick, agentStatuses, agentSessionInfos, selectedAgentName })
+  propsRef.current = { onAgentClick, onItemClick, agentStatuses, agentSessionInfos, selectedAgentName }
 
   const [zoomLevel, setZoomLevel] = useState(3)
+  const [tooltip, setTooltip] = useState<TooltipState | null>(null)
 
   // Initialize office state + add agents + load assets
   useEffect(() => {
@@ -48,23 +86,46 @@ export default function CanvasOffice({
     for (const agent of OFFICE_AGENTS) {
       state.addAgent(agent.id, agent.palette, agent.hueShift, agent.seatId, true)
     }
+    // Mark CEO as player-controlled and start idle (not typing at desk)
+    if (CEO_ID !== null) {
+      const ceoCh = state.characters.get(CEO_ID)
+      if (ceoCh) {
+        ceoCh.isPlayerControlled = true
+        ceoCh.state = CharacterState.IDLE
+        ceoCh.isActive = false
+        ceoCh.agentStatus = 'working'
+      }
+    }
     stateRef.current = state
     loadAllAssets()
     onTilesetReady(() => {
-      // Rebuild furniture instances with new tileset sprites
       state.rebuildFurnitureInstances()
     })
   }, [])
 
-  // Sync agent active states from statuses
+  // Sync agent statuses from props (debounced inside OfficeState)
+  // Skip player-controlled CEO
   useEffect(() => {
     const state = stateRef.current
     if (!state) return
     for (const agent of OFFICE_AGENTS) {
+      if (agent.isPlayer) continue
       const status = agentStatuses[agent.agentName] ?? 'offline'
-      state.setAgentActive(agent.id, status === 'working' || status === 'waiting')
+      state.setAgentStatus(agent.id, status)
     }
   }, [agentStatuses])
+
+  // Sync session context info (task name, tool name)
+  useEffect(() => {
+    const state = stateRef.current
+    if (!state || !agentSessionInfos) return
+    for (const agent of OFFICE_AGENTS) {
+      const info = agentSessionInfos[agent.agentName]
+      if (info) {
+        state.setAgentSessionInfo(agent.id, info)
+      }
+    }
+  }, [agentSessionInfos])
 
   // Sync selected agent
   useEffect(() => {
@@ -77,6 +138,38 @@ export default function CanvasOffice({
       state.selectedAgentId = null
     }
   }, [selectedAgentName])
+
+  // WASD keyboard input for CEO movement
+  useEffect(() => {
+    const canvas = canvasRef.current
+    if (!canvas || CEO_ID === null) return
+
+    const onKeyDown = (e: KeyboardEvent) => {
+      const state = stateRef.current
+      if (!state) return
+      const ceo = state.characters.get(CEO_ID!)
+      if (!ceo || !ceo.isPlayerControlled) return
+      if (ceo.state === CharacterState.WALK && ceo.path.length > 0) return
+
+      let dc = 0
+      let dr = 0
+      switch (e.key.toLowerCase()) {
+        case 'w': case 'arrowup':    dr = -1; break
+        case 's': case 'arrowdown':  dr = 1;  break
+        case 'a': case 'arrowleft':  dc = -1; break
+        case 'd': case 'arrowright': dc = 1;  break
+        default: return
+      }
+      e.preventDefault()
+      const targetCol = ceo.tileCol + dc
+      const targetRow = ceo.tileRow + dr
+      state.walkToTile(CEO_ID!, targetCol, targetRow)
+    }
+
+    canvas.addEventListener('keydown', onKeyDown)
+    canvas.focus()
+    return () => canvas.removeEventListener('keydown', onKeyDown)
+  }, [])
 
   // ResizeObserver
   useEffect(() => {
@@ -121,20 +214,57 @@ export default function CanvasOffice({
       const dpr = window.devicePixelRatio || 1
       const w = canvas.width / dpr
       const h = canvas.height / dpr
+      const cam = cameraRef.current
+
+      // Smooth camera follow for CEO
+      if (CEO_ID !== null && dt > 0) {
+        const ceo = state.characters.get(CEO_ID)
+        if (ceo && ceo.isPlayerControlled) {
+          const cols = state.tileMap[0]?.length ?? 1
+          const rows = state.tileMap.length ?? 1
+          const mapW = cols * TILE_SIZE * cam.zoom
+          const mapH = rows * TILE_SIZE * cam.zoom
+          const baseOffsetX = Math.floor((w - mapW) / 2)
+          const baseOffsetY = Math.floor((h - mapH) / 2)
+          const targetPanX = w / 2 - ceo.x * cam.zoom - baseOffsetX
+          const targetPanY = h / 2 - ceo.y * cam.zoom - baseOffsetY
+          const dx = targetPanX - cam.panX
+          const dy = targetPanY - cam.panY
+          if (Math.abs(dx) > CAMERA_FOLLOW_SNAP_THRESHOLD || Math.abs(dy) > CAMERA_FOLLOW_SNAP_THRESHOLD) {
+            cam.panX += dx * CAMERA_FOLLOW_LERP
+            cam.panY += dy * CAMERA_FOLLOW_LERP
+          } else {
+            cam.panX = targetPanX
+            cam.panY = targetPanY
+          }
+        }
+      }
+
       const ctx = canvas.getContext('2d')!
       ctx.save()
       ctx.scale(dpr, dpr)
       ctx.imageSmoothingEnabled = false
 
-      const cam = cameraRef.current
-
-      // Build selection state for seat indicators + outlines
       const selection: SelectionRenderState = {
         selectedAgentId: state.selectedAgentId,
         hoveredAgentId: state.hoveredAgentId,
         hoveredTile: state.hoveredTile,
         seats: state.seats,
         characters: state.characters,
+      }
+
+      const statuses = propsRef.current.agentStatuses
+      const statusMap = new Map<number, import('./types').AgentStatus>()
+      for (const [name, status] of Object.entries(statuses)) {
+        const id = AGENT_NAME_TO_ID.get(name)
+        if (id !== undefined) statusMap.set(id, status)
+      }
+      if (CEO_ID !== null) statusMap.set(CEO_ID, 'working')
+
+      const identity: IdentityOverlay = {
+        nameMap: AGENT_ID_TO_NAME,
+        statusMap,
+        time: time / 1000,
       }
 
       renderFrame(
@@ -148,11 +278,12 @@ export default function CanvasOffice({
         cam.panX,
         cam.panY,
         selection,
-        undefined, // no editor
+        undefined,
         state.layout.tileColors,
         state.layout.cols,
         state.layout.rows,
         state.layout.gidLayers,
+        identity,
       )
 
       ctx.restore()
@@ -228,10 +359,72 @@ export default function CanvasOffice({
     }
   }, [])
 
-  // Resolve character id → agent name
+  // Resolve character id -> display name ("You" for CEO)
   const resolveAgentName = useCallback((charId: number): string => {
     return AGENT_ID_TO_NAME.get(charId) ?? ''
   }, [])
+
+  // Resolve character id -> real agent name (for data lookups, never "You")
+  const resolveRealAgentName = useCallback((charId: number): string => {
+    return AGENT_ID_TO_REAL_NAME.get(charId) ?? ''
+  }, [])
+
+  // ---------------------------------------------------------------------------
+  // Click handler: process a click at world coordinates.
+  // Priority: agent > furniture/desk > click-to-move (CEO)
+  // ---------------------------------------------------------------------------
+  const processClick = useCallback(
+    (worldX: number, worldY: number) => {
+      const state = stateRef.current
+      if (!state) return
+
+      // 1. Agent hit (highest priority)
+      const charId = state.getCharacterAt(worldX, worldY)
+      if (charId !== null) {
+        state.selectedAgentId = charId === state.selectedAgentId ? null : charId
+        const name = resolveAgentName(charId)
+        if (name && propsRef.current.onAgentClick) {
+          propsRef.current.onAgentClick(name)
+        }
+        return
+      }
+
+      // 2. Furniture/desk hit (second priority)
+      const tileInfo = state.getTileInfoAt(worldX, worldY)
+      if (tileInfo && tileInfo.type !== 'wall') {
+        state.selectedAgentId = null
+        let agentName: string | undefined
+        if (tileInfo.type === 'desk' && tileInfo.agentId !== undefined) {
+          agentName = resolveRealAgentName(tileInfo.agentId)
+        }
+        const item: ClickedItem = {
+          type: tileInfo.type,
+          col: tileInfo.col,
+          row: tileInfo.row,
+          agentName,
+        }
+        if (propsRef.current.onItemClick) {
+          propsRef.current.onItemClick(item)
+        }
+        return
+      }
+
+      // 3. Empty space -- deselect + click-to-move CEO
+      state.selectedAgentId = null
+      if (propsRef.current.onAgentClick) {
+        propsRef.current.onAgentClick('')
+      }
+      if (propsRef.current.onItemClick) {
+        propsRef.current.onItemClick(null)
+      }
+      if (CEO_ID !== null) {
+        const tileCol = Math.floor(worldX / TILE_SIZE)
+        const tileRow = Math.floor(worldY / TILE_SIZE)
+        state.walkToTile(CEO_ID, tileCol, tileRow)
+      }
+    },
+    [resolveAgentName, resolveRealAgentName],
+  )
 
   // Mouse handlers
   const handleMouseDown = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
@@ -249,19 +442,53 @@ export default function CanvasOffice({
     (e: React.MouseEvent<HTMLCanvasElement>) => {
       const drag = dragRef.current
       if (!drag) {
-        // Hover cursor + hovered agent
         const state = stateRef.current
         if (state) {
-          const { worldX, worldY } = screenToWorld(e.nativeEvent.offsetX, e.nativeEvent.offsetY)
+          const screenX = e.nativeEvent.offsetX
+          const screenY = e.nativeEvent.offsetY
+          const { worldX, worldY } = screenToWorld(screenX, screenY)
           const charId = state.getCharacterAt(worldX, worldY)
           state.hoveredAgentId = charId
+
+          // Check furniture for pointer cursor
+          const tileInfo = charId === null ? state.getTileInfoAt(worldX, worldY) : null
+          const isInteractive = charId !== null || (tileInfo !== null && tileInfo.type !== 'wall')
+
           if (canvasRef.current) {
-            canvasRef.current.style.cursor = charId !== null ? 'pointer' : 'default'
+            canvasRef.current.style.cursor = isInteractive ? 'pointer' : 'default'
+          }
+
+          // Room hover tooltip: only show when not hovering agent or interactive furniture
+          if (charId === null && !isInteractive) {
+            const col = Math.floor(worldX / TILE_SIZE)
+            const row = Math.floor(worldY / TILE_SIZE)
+            const zoneId = getZoneAt(col, row)
+            if (zoneId) {
+              const zone = ROOM_ZONES[zoneId]
+              const agentsInZone = state.getAgentsInZone(
+                zone.bounds.minCol, zone.bounds.minRow,
+                zone.bounds.maxCol, zone.bounds.maxRow,
+              )
+              const agentNames = agentsInZone
+                .map((a) => AGENT_ID_TO_NAME.get(a.id) ?? '')
+                .filter((n) => n !== '')
+              setTooltip({
+                x: screenX + 12,
+                y: screenY - 8,
+                roomName: zone.label,
+                agents: agentNames,
+              })
+            } else {
+              setTooltip(null)
+            }
+          } else {
+            setTooltip(null)
           }
         }
         return
       }
 
+      // Drag panning
       const dx = e.nativeEvent.offsetX - drag.startX
       const dy = e.nativeEvent.offsetY - drag.startY
       if (!drag.active && Math.sqrt(dx * dx + dy * dy) >= 4) drag.active = true
@@ -269,6 +496,7 @@ export default function CanvasOffice({
         cameraRef.current.panX = drag.startPanX + dx
         cameraRef.current.panY = drag.startPanY + dy
         if (canvasRef.current) canvasRef.current.style.cursor = 'grabbing'
+        setTooltip(null)
       }
     },
     [screenToWorld],
@@ -279,28 +507,13 @@ export default function CanvasOffice({
       const drag = dragRef.current
       if (!drag) return
       if (!drag.active) {
-        const state = stateRef.current
-        if (state) {
-          const { worldX, worldY } = screenToWorld(e.nativeEvent.offsetX, e.nativeEvent.offsetY)
-          const charId = state.getCharacterAt(worldX, worldY)
-          if (charId !== null) {
-            state.selectedAgentId = charId === state.selectedAgentId ? null : charId
-            const name = resolveAgentName(charId)
-            if (name && propsRef.current.onAgentClick) {
-              propsRef.current.onAgentClick(name)
-            }
-          } else {
-            state.selectedAgentId = null
-            if (propsRef.current.onAgentClick) {
-              propsRef.current.onAgentClick('')
-            }
-          }
-        }
+        const { worldX, worldY } = screenToWorld(e.nativeEvent.offsetX, e.nativeEvent.offsetY)
+        processClick(worldX, worldY)
       }
       dragRef.current = null
       if (canvasRef.current) canvasRef.current.style.cursor = 'default'
     },
-    [screenToWorld, resolveAgentName],
+    [screenToWorld, processClick],
   )
 
   const handleMouseLeave = useCallback(() => {
@@ -308,6 +521,7 @@ export default function CanvasOffice({
     const state = stateRef.current
     if (state) state.hoveredAgentId = null
     if (canvasRef.current) canvasRef.current.style.cursor = 'default'
+    setTooltip(null)
   }, [])
 
   // Touch handlers
@@ -395,6 +609,7 @@ export default function CanvasOffice({
           const offsetY = Math.floor((logH - mapH) / 2) + Math.round(cam.panY)
           const worldX = (dragRef.current.startX - offsetX) / cam.zoom
           const worldY = (dragRef.current.startY - offsetY) / cam.zoom
+          // Touch tap: same priority logic as mouse click
           const charId = state.getCharacterAt(worldX, worldY)
           if (charId !== null) {
             state.selectedAgentId = charId === state.selectedAgentId ? null : charId
@@ -403,9 +618,29 @@ export default function CanvasOffice({
               propsRef.current.onAgentClick(name)
             }
           } else {
-            state.selectedAgentId = null
-            if (propsRef.current.onAgentClick) {
-              propsRef.current.onAgentClick('')
+            const tileInfo = state.getTileInfoAt(worldX, worldY)
+            if (tileInfo && tileInfo.type !== 'wall') {
+              state.selectedAgentId = null
+              let agentName: string | undefined
+              if (tileInfo.type === 'desk' && tileInfo.agentId !== undefined) {
+                agentName = AGENT_ID_TO_REAL_NAME.get(tileInfo.agentId)
+              }
+              if (propsRef.current.onItemClick) {
+                propsRef.current.onItemClick({
+                  type: tileInfo.type,
+                  col: tileInfo.col,
+                  row: tileInfo.row,
+                  agentName,
+                })
+              }
+            } else {
+              state.selectedAgentId = null
+              if (propsRef.current.onAgentClick) {
+                propsRef.current.onAgentClick('')
+              }
+              if (propsRef.current.onItemClick) {
+                propsRef.current.onItemClick(null)
+              }
             }
           }
         }
@@ -427,7 +662,8 @@ export default function CanvasOffice({
     <div className="relative w-full h-full">
       <canvas
         ref={canvasRef}
-        className="block touch-none"
+        className="block touch-none outline-none"
+        tabIndex={0}
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
@@ -438,6 +674,22 @@ export default function CanvasOffice({
       {zoomLevel > 1 && (
         <div className="absolute bottom-3 right-3 bg-black/60 text-white text-xs px-2 py-1 rounded pointer-events-none">
           {zoomLevel}x
+        </div>
+      )}
+      {tooltip && (
+        <div
+          className="absolute pointer-events-none bg-black/80 text-white text-xs px-3 py-2 rounded-lg shadow-lg"
+          style={{ left: tooltip.x, top: tooltip.y, maxWidth: 200 }}
+          role="tooltip"
+        >
+          <div className="font-semibold mb-0.5">{tooltip.roomName}</div>
+          {tooltip.agents.length > 0 ? (
+            <div className="text-white/70">
+              {tooltip.agents.join(', ')}
+            </div>
+          ) : (
+            <div className="text-white/50 italic">Empty</div>
+          )}
         </div>
       )}
     </div>

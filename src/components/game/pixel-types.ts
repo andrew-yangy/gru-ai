@@ -168,6 +168,15 @@ export interface OfficeLayout {
   seatPositions?: SeatPosition[]
 }
 
+/** Agent status from backend session state */
+export type AgentStatus = 'working' | 'waiting' | 'idle' | 'error' | 'offline'
+
+/** Context data threaded from the session/activity layer */
+export interface SessionInfo {
+  taskName?: string
+  toolName?: string
+}
+
 export interface Character {
   id: number
   state: CharacterState
@@ -221,4 +230,22 @@ export interface Character {
   matrixEffectSeeds: number[]
   /** Workspace folder name (only set for multi-root workspaces) */
   folderName?: string
+  /** Current agent status from backend (working/waiting/idle/error/offline) */
+  agentStatus: AgentStatus
+  /** Context data from session/activity for tooltip/panel display */
+  sessionInfo: SessionInfo
+  /** Pending status waiting to be applied after debounce delay */
+  pendingStatus: AgentStatus | null
+  /** Countdown timer for status change debounce (seconds remaining) */
+  statusChangeTimer: number
+  /** True when agent has an error — stays at desk with error indicator */
+  hasError: boolean
+  /** True for the CEO / player-controlled character — skips AI FSM */
+  isPlayerControlled: boolean
+  /** Linger timer (seconds remaining) — delays routing to break room after task completion */
+  lingerTimer: number
+  /** True when agent has multiple concurrent active sessions */
+  isBusy: boolean
+  /** Current routing destination zone, or null if at default location */
+  routingZone: string | null
 }

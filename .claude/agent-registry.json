@@ -14,7 +14,7 @@
       "borderColor": "border-foreground/30",
       "dotColor": "bg-foreground",
       "isCsuite": true,
-      "game": null
+      "game": { "palette": 0, "seatId": "seat-2", "position": { "row": 4, "col": 9 }, "color": "gold", "isPlayer": true }
     },
     {
       "id": "sarah",

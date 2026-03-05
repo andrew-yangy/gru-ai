@@ -78,6 +78,15 @@ export function createCharacter(
     matrixEffect: null,
     matrixEffectTimer: 0,
     matrixEffectSeeds: [],
+    agentStatus: 'offline',
+    sessionInfo: {},
+    pendingStatus: null,
+    statusChangeTimer: 0,
+    hasError: false,
+    isPlayerControlled: false,
+    lingerTimer: 0,
+    isBusy: false,
+    routingZone: null,
   }
 }
 
@@ -90,6 +99,42 @@ export function updateCharacter(
   blockedTiles: Set<string>,
 ): void {
   ch.frameTimer += dt
+
+  // Player-controlled characters only process walk animation — no AI FSM
+  if (ch.isPlayerControlled) {
+    if (ch.state === CharacterState.WALK) {
+      if (ch.frameTimer >= WALK_FRAME_DURATION_SEC) {
+        ch.frameTimer -= WALK_FRAME_DURATION_SEC
+        ch.frame = (ch.frame + 1) % 4
+      }
+      if (ch.path.length === 0) {
+        const center = tileCenter(ch.tileCol, ch.tileRow)
+        ch.x = center.x
+        ch.y = center.y
+        ch.state = CharacterState.IDLE
+        ch.frame = 0
+        ch.frameTimer = 0
+        return
+      }
+      const nextTile = ch.path[0]
+      ch.dir = directionBetween(ch.tileCol, ch.tileRow, nextTile.col, nextTile.row)
+      ch.moveProgress += (WALK_SPEED_PX_PER_SEC / TILE_SIZE) * dt
+      const fromCenter = tileCenter(ch.tileCol, ch.tileRow)
+      const toCenter = tileCenter(nextTile.col, nextTile.row)
+      const t = Math.min(ch.moveProgress, 1)
+      ch.x = fromCenter.x + (toCenter.x - fromCenter.x) * t
+      ch.y = fromCenter.y + (toCenter.y - fromCenter.y) * t
+      if (ch.moveProgress >= 1) {
+        ch.tileCol = nextTile.col
+        ch.tileRow = nextTile.row
+        ch.x = toCenter.x
+        ch.y = toCenter.y
+        ch.path.shift()
+        ch.moveProgress = 0
+      }
+    }
+    return
+  }
 
   switch (ch.state) {
     case CharacterState.TYPE: {

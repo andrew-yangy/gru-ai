@@ -1,0 +1,183 @@
+{
+  "id": "game-phase3-living-office",
+  "title": "Game Phase 3 — Living Office",
+  "goal_id": "game",
+  "status": "in_progress",
+  "priority": "P0",
+  "agent": ["riley"],
+  "reviewers": ["sarah", "marcus"],
+  "description": "Transform the pixel-art office from a static display into a living, interactive game. Data-driven agents, player-controlled CEO, context-aware spatial behavior, interactive elements, and game-feel HUD.",
+  "source_directive": "game-phase3-living-office",
+  "scope": {
+    "in": [
+      "Z-sort rendering fix for furniture/character overlap",
+      "Real-time data binding from Zustand store to game characters",
+      "Character identity: names, status indicators, gender matching",
+      "CEO player-controlled character (WASD + click-to-move)",
+      "Context-aware spatial behavior with room zone routing",
+      "Smooth movement and animation transitions",
+      "Enhanced game HUD header with notifications",
+      "Clickable agents, desks, and rooms",
+      "Research note on game UX patterns for future features"
+    ],
+    "out": [
+      "Tiled map redesign (use zone definitions on existing 32x32 map)",
+      "Day/night cycle implementation (research only)",
+      "Weather effects implementation (research only)",
+      "Full achievement system (research only)"
+    ]
+  },
+  "browser_test": true,
+  "initiatives": [
+    {
+      "id": "z-sort-rendering-fix",
+      "title": "Fix Z-Sort and Rendering Order",
+      "priority": "P0",
+      "complexity": "simple",
+      "phases": ["build", "review"],
+      "cast": { "auditor": "riley", "builder": "riley", "reviewers": ["sarah"] },
+      "scope": "Fix FurnitureInstance.zY in layoutSerializer.ts so up-facing chairs render behind seated characters. Audit all ZDrawable sorting in renderer.ts for edge cases.",
+      "verify": "npm run type-check && npm run build",
+      "definition_of_done": [
+        { "criterion": "FurnitureInstance.zY correctly computed so characters in up-facing chairs render in front", "met": false },
+        { "criterion": "All 25 seats visually verified — no character-behind-furniture clipping", "met": false },
+        { "criterion": "No regressions in existing z-sort for desks, monitors, and other furniture", "met": false }
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "data-binding-agent-state",
+      "title": "Bind Game Characters to Real System State",
+      "priority": "P0",
+      "complexity": "moderate",
+      "phases": ["build", "review"],
+      "cast": { "auditor": "riley", "builder": "riley", "reviewers": ["sarah"] },
+      "scope": "Map real Zustand session states to CharacterState. Add debounce/smoothing layer for rapid state changes. Make context data available on Character.",
+      "verify": "npm run type-check && npm run build",
+      "definition_of_done": [
+        { "criterion": "Agent sprites reflect real session state from Zustand store", "met": false },
+        { "criterion": "State transitions are debounced — rapid updates don't cause visual jitter", "met": false },
+        { "criterion": "Context data (task name, session info) available on Character object", "met": false }
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "character-identity-status",
+      "title": "Character Identity, Names, and Status Indicators",
+      "priority": "P0",
+      "complexity": "moderate",
+      "phases": ["build", "review"],
+      "cast": { "auditor": "riley", "builder": "riley", "reviewers": ["sarah", "marcus"] },
+      "scope": "Add agent name labels and status indicator icons above character sprites. Match agent genders to personas. Simple canvas fillText for names, small sprite/shape for indicators.",
+      "verify": "npm run type-check && npm run build",
+      "definition_of_done": [
+        { "criterion": "Agent names displayed above character sprites, legible at default zoom", "met": false },
+        { "criterion": "Status indicators visible: spinner (working), zzz (idle), exclamation (error), speech bubble (discussion)", "met": false },
+        { "criterion": "Indicators animate smoothly using game loop, not React effects", "met": false }
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "ceo-player-character",
+      "title": "CEO Player-Controlled Character",
+      "priority": "P1",
+      "complexity": "moderate",
+      "phases": ["build", "review"],
+      "cast": { "auditor": "riley", "builder": "riley", "reviewers": ["sarah", "marcus"] },
+      "scope": "Add CEO to agent-registry.json. Implement WASD keyboard input and click-to-move via A* pathfinding. Camera follows CEO. Uses existing Character FSM.",
+      "verify": "npm run type-check && npm run build",
+      "definition_of_done": [
+        { "criterion": "CEO character appears in office with distinct sprite", "met": false },
+        { "criterion": "WASD keys move CEO tile-by-tile with walking animation", "met": false },
+        { "criterion": "Click-to-move sends CEO to clicked tile via A* pathfinding", "met": false },
+        { "criterion": "Camera smoothly follows CEO character", "met": false },
+        { "criterion": "CEO collides with walls and furniture correctly", "met": false }
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "spatial-behavior",
+      "title": "Context-Aware Spatial Behavior for Agents",
+      "priority": "P1",
+      "complexity": "moderate",
+      "phases": ["build", "review"],
+      "cast": { "auditor": "riley", "builder": "riley", "reviewers": ["sarah"] },
+      "scope": "Define room zones as tile-coordinate ranges. Implement 4 routing rules: coding→desk, discussion→meeting, infra→server, idle→break. Add linger timer and busy indicator.",
+      "verify": "npm run type-check && npm run build",
+      "definition_of_done": [
+        { "criterion": "Room zones defined as tile-coordinate ranges (desks, meeting, server, break)", "met": false },
+        { "criterion": "Agents route to contextually appropriate room based on session type", "met": false },
+        { "criterion": "Agents linger 2-5s after short tasks before moving", "met": false },
+        { "criterion": "Busy indicator shown when agent has multiple concurrent tasks", "met": false }
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "smooth-movement",
+      "title": "Smooth Movement and Animation Transitions",
+      "priority": "P1",
+      "complexity": "moderate",
+      "phases": ["build", "review"],
+      "cast": { "auditor": "riley", "builder": "riley", "reviewers": ["sarah"] },
+      "scope": "Ensure smooth tile-to-tile interpolation. All movement timers in game loop deltaTime. Fix any teleporting behavior.",
+      "verify": "npm run type-check && npm run build",
+      "definition_of_done": [
+        { "criterion": "Characters interpolate smoothly between tiles during movement", "met": false },
+        { "criterion": "Walking speed feels natural", "met": false },
+        { "criterion": "All movement timers use game loop deltaTime, zero useEffect timers", "met": false }
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "game-hud",
+      "title": "Enhanced Game HUD Header",
+      "priority": "P1",
+      "complexity": "simple",
+      "phases": ["build", "review"],
+      "cast": { "auditor": "riley", "builder": "riley", "reviewers": ["marcus"] },
+      "scope": "Enhance GameHeader.tsx with date/time, notification badges, quick-access buttons. Dark themed HTML bar above canvas.",
+      "verify": "npm run type-check && npm run build",
+      "definition_of_done": [
+        { "criterion": "GameHeader shows current date/time", "met": false },
+        { "criterion": "Notification badges show counts for active sessions and pending directives", "met": false },
+        { "criterion": "Quick-access buttons open relevant SidePanel views", "met": false },
+        { "criterion": "Dark theme consistent with game aesthetic", "met": false }
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "interactive-elements",
+      "title": "Clickable Agents, Desks, and Rooms",
+      "priority": "P1",
+      "complexity": "moderate",
+      "phases": ["build", "review"],
+      "cast": { "auditor": "riley", "builder": "riley", "reviewers": ["marcus"] },
+      "scope": "Extend click handler in CanvasOffice.tsx. Click agents for detail, click desks for reports, hover rooms for tooltip. Follow getCharacterAt pattern.",
+      "verify": "npm run type-check && npm run build",
+      "definition_of_done": [
+        { "criterion": "Clicking agent sprite opens agent detail in SidePanel", "met": false },
+        { "criterion": "Clicking desk/furniture shows associated agent reports", "met": false },
+        { "criterion": "Hovering over room zone shows tooltip with occupants", "met": false },
+        { "criterion": "Click priority: agent > furniture > room (no conflicts)", "met": false }
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "research-game-patterns",
+      "title": "Research Game UX Patterns",
+      "priority": "P2",
+      "complexity": "simple",
+      "phases": ["research"],
+      "cast": { "auditor": "riley", "builder": "riley", "reviewers": [] },
+      "scope": "Study claw-empire and pixel-agents for stealable patterns. Brief research note on future features (day/night, weather, achievements). Max 2 pages.",
+      "verify": "test -f .context/goals/game/research-game-patterns.md",
+      "definition_of_done": [
+        { "criterion": "Research note created at .context/goals/game/research-game-patterns.md", "met": false },
+        { "criterion": "Covers pattern analysis and future feature feasibility", "met": false }
+      ],
+      "status": "pending"
+    }
+  ],
+  "created": "2026-03-05T15:30:00Z",
+  "updated": "2026-03-05T15:30:00Z"
+}

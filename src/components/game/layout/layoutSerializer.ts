@@ -42,15 +42,22 @@ export function layoutToFurnitureInstances(furniture: PlacedFurniture[]): Furnit
     const spriteH = entry.sprite.length
     let zY = y + spriteH
 
-    // Chair z-sorting: ensure characters sitting on chairs render correctly
+    // Chair z-sorting: ensure characters sitting on chairs render correctly.
+    // Character zY at a seat = (seatRow + 1) * TILE_SIZE + 0.5, so:
+    //   - Chairs that face the camera (front/left/right): character sits visually
+    //     in front, so chair zY must be LESS than character zY.
+    //   - Back-facing chairs (character faces UP, away from camera): the chair
+    //     back is behind the character, so chair zY must also be LESS.
+    //     Previously this was +1 (in front), which was the bug.
     if (entry.category === 'chairs') {
       if (entry.orientation === 'back') {
-        // Back-facing chairs render IN FRONT of the seated character
-        // (the chair back visually occludes the character behind it)
-        zY = (item.row + 1) * TILE_SIZE + 1
+        // Back-facing chairs sort BEHIND the seated character.
+        // Use row bottom minus 1 so the chair draws clearly behind
+        // the character whose zY = (row+1)*TILE_SIZE + 0.5.
+        zY = (item.row + 1) * TILE_SIZE - 1
       } else {
-        // All other chairs: cap zY to first row bottom so characters
-        // at any seat tile render in front of the chair
+        // Front/left/right chairs: cap zY to row bottom.
+        // Character zY is +0.5 higher, so character draws in front.
         zY = (item.row + 1) * TILE_SIZE
       }
     }

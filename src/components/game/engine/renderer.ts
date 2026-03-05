@@ -7,6 +7,7 @@ import { renderMatrixEffect } from './matrixEffect'
 import { getColorizedFloorSprite, hasFloorSprites, WALL_COLOR } from '../floorTiles'
 import { hasWallSprites, getWallInstances, wallColorToHex } from '../wallTiles'
 import { hasTilesetCache, getScaledTileCanvas } from '../tilesetCache'
+import type { AgentStatus } from '../types'
 import {
   CHARACTER_SITTING_OFFSET_PX,
   CHARACTER_Z_SORT_OFFSET,
@@ -39,6 +40,23 @@ import {
   SELECTION_HIGHLIGHT_COLOR,
   DELETE_BUTTON_BG,
   ROTATE_BUTTON_BG,
+  NAME_LABEL_FONT,
+  NAME_LABEL_BG,
+  NAME_LABEL_TEXT_COLOR,
+  NAME_LABEL_PADDING_X,
+  NAME_LABEL_PADDING_Y,
+  NAME_LABEL_BORDER_RADIUS,
+  NAME_LABEL_VERTICAL_OFFSET_PX,
+  NAME_LABEL_SITTING_OFFSET_PX,
+  STATUS_DOT_RADIUS,
+  STATUS_DOT_BORDER_WIDTH,
+  STATUS_DOT_BORDER_COLOR,
+  STATUS_DOT_GAP_PX,
+  STATUS_COLOR_WORKING,
+  STATUS_COLOR_IDLE,
+  STATUS_COLOR_WAITING,
+  STATUS_COLOR_ERROR,
+  STATUS_COLOR_OFFLINE,
 } from '../constants'
 
 // ── Render functions ────────────────────────────────────────────
@@ -467,6 +485,162 @@ export function renderRotateButton(
   return { cx, cy, radius }
 }
 
+// ── Name labels & status indicators ─────────────────────────────
+
+/** Data needed to render agent identity overlays above characters */
+export interface IdentityOverlay {
+  /** Map from character id to display name */
+  nameMap: Map<number, string>
+  /** Map from character id to current agent status */
+  statusMap: Map<number, AgentStatus>
+  /** Monotonically increasing time (seconds) for animation */
+  time: number
+}
+
+function getStatusColor(status: AgentStatus): string {
+  switch (status) {
+    case 'working': return STATUS_COLOR_WORKING
+    case 'idle': return STATUS_COLOR_IDLE
+    case 'waiting': return STATUS_COLOR_WAITING
+    case 'error': return STATUS_COLOR_ERROR
+    case 'offline': return STATUS_COLOR_OFFLINE
+  }
+}
+
+export function renderNameLabels(
+  ctx: CanvasRenderingContext2D,
+  characters: Character[],
+  offsetX: number,
+  offsetY: number,
+  zoom: number,
+  identity: IdentityOverlay,
+): void {
+  // Scale font with zoom: base 8px, clamped to stay readable
+  const fontSize = Math.max(7, Math.min(12, Math.round(8 * zoom / 3)))
+  ctx.font = `bold ${fontSize}px monospace`
+  ctx.textAlign = 'center'
+  ctx.textBaseline = 'bottom'
+
+  for (const ch of characters) {
+    // Skip characters in matrix effect (spawning/despawning)
+    if (ch.matrixEffect) continue
+
+    const name = identity.nameMap.get(ch.id)
+    if (!name) continue
+
+    const sittingOff = ch.state === CharacterState.TYPE ? NAME_LABEL_SITTING_OFFSET_PX : 0
+    // Position above the character's head
+    const labelX = offsetX + ch.x * zoom
+    const labelY = offsetY + (ch.y + sittingOff - NAME_LABEL_VERTICAL_OFFSET_PX) * zoom
+
+    // Measure text for background rect
+    const metrics = ctx.measureText(name)
+    const textW = metrics.width
+    const padX = NAME_LABEL_PADDING_X * (zoom / 3)
+    const padY = NAME_LABEL_PADDING_Y * (zoom / 3)
+    const rectW = textW + padX * 2
+    const rectH = fontSize + padY * 2
+    const rectX = labelX - rectW / 2
+    const rectY = labelY - rectH
+
+    // Draw background rounded rect
+    ctx.save()
+    ctx.fillStyle = NAME_LABEL_BG
+    ctx.beginPath()
+    const r = NAME_LABEL_BORDER_RADIUS * (zoom / 3)
+    ctx.moveTo(rectX + r, rectY)
+    ctx.lineTo(rectX + rectW - r, rectY)
+    ctx.arcTo(rectX + rectW, rectY, rectX + rectW, rectY + r, r)
+    ctx.lineTo(rectX + rectW, rectY + rectH - r)
+    ctx.arcTo(rectX + rectW, rectY + rectH, rectX + rectW - r, rectY + rectH, r)
+    ctx.lineTo(rectX + r, rectY + rectH)
+    ctx.arcTo(rectX, rectY + rectH, rectX, rectY + rectH - r, r)
+    ctx.lineTo(rectX, rectY + r)
+    ctx.arcTo(rectX, rectY, rectX + r, rectY, r)
+    ctx.closePath()
+    ctx.fill()
+
+    // Draw text
+    ctx.fillStyle = NAME_LABEL_TEXT_COLOR
+    ctx.fillText(name, labelX, labelY - padY)
+    ctx.restore()
+  }
+}
+
+export function renderStatusIndicators(
+  ctx: CanvasRenderingContext2D,
+  characters: Character[],
+  offsetX: number,
+  offsetY: number,
+  zoom: number,
+  identity: IdentityOverlay,
+): void {
+  const fontSize = Math.max(7, Math.min(12, Math.round(8 * zoom / 3)))
+  const padY = NAME_LABEL_PADDING_Y * (zoom / 3)
+  const dotR = Math.max(2, STATUS_DOT_RADIUS * (zoom / 3))
+  const borderW = Math.max(1, STATUS_DOT_BORDER_WIDTH * (zoom / 3))
+  const gap = STATUS_DOT_GAP_PX * (zoom / 3)
+
+  for (const ch of characters) {
+    if (ch.matrixEffect) continue
+
+    const status = identity.statusMap.get(ch.id)
+    if (!status || status === 'offline') continue
+
+    const name = identity.nameMap.get(ch.id)
+    if (!name) continue
+
+    const sittingOff = ch.state === CharacterState.TYPE ? NAME_LABEL_SITTING_OFFSET_PX : 0
+    const labelY = offsetY + (ch.y + sittingOff - NAME_LABEL_VERTICAL_OFFSET_PX) * zoom
+    // Dot goes above the name label background
+    const rectH = fontSize + padY * 2
+    const dotCX = offsetX + ch.x * zoom
+    const dotCY = labelY - rectH - gap - dotR
+
+    ctx.save()
+
+    // For 'working' status, pulse the dot opacity using sin wave
+    if (status === 'working') {
+      const pulse = 0.6 + 0.4 * Math.sin(identity.time * 4)
+      ctx.globalAlpha = pulse
+    }
+
+    // White border
+    ctx.beginPath()
+    ctx.arc(dotCX, dotCY, dotR + borderW, 0, Math.PI * 2)
+    ctx.fillStyle = STATUS_DOT_BORDER_COLOR
+    ctx.fill()
+
+    // Colored dot
+    ctx.beginPath()
+    ctx.arc(dotCX, dotCY, dotR, 0, Math.PI * 2)
+    ctx.fillStyle = getStatusColor(status)
+    ctx.fill()
+
+    // For 'error' status, add a small exclamation mark inside
+    if (status === 'error' && dotR >= 3) {
+      ctx.fillStyle = '#ffffff'
+      ctx.font = `bold ${Math.round(dotR * 1.4)}px monospace`
+      ctx.textAlign = 'center'
+      ctx.textBaseline = 'middle'
+      ctx.fillText('!', dotCX, dotCY)
+    }
+
+    // For 'idle' status, render tiny "z" above the dot
+    if (status === 'idle') {
+      ctx.globalAlpha = 0.5 + 0.3 * Math.sin(identity.time * 2)
+      ctx.fillStyle = STATUS_COLOR_IDLE
+      ctx.font = `bold ${Math.max(6, Math.round(dotR * 1.2))}px monospace`
+      ctx.textAlign = 'left'
+      ctx.textBaseline = 'bottom'
+      const zOff = Math.sin(identity.time * 1.5) * 1.5
+      ctx.fillText('z', dotCX + dotR + 1, dotCY - dotR + zOff)
+    }
+
+    ctx.restore()
+  }
+}
+
 // ── Speech bubbles ──────────────────────────────────────────────
 
 export function renderBubbles(
@@ -564,6 +738,7 @@ export function renderFrame(
   layoutCols?: number,
   layoutRows?: number,
   gidLayers?: number[][],
+  identity?: IdentityOverlay,
 ): { offsetX: number; offsetY: number } {
   // Clear
   ctx.clearRect(0, 0, canvasWidth, canvasHeight)
@@ -600,6 +775,12 @@ export function renderFrame(
   const selectedId = selection?.selectedAgentId ?? null
   const hoveredId = selection?.hoveredAgentId ?? null
   renderScene(ctx, allFurniture, characters, offsetX, offsetY, zoom, selectedId, hoveredId)
+
+  // Name labels + status indicators (above characters, below bubbles)
+  if (identity) {
+    renderNameLabels(ctx, characters, offsetX, offsetY, zoom, identity)
+    renderStatusIndicators(ctx, characters, offsetX, offsetY, zoom, identity)
+  }
 
   // Speech bubbles (always on top of characters)
   renderBubbles(ctx, characters, offsetX, offsetY, zoom)
