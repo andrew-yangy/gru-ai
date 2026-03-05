@@ -2,7 +2,7 @@
   "id": "game-phase3-living-office",
   "title": "Game Phase 3 — Living Office",
   "goal_id": "game",
-  "status": "in_progress",
+  "status": "completed",
   "priority": "P0",
   "agent": ["riley"],
   "reviewers": ["sarah", "marcus"],
@@ -39,11 +39,11 @@
       "scope": "Fix FurnitureInstance.zY in layoutSerializer.ts so up-facing chairs render behind seated characters. Audit all ZDrawable sorting in renderer.ts for edge cases.",
       "verify": "npm run type-check && npm run build",
       "definition_of_done": [
-        { "criterion": "FurnitureInstance.zY correctly computed so characters in up-facing chairs render in front", "met": false },
-        { "criterion": "All 25 seats visually verified — no character-behind-furniture clipping", "met": false },
-        { "criterion": "No regressions in existing z-sort for desks, monitors, and other furniture", "met": false }
+        { "criterion": "FurnitureInstance.zY correctly computed so characters in up-facing chairs render in front", "met": true },
+        { "criterion": "All 25 seats visually verified — no character-behind-furniture clipping", "met": true },
+        { "criterion": "No regressions in existing z-sort for desks, monitors, and other furniture", "met": true }
       ],
-      "status": "pending"
+      "status": "completed"
     },
     {
       "id": "data-binding-agent-state",
@@ -55,11 +55,11 @@
       "scope": "Map real Zustand session states to CharacterState. Add debounce/smoothing layer for rapid state changes. Make context data available on Character.",
       "verify": "npm run type-check && npm run build",
       "definition_of_done": [
-        { "criterion": "Agent sprites reflect real session state from Zustand store", "met": false },
-        { "criterion": "State transitions are debounced — rapid updates don't cause visual jitter", "met": false },
-        { "criterion": "Context data (task name, session info) available on Character object", "met": false }
+        { "criterion": "Agent sprites reflect real session state from Zustand store", "met": true },
+        { "criterion": "State transitions are debounced — rapid updates don't cause visual jitter", "met": true },
+        { "criterion": "Context data (task name, session info) available on Character object", "met": true }
       ],
-      "status": "pending"
+      "status": "completed"
     },
     {
       "id": "character-identity-status",
@@ -71,11 +71,11 @@
       "scope": "Add agent name labels and status indicator icons above character sprites. Match agent genders to personas. Simple canvas fillText for names, small sprite/shape for indicators.",
       "verify": "npm run type-check && npm run build",
       "definition_of_done": [
-        { "criterion": "Agent names displayed above character sprites, legible at default zoom", "met": false },
-        { "criterion": "Status indicators visible: spinner (working), zzz (idle), exclamation (error), speech bubble (discussion)", "met": false },
-        { "criterion": "Indicators animate smoothly using game loop, not React effects", "met": false }
+        { "criterion": "Agent names displayed above character sprites, legible at default zoom", "met": true },
+        { "criterion": "Status indicators visible: spinner (working), zzz (idle), exclamation (error), speech bubble (discussion)", "met": true },
+        { "criterion": "Indicators animate smoothly using game loop, not React effects", "met": true }
       ],
-      "status": "pending"
+      "status": "completed"
     },
     {
       "id": "ceo-player-character",
@@ -87,13 +87,13 @@
       "scope": "Add CEO to agent-registry.json. Implement WASD keyboard input and click-to-move via A* pathfinding. Camera follows CEO. Uses existing Character FSM.",
       "verify": "npm run type-check && npm run build",
       "definition_of_done": [
-        { "criterion": "CEO character appears in office with distinct sprite", "met": false },
-        { "criterion": "WASD keys move CEO tile-by-tile with walking animation", "met": false },
-        { "criterion": "Click-to-move sends CEO to clicked tile via A* pathfinding", "met": false },
-        { "criterion": "Camera smoothly follows CEO character", "met": false },
-        { "criterion": "CEO collides with walls and furniture correctly", "met": false }
+        { "criterion": "CEO character appears in office with distinct sprite", "met": true },
+        { "criterion": "WASD keys move CEO tile-by-tile with walking animation", "met": true },
+        { "criterion": "Click-to-move sends CEO to clicked tile via A* pathfinding", "met": true },
+        { "criterion": "Camera smoothly follows CEO character", "met": true },
+        { "criterion": "CEO collides with walls and furniture correctly", "met": true }
       ],
-      "status": "pending"
+      "status": "completed"
     },
     {
       "id": "spatial-behavior",
@@ -105,12 +105,12 @@
       "scope": "Define room zones as tile-coordinate ranges. Implement 4 routing rules: coding→desk, discussion→meeting, infra→server, idle→break. Add linger timer and busy indicator.",
       "verify": "npm run type-check && npm run build",
       "definition_of_done": [
-        { "criterion": "Room zones defined as tile-coordinate ranges (desks, meeting, server, break)", "met": false },
-        { "criterion": "Agents route to contextually appropriate room based on session type", "met": false },
-        { "criterion": "Agents linger 2-5s after short tasks before moving", "met": false },
-        { "criterion": "Busy indicator shown when agent has multiple concurrent tasks", "met": false }
+        { "criterion": "Room zones defined as tile-coordinate ranges (desks, meeting, server, break)", "met": true },
+        { "criterion": "Agents route to contextually appropriate room based on session type", "met": true },
+        { "criterion": "Agents linger 2-5s after short tasks before moving", "met": true },
+        { "criterion": "Busy indicator shown when agent has multiple concurrent tasks", "met": true }
       ],
-      "status": "pending"
+      "status": "completed"
     },
     {
       "id": "smooth-movement",
@@ -122,11 +122,11 @@
       "scope": "Ensure smooth tile-to-tile interpolation. All movement timers in game loop deltaTime. Fix any teleporting behavior.",
       "verify": "npm run type-check && npm run build",
       "definition_of_done": [
-        { "criterion": "Characters interpolate smoothly between tiles during movement", "met": false },
-        { "criterion": "Walking speed feels natural", "met": false },
-        { "criterion": "All movement timers use game loop deltaTime, zero useEffect timers", "met": false }
+        { "criterion": "Characters interpolate smoothly between tiles during movement", "met": true },
+        { "criterion": "Walking speed feels natural", "met": true },
+        { "criterion": "All movement timers use game loop deltaTime, zero useEffect timers", "met": true }
       ],
-      "status": "pending"
+      "status": "completed"
     },
     {
       "id": "game-hud",
@@ -138,12 +138,12 @@
       "scope": "Enhance GameHeader.tsx with date/time, notification badges, quick-access buttons. Dark themed HTML bar above canvas.",
       "verify": "npm run type-check && npm run build",
       "definition_of_done": [
-        { "criterion": "GameHeader shows current date/time", "met": false },
-        { "criterion": "Notification badges show counts for active sessions and pending directives", "met": false },
-        { "criterion": "Quick-access buttons open relevant SidePanel views", "met": false },
-        { "criterion": "Dark theme consistent with game aesthetic", "met": false }
+        { "criterion": "GameHeader shows current date/time", "met": true },
+        { "criterion": "Notification badges show counts for active sessions and pending directives", "met": true },
+        { "criterion": "Quick-access buttons open relevant SidePanel views", "met": true },
+        { "criterion": "Dark theme consistent with game aesthetic", "met": true }
       ],
-      "status": "pending"
+      "status": "completed"
     },
     {
       "id": "interactive-elements",
@@ -155,12 +155,12 @@
       "scope": "Extend click handler in CanvasOffice.tsx. Click agents for detail, click desks for reports, hover rooms for tooltip. Follow getCharacterAt pattern.",
       "verify": "npm run type-check && npm run build",
       "definition_of_done": [
-        { "criterion": "Clicking agent sprite opens agent detail in SidePanel", "met": false },
-        { "criterion": "Clicking desk/furniture shows associated agent reports", "met": false },
-        { "criterion": "Hovering over room zone shows tooltip with occupants", "met": false },
-        { "criterion": "Click priority: agent > furniture > room (no conflicts)", "met": false }
+        { "criterion": "Clicking agent sprite opens agent detail in SidePanel", "met": true },
+        { "criterion": "Clicking desk/furniture shows associated agent reports", "met": true },
+        { "criterion": "Hovering over room zone shows tooltip with occupants", "met": true },
+        { "criterion": "Click priority: agent > furniture > room (no conflicts)", "met": true }
       ],
-      "status": "pending"
+      "status": "completed"
     },
     {
       "id": "research-game-patterns",
@@ -172,12 +172,12 @@
       "scope": "Study claw-empire and pixel-agents for stealable patterns. Brief research note on future features (day/night, weather, achievements). Max 2 pages.",
       "verify": "test -f .context/goals/game/research-game-patterns.md",
       "definition_of_done": [
-        { "criterion": "Research note created at .context/goals/game/research-game-patterns.md", "met": false },
-        { "criterion": "Covers pattern analysis and future feature feasibility", "met": false }
+        { "criterion": "Research note created at .context/goals/game/research-game-patterns.md", "met": true },
+        { "criterion": "Covers pattern analysis and future feature feasibility", "met": true }
       ],
-      "status": "pending"
+      "status": "completed"
     }
   ],
   "created": "2026-03-05T15:30:00Z",
-  "updated": "2026-03-05T15:30:00Z"
+  "updated": "2026-03-05T19:37:00Z"
 }
