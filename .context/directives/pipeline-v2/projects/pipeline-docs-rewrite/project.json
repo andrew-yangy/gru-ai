@@ -1,0 +1,98 @@
+{
+  "id": "pipeline-docs-rewrite",
+  "title": "Pipeline docs: kill initiative refs, add project brainstorm + completion gate steps",
+  "status": "completed",
+  "agent": ["taylor"],
+  "reviewers": ["sarah", "morgan"],
+  "tasks": [
+    {
+      "id": "terminology-search-and-replace",
+      "title": "Replace initiative terminology across all pipeline and reference docs",
+      "status": "completed",
+      "agent": ["taylor"],
+      "dod": [
+        { "criterion": "Zero occurrences of 'initiative' (case-insensitive) in any file under .claude/skills/directive/docs/", "met": true },
+        { "criterion": "Replacements are contextually correct: Morgan plan items = project, execution items = task", "met": true },
+        { "criterion": "09-execute-initiatives.md renamed to 09-execute-projects.md", "met": true },
+        { "criterion": "All SKILL.md routing table entries updated for the renamed file", "met": true },
+        { "criterion": "All cross-doc links to old filename updated", "met": true },
+        { "criterion": "Excludes directive-json.md, current-json.md, morgan-plan.md (handled by schema project)", "met": true }
+      ]
+    },
+    {
+      "id": "add-step-3c-project-brainstorm",
+      "title": "Add Step 3c project brainstorm to pipeline docs",
+      "status": "completed",
+      "agent": ["taylor"],
+      "dod": [
+        { "criterion": "New pipeline doc 07b-project-brainstorm.md exists with full instructions", "met": true },
+        { "criterion": "Doc specifies: inputs (morgan-plan, audit, directive brainstorm), participants (Sarah + builder), outputs (tasks[] with DOD in project.json)", "met": true },
+        { "criterion": "SKILL.md routing table includes Step 3c pointing to 07b-project-brainstorm.md", "met": true },
+        { "criterion": "07-plan-approval.md references project brainstorm as next step after approval", "met": true }
+      ]
+    },
+    {
+      "id": "add-completion-gate-step",
+      "title": "Add CEO completion gate step -- ALL directives require CEO sign-off",
+      "status": "completed",
+      "agent": ["taylor"],
+      "dod": [
+        { "criterion": "New pipeline doc 11-completion-gate.md exists", "met": true },
+        { "criterion": "ALL directives (including lightweight) set status to awaiting_completion after wrapup", "met": true },
+        { "criterion": "10-wrapup.md Step 6g sets status to awaiting_completion instead of completed", "met": true },
+        { "criterion": "Completion doc covers: approve flow (-> completed), reject flow (-> stays in_progress with CEO feedback)", "met": true },
+        { "criterion": "SKILL.md routing table includes completion gate step", "met": true }
+      ]
+    },
+    {
+      "id": "resolve-conflicts-and-contradictions",
+      "title": "Resolve 7 conflicts and 3 contradictions from Sarah's audit",
+      "status": "completed",
+      "agent": ["taylor"],
+      "dod": [
+        { "criterion": "C5-C6: 00-delegation-and-triage.md updated -- ALL weights require CEO completion approval", "met": true },
+        { "criterion": "IC1: vision.md risk-based authority updated to reflect universal completion gate", "met": true },
+        { "criterion": "IC2: 10-wrapup.md Step 6g checks browser_test before marking awaiting_completion", "met": true },
+        { "criterion": "IC3: 10-wrapup.md documents that completing with failed tasks requires explanation in digest", "met": true },
+        { "criterion": "Each conflict resolution traceable to specific C# or IC# from audit", "met": true }
+      ]
+    },
+    {
+      "id": "update-morgan-prompt-template",
+      "title": "Update Morgan's prompt template to output projects instead of initiatives",
+      "status": "completed",
+      "agent": ["taylor"],
+      "dod": [
+        { "criterion": "morgan-prompt.md instructs Morgan to output projects[]", "met": true },
+        { "criterion": "Morgan output template does NOT include definition_of_done or tasks per project", "met": true },
+        { "criterion": "Example output matches updated morgan-plan.md schema", "met": true },
+        { "criterion": "Zero occurrences of 'initiative' in morgan-prompt.md", "met": true }
+      ]
+    },
+    {
+      "id": "update-agent-prompts-and-memory",
+      "title": "Update agent prompt files, MEMORY.md, and lessons for new terminology",
+      "status": "completed",
+      "agent": ["taylor"],
+      "dod": [
+        { "criterion": "Zero occurrences of 'initiative' in any .claude/agents/*.md file (10 files, 26 occurrences)", "met": true },
+        { "criterion": "MEMORY.md updated: project.json key references use 'tasks' not 'initiatives'", "met": true },
+        { "criterion": "Prescriptive guidance in .context/lessons/*.md updated (not historical narrative)", "met": true },
+        { "criterion": "Replacements contextually correct (Morgan's output = projects, execution items = tasks)", "met": true }
+      ]
+    },
+    {
+      "id": "update-claude-md-and-skill-md",
+      "title": "Update CLAUDE.md and SKILL.md for new terminology and structure",
+      "status": "completed",
+      "agent": ["taylor"],
+      "dod": [
+        { "criterion": "CLAUDE.md context tree shows .context/directives/{id}/directive.json (directory structure)", "met": true },
+        { "criterion": "CLAUDE.md conventions reference projects and tasks, not initiatives", "met": true },
+        { "criterion": "SKILL.md routing table includes all pipeline steps with correct numbering", "met": true },
+        { "criterion": "SKILL.md includes Step 3c (07b-project-brainstorm.md) and completion gate (11-completion-gate.md)", "met": true },
+        { "criterion": "Zero occurrences of 'initiative' in CLAUDE.md or SKILL.md", "met": true }
+      ]
+    }
+  ]
+}

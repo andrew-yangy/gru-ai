@@ -18,7 +18,13 @@ export type TileType =
   | 'mailbox'
   | 'bell'
   | 'server-room'
-  | 'door';
+  | 'door'
+  | 'bookshelf'
+  | 'hud-team'
+  | 'hud-action'
+  | 'hud-ops'
+  | 'hud-directive'
+  | 'hud-log';
 
 /** Currently selected item (kept for SidePanel compatibility) */
 export interface SelectedItem {

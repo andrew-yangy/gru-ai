@@ -5,11 +5,11 @@ import { useDashboardStore } from '@/stores/dashboard-store';
 import { timeAgo } from '@/lib/utils';
 
 const PAGE_TITLES: Record<string, string> = {
-  '/': 'Dashboard',
+  '/': 'Office',
+  '/office': 'Office',
+  '/overview': 'Overview',
   '/sessions': 'Sessions',
-  '/insights': 'Insights',
-  '/history': 'History',
-  '/plans': 'Plans',
+  '/directives': 'Directives',
 };
 
 export default function Header() {
@@ -22,6 +22,9 @@ export default function Header() {
   if (location.pathname.startsWith('/teams/')) {
     const teamName = decodeURIComponent(location.pathname.split('/teams/')[1]);
     title = teamName;
+  }
+  if (location.pathname.startsWith('/org')) {
+    title = 'Team';
   }
 
   const handleNotificationToggle = async () => {

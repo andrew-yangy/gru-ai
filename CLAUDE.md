@@ -23,9 +23,17 @@ An autonomous AI company framework. See `.context/vision.md` for the full vision
 |   |       +-- ...
 |   +-- ...
 |
-|-- directives/                         # FLAT: status in JSON, not directory
-|   |-- {id}.json                       # Directive entity (status: pending|triaged|executing|completed)
-|   +-- {id}.md                         # CEO brief (optional)
+|-- directives/                         # Directive containers with nested projects
+|   |-- {id}/
+|   |   |-- directive.json              # Pipeline state, weight, references
+|   |   |-- directive.md                # CEO brief
+|   |   |-- brainstorm.md              # OPTIONAL: pre-planning (strategic/heavyweight)
+|   |   |-- audit.md                   # OPTIONAL: technical audit
+|   |   +-- projects/
+|   |       |-- {project-id}/
+|   |       |   +-- project.json       # Tasks[], DOD, agents -- THE source of truth
+|   |       +-- ...
+|   +-- ...
 |
 |-- intel/                              # Scout outputs
 |   |-- latest/                         # Overwritten each /scout run
@@ -48,7 +56,7 @@ An autonomous AI company framework. See `.context/vision.md` for the full vision
 
 - **"What should we do now?"** -> Read `goals/*/goal.json` for active goals, then `goals/*/backlog.json` for pending work, check `goals/*/projects/*/project.json` for active projects
 - **Planning a feature:** -> Read `vision.md` + relevant `goals/{goal}/goal.json` + `lessons/` + relevant project context.md files
-- **Building a feature:** -> Read `goals/{goal}/projects/{project}/project.json` for tasks, relevant `lessons/` files
+- **Building a feature:** -> Read project.json for tasks (at `goals/{goal}/projects/{project}/project.json` or `directives/{id}/projects/{project}/project.json`), relevant `lessons/` files
 - **After completing work:** -> Update project.json tasks, create report.md in project dir, update `lessons/` if new patterns discovered
 
 ## Key Conventions
@@ -56,9 +64,9 @@ An autonomous AI company framework. See `.context/vision.md` for the full vision
 - Directory names = entity IDs. `goals/data-model/` means `goal.id = "data-model"`
 - project.json is THE source of truth for a project including all its tasks
 - Tasks are embedded in project.json -- no separate task files
-- Directives are flat in `directives/` -- status tracked in JSON, not by directory
+- Directives are directories in `directives/{id}/` -- each contains directive.json, directive.md, and optional projects/
 - Goals discovered via glob: `goals/*/goal.json`
-- Projects discovered via glob: `goals/*/projects/*/project.json`
+- Projects discovered via glob: `goals/*/projects/*/project.json` or `directives/*/projects/*/project.json`
 - No indexer or computed state files -- read source files directly
 
 ## Four Goals

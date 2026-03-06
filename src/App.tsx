@@ -16,7 +16,8 @@ export default function App() {
       <Initializers />
       <Toaster
         theme="dark"
-        position="top-right"
+        position="bottom-right"
+        closeButton
         toastOptions={{
           style: {
             background: 'hsl(var(--card))',

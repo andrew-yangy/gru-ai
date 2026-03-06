@@ -39,10 +39,10 @@ export default function OrientationBanner() {
     // Active work: from directive state or most recent active session
     let activeWork = '';
     if (directiveState?.status === 'in_progress') {
-      const currentInit = directiveState.initiatives.find(
-        i => i.status === 'in_progress'
+      const currentProj = directiveState.projects.find(
+        p => p.status === 'in_progress'
       );
-      activeWork = currentInit?.title ?? directiveState.directiveName;
+      activeWork = currentProj?.title ?? directiveState.directiveName;
     } else {
       const workingSession = sorted.find(s => s.status === 'working');
       if (workingSession) {

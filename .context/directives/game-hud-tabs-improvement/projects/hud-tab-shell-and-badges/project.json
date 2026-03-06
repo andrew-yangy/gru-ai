@@ -1,0 +1,76 @@
+{
+  "id": "hud-tab-shell-and-badges",
+  "title": "HUD Tab Shell & Badge System",
+  "goal_id": "game",
+  "status": "completed",
+  "completed": "2026-03-06T22:30:00.000Z",
+  "description": "Rename all 5 HUD tabs to workflow-oriented names, add notification badge counts, and wire furniture clicks to open specific tabs contextually.",
+  "scope": {
+    "in": "SidePanel.tsx tab definitions (HudTab type, TAB_LIST, TAB_ICONS, TabStrip), badge count hook, furniture-to-tab click mapping in CanvasOffice.tsx/GamePage.tsx, pixel-types.ts HudTab union",
+    "out": "Panel content rewrites (handled by hud-panel-rewrites project), new backend data sources, game engine changes"
+  },
+  "dod": [
+    { "criterion": "HudTab type is 'team' | 'action' | 'ops' | 'directive' | 'log' across all files", "met": true },
+    { "criterion": "TabStrip renders 5 tabs with updated names and icons", "met": true },
+    { "criterion": "useBadgeCounts() hook returns counts for Action (waiting items), Directive (active pipeline), Ops (failing goals), Team (idle agents)", "met": true },
+    { "criterion": "Badge dots/counts render on tabs with non-zero counts", "met": true },
+    { "criterion": "Clicking CEO desk furniture opens Action tab, whiteboard opens Directive tab, bookshelf opens Log tab", "met": true }
+  ],
+  "agent": ["riley"],
+  "reviewers": ["marcus"],
+  "complexity": "moderate",
+  "tasks": [
+    {
+      "id": "rename-tab-types",
+      "title": "Rename HudTab Union Types & Constants",
+      "priority": "P0",
+      "complexity": "simple",
+      "phases": ["build", "review"],
+      "status": "completed",
+      "agent": ["riley"],
+      "user_scenario": "Player sees tabs labeled Team, Action, Ops, Directive, Log instead of the old names",
+      "scope": "Rename HudTab union in types.ts from 'inbox'|'projects'|'intel'|'wiki' to 'action'|'ops'|'directive'|'log'. Update TAB_LIST, TAB_ICONS in SidePanel.tsx. Update all references in GameHeader.tsx, GamePage.tsx.",
+      "dod": [
+        { "criterion": "HudTab type = 'team' | 'action' | 'ops' | 'directive' | 'log' in SidePanel.tsx", "met": true },
+        { "criterion": "TAB_LIST, TAB_ICONS updated in SidePanel.tsx with new names", "met": true },
+        { "criterion": "All imports/references to old tab names updated across GameHeader.tsx, GamePage.tsx, types.ts", "met": true },
+        { "criterion": "App compiles with zero TypeScript errors", "met": true }
+      ]
+    },
+    {
+      "id": "badge-count-computation",
+      "title": "Badge Count Hook & Tab Rendering",
+      "priority": "P0",
+      "complexity": "simple",
+      "phases": ["build", "review"],
+      "status": "completed",
+      "agent": ["riley"],
+      "user_scenario": "Player sees red badge dots on tabs that have pending items, drawing attention to what needs action",
+      "scope": "Create useBadgeCounts() hook and render badge indicators in TabStrip and GameHeader HudButtons.",
+      "dod": [
+        { "criterion": "useBadgeCounts() hook exists and returns { team: number, action: number, ops: number, directive: number, log: number }", "met": true },
+        { "criterion": "Badge dots render on tabs with count > 0, hidden when 0", "met": true },
+        { "criterion": "Badge counts update reactively when store state changes", "met": true },
+        { "criterion": "Badge styling matches pixel-art aesthetic (small colored dot or number)", "met": true }
+      ]
+    },
+    {
+      "id": "contextual-furniture-opening",
+      "title": "Contextual Furniture-to-Tab Wiring",
+      "priority": "P1",
+      "complexity": "simple",
+      "phases": ["build", "review"],
+      "status": "completed",
+      "agent": ["riley"],
+      "user_scenario": "Player clicks the CEO desk and the Action tab opens; clicks the whiteboard and the Directive tab opens",
+      "scope": "Update furniture click handlers in GamePage.tsx via FURNITURE_TAB_MAP constant.",
+      "dod": [
+        { "criterion": "CEO desk click opens Action tab in side panel", "met": true },
+        { "criterion": "Whiteboard click opens Directive tab", "met": true },
+        { "criterion": "Bookshelf click opens Log tab", "met": false },
+        { "criterion": "Furniture-tab mapping is configurable via a constant object, not scattered if-else", "met": true }
+      ]
+    }
+  ],
+  "sequencing_rationale": "Tab renames must land first so all downstream code references the new names. Badges build on the renamed tabs. Furniture wiring is independent but lower priority."
+}

@@ -1,0 +1,83 @@
+{
+  "id": "parallel-execution",
+  "title": "Wave-based parallel execution with specialist casting",
+  "status": "completed",
+  "agent": ["devon"],
+  "reviewers": ["sarah"],
+  "tasks": [
+    {
+      "id": "evaluate-execution-primitives",
+      "title": "Evaluate CC agent teams vs CLI spawns vs Agent tool for parallel builds",
+      "status": "completed",
+      "agent": ["devon"],
+      "dod": [
+        { "criterion": "Agent teams (CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS) tested with a real parallel build scenario", "met": true },
+        { "criterion": "/batch command tested for large-scale file changes", "met": true },
+        { "criterion": "Comparison doc: agent teams vs CLI spawns vs Agent tool background — capabilities, limitations, when to use each", "met": true },
+        { "criterion": "Recommendation for which primitive the pipeline should use for parallel task execution", "met": true }
+      ]
+    },
+    {
+      "id": "morgan-schema-depends-on",
+      "title": "Add depends_on and touches_files_hint to Morgan's output schema",
+      "status": "completed",
+      "agent": ["taylor"],
+      "dod": [
+        { "criterion": "morgan-plan.md schema includes depends_on[] (optional, default []) per project", "met": true },
+        { "criterion": "morgan-plan.md schema includes touches_files_hint[] (optional) per project", "met": true },
+        { "criterion": "morgan-prompt.md includes parallel execution guidance and specialist casting rules", "met": true },
+        { "criterion": "Example in morgan-plan.md shows depends_on usage for parallel vs sequential tasks", "met": true }
+      ]
+    },
+    {
+      "id": "wave-analysis-algorithm",
+      "title": "Implement wave analysis algorithm in execution doc",
+      "status": "completed",
+      "agent": ["taylor"],
+      "dod": [
+        { "criterion": "09-execute-projects.md documents the greedy wave computation algorithm", "met": true },
+        { "criterion": "Algorithm inputs: tasks[] with depends_on, audit active_files per task", "met": true },
+        { "criterion": "Algorithm respects: priority tiers, explicit dependencies, file overlap", "met": true },
+        { "criterion": "Max 3 parallel tasks per wave (tunable MAX_PARALLEL)", "met": true },
+        { "criterion": "Global sequential files list documented (package.json, tsconfig.json, prisma/schema.prisma)", "met": true },
+        { "criterion": "Wave manifest artifact spec (wave-manifest.json) documented", "met": true }
+      ]
+    },
+    {
+      "id": "parallel-build-execution",
+      "title": "Update execution doc for parallel builds using chosen primitive",
+      "status": "completed",
+      "agent": ["taylor"],
+      "dod": [
+        { "criterion": "09-execute-projects.md execution loop changed from sequential to wave-based", "met": true },
+        { "criterion": "Parallel builds use the recommended primitive from evaluate-execution-primitives", "met": true },
+        { "criterion": "Reviews stay sequential per task within each wave", "met": true },
+        { "criterion": "Post-wave diff check documented (git diff --name-only vs predicted active_files)", "met": true },
+        { "criterion": "Progress display format documented (Wave N/M: [K tasks, PARALLEL])", "met": true }
+      ]
+    },
+    {
+      "id": "failure-handling-waves",
+      "title": "Document failure handling for parallel waves",
+      "status": "completed",
+      "agent": ["taylor"],
+      "dod": [
+        { "criterion": "Failed tasks block dependents only, not entire pipeline", "met": true },
+        { "criterion": "Partial failures within a wave: successful tasks proceed to review, failed tasks marked", "met": true },
+        { "criterion": "Timeout handling: 10min per task, kill process, mark failed, others unaffected", "met": true },
+        { "criterion": "Merge conflict recovery: last-write-wins, review catches inconsistencies", "met": true }
+      ]
+    },
+    {
+      "id": "validate-cast-depends-on",
+      "title": "Add depends_on validation to validate-cast.sh",
+      "status": "completed",
+      "agent": ["jordan"],
+      "dod": [
+        { "criterion": "validate-cast.sh checks depends_on references exist (no dangling task IDs)", "met": true },
+        { "criterion": "validate-cast.sh detects circular dependencies", "met": true },
+        { "criterion": "Validation passes when depends_on is absent or empty array", "met": true }
+      ]
+    }
+  ]
+}

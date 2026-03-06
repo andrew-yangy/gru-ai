@@ -1,0 +1,55 @@
+{
+  "id": "game-hud-tabs-improvement",
+  "status": "awaiting_completion",
+  "weight": "heavyweight",
+  "goalIds": ["game"],
+  "createdAt": "2026-03-06",
+  "started_at": "2026-03-06T21:00:00.000Z",
+  "updated_at": "2026-03-06T23:35:00.000Z",
+  "title": "Game HUD Tabs Improvement",
+  "current_step": "completion",
+  "planning": {
+    "ceo_approval": { "status": "approved", "modifications": [] },
+    "worktree_path": null
+  },
+  "pipeline": {
+    "triage": { "status": "completed", "agent": "CEO", "output": { "weight": "heavyweight" } },
+    "read": { "status": "completed", "agent": "CEO" },
+    "context": { "status": "completed", "agent": "CEO" },
+    "brainstorm": {
+      "status": "completed",
+      "agent": "Marcus, Sarah",
+      "output": { "summary": "Marcus produced full design doc with tab restructure, badge system, KPI strip, decision cards, event feed. Sarah validated feasibility." },
+      "artifacts": [".context/directives/game-hud-tabs-improvement/brainstorm.md", ".context/goals/game/projects/hud-panel-redesign/design-doc.md"]
+    },
+    "plan": {
+      "status": "completed",
+      "agent": "Morgan",
+      "output": { "projects": "2 sequential: shell+badges (P0), panel rewrites (P0, depends on shell)" }
+    },
+    "audit": { "status": "completed", "agent": "Sarah" },
+    "approve": {
+      "status": "completed",
+      "agent": "CEO",
+      "output": { "decision": "approved" }
+    },
+    "project-brainstorm": {
+      "status": "completed",
+      "agent": "Sarah + Riley",
+      "output": { "summary": "Project 1: 3 tasks. Project 2: 5 tasks." }
+    },
+    "setup": { "status": "completed" },
+    "execute": {
+      "status": "completed",
+      "output": {
+        "summary": "Both projects completed. Project 1: 3/3 tasks (rename tabs, badge hook, furniture wiring). Project 2: 5/5 tasks (LogPanel, ActionPanel, OpsPanel, DirectivePanel, BookshelfPanel). All reviews passed."
+      }
+    },
+    "wrapup": { "status": "completed" },
+    "completion": { "status": "active" }
+  },
+  "projects": [
+    { "id": "hud-tab-shell-and-badges", "status": "completed" },
+    { "id": "hud-panel-rewrites", "status": "completed" }
+  ]
+}

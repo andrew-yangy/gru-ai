@@ -1,0 +1,93 @@
+{
+  "id": "pipeline-v2",
+  "title": "Pipeline v2 — Directive>Project>Task hierarchy, mechanical enforcement, CEO completion gate",
+  "status": "awaiting_completion",
+  "created": "2026-03-06",
+  "completed": null,
+  "weight": "strategic",
+  "goal_ids": ["workflow-orchestration", "data-model", "ui"],
+  "produced_features": [],
+  "produced_projects": [
+    "pipeline-v2/projects/schema-and-directory-restructure",
+    "pipeline-v2/projects/pipeline-docs-rewrite",
+    "pipeline-v2/projects/gate-script",
+    "pipeline-v2/projects/watcher-and-dashboard",
+    "pipeline-v2/projects/parallel-execution"
+  ],
+  "report": "pipeline-v2-2026-03-06",
+  "backlog_sources": [],
+  "started_at": "2026-03-06T16:00:00Z",
+  "updated_at": "2026-03-06T20:00:00Z",
+  "current_step": "step-8",
+  "triage": {
+    "weight": "strategic",
+    "rationale": "Architectural change to core data model — affects schemas, pipeline docs, watcher, UI, Morgan output. Multiple valid approaches, lasting conventions."
+  },
+  "pipeline": {
+    "triage": {
+      "status": "completed",
+      "agent": "CEO",
+      "output": { "weight": "strategic", "rationale": "Core data model terminology change, multiple valid approaches, lasting conventions" }
+    },
+    "read": {
+      "status": "completed",
+      "agent": "CEO",
+      "output": { "summary": "Ad-hoc directive: kill 'initiatives' concept, unify to directive→project→task, directive UI links to projects" }
+    },
+    "context": {
+      "status": "completed",
+      "agent": "CEO",
+      "output": { "summary": "Read vision.md, all lessons, morgan-plan schema, directive-json schema, current-json schema, server types, brainstorm templates" }
+    },
+    "brainstorm": {
+      "status": "completed",
+      "agent": "Sarah, Marcus, Morgan",
+      "output": { "summary": "3 rounds + deliberation. Resolved: Directive>Project>Task hierarchy, Morgan outputs projects, nested dirs, file-existence enforcement, Sarah+builder produce tasks, CEO completion gate for all weights" },
+      "artifacts": ["pipeline-v2/brainstorm.md"]
+    },
+    "plan": {
+      "status": "completed",
+      "agent": "Morgan",
+      "output": { "summary": "4 projects: schema restructure (P0), pipeline docs (P0), gate script (P1), watcher+dashboard (P1)" },
+      "artifacts": ["pipeline-v2/morgan-plan.json"]
+    },
+    "audit": {
+      "status": "completed",
+      "agent": "Sam, Sarah",
+      "output": { "summary": "346 initiative refs across 46 files. validate-cast.sh has 19 refs in jq. Watcher depth:0 can't see nested dirs. 51 flat directive files." },
+      "artifacts": ["pipeline-v2/conflicts-audit.md"]
+    },
+    "approve": {
+      "status": "completed",
+      "agent": "CEO",
+      "output": { "decision": "Approved with 3 modifications: no backward compat, CEO approves ALL completions, rename 09-execute-initiatives.md" }
+    },
+    "setup": {
+      "status": "completed",
+      "agent": "CEO",
+      "output": { "mode": "Inline (no worktree)" }
+    },
+    "execute": {
+      "status": "completed",
+      "agent": "Taylor, Jordan, Sam",
+      "reviewers": ["Sarah", "Marcus", "Morgan"],
+      "output": { "progress": "5/5 projects", "current": null, "completed": ["schema-and-directory-restructure", "gate-script", "pipeline-docs-rewrite", "watcher-and-dashboard", "parallel-execution"] }
+    },
+    "wrapup": { "status": "completed", "agent": "CEO", "output": { "digest": "pipeline-v2-2026-03-06" } },
+    "completion": { "status": "awaiting", "agent": "CEO" }
+  },
+  "planning": {
+    "morgan_plan": {
+      "goal": "Pipeline v2 — Directive>Project>Task hierarchy, mechanical enforcement, CEO completion gate",
+      "projects": [
+        { "id": "schema-and-directory-restructure", "title": "Schema + directory restructure", "priority": "P0", "agent": ["devon"], "reviewers": ["sarah"] },
+        { "id": "pipeline-docs-rewrite", "title": "Pipeline docs rewrite", "priority": "P0", "agent": ["taylor"], "reviewers": ["sarah", "morgan"] },
+        { "id": "gate-script", "title": "Gate script enforcement", "priority": "P1", "agent": ["jordan"], "reviewers": ["sarah"] },
+        { "id": "watcher-and-dashboard", "title": "Watcher + dashboard UI", "priority": "P1", "agent": ["riley", "jordan"], "reviewers": ["sarah", "marcus"] }
+      ]
+    },
+    "ceo_approval": { "status": "approved", "modifications": ["No backward compat", "CEO approves ALL completions", "Rename 09-execute-initiatives.md"] }
+  },
+  "initiatives": [],
+  "wrapup": {}
+}

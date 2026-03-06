@@ -2,117 +2,380 @@
   "id": "game-visual-quality-overhaul",
   "title": "Game Visual Quality Overhaul — Exceed pixel-agents and claw-empire",
   "goal_id": "game",
-  "status": "active",
+  "status": "completed",
   "created": "2026-03-04",
-  "initiatives": [
+  "reviewers": [
+    "sarah",
+    "marcus"
+  ],
+  "tasks": [
     {
       "id": "room-system-and-zsort",
       "title": "Room grid data model + z-sort rendering pipeline",
       "priority": "P0",
       "complexity": "complex",
-      "phases": ["design", "build", "tech-review"],
-      "cast": { "auditor": "sarah", "builder": "riley", "reviewers": ["sarah"] },
+      "phases": [
+        "design",
+        "build",
+        "tech-review"
+      ],
       "scope": "Create RoomGrid data model in engine/types.ts: Room type with id, department, bounds, palette (HSL base). Add rooms.ts defining room zones mapped to grid coordinates (CEO office, dev pit, ops wing, conference, server room, lobby). Refactor renderer.ts render() to collect ZDrawable[] from all tile renderers, sort by zY ascending, then draw in order. Replace direct-draw pattern with emit-drawable pattern. Add resolveRoomAt(row, col) lookup function.",
       "verify": "npx tsc --noEmit && npx vite build",
-      "definition_of_done": [
-        { "criterion": "Room type exists in engine/types.ts with id, department, colorPalette, and bounds", "met": false },
-        { "criterion": "rooms.ts exports ROOMS array and resolveRoomAt(row, col)", "met": false },
-        { "criterion": "render() uses painter's algorithm — ZDrawable[] sorted by zY", "met": false },
-        { "criterion": "Existing tile renderers produce identical visual output (no regression)", "met": false },
-        { "criterion": "TypeScript compiles with no errors", "met": false }
+      "status": "pending",
+      "agent": [
+        "riley"
       ],
-      "status": "pending"
+      "dod": [
+        {
+          "criterion": "Room type exists in engine/types.ts with id, department, colorPalette, and bounds",
+          "met": false
+        },
+        {
+          "criterion": "rooms.ts exports ROOMS array and resolveRoomAt(row, col)",
+          "met": false
+        },
+        {
+          "criterion": "render() uses painter's algorithm — ZDrawable[] sorted by zY",
+          "met": false
+        },
+        {
+          "criterion": "Existing tile renderers produce identical visual output (no regression)",
+          "met": false
+        },
+        {
+          "criterion": "TypeScript compiles with no errors",
+          "met": false
+        }
+      ]
     },
     {
       "id": "floors-and-walls",
       "title": "Textured floors with HSL colorization + auto-tiling walls with depth",
       "priority": "P0",
       "complexity": "moderate",
-      "phases": ["build", "review"],
-      "cast": { "auditor": "sarah", "builder": "riley", "reviewers": ["sarah", "marcus"] },
+      "phases": [
+        "build",
+        "review"
+      ],
       "scope": "Rewrite renderFloor() to draw checkerboard pattern with 4-edge lighting colorized per room via HSL. Implement hslColorize() and blendColor() in engine/color-utils.ts. Rewrite renderWall() with 4-bit bitmask auto-tiling and depth shading. Add accent color stripe from adjacent room's department palette.",
       "verify": "npx tsc --noEmit && npx vite build",
-      "definition_of_done": [
-        { "criterion": "renderFloor() produces checkerboard with directional lighting and HSL colorization per room", "met": false },
-        { "criterion": "renderWall() uses 4-bit bitmask auto-tiling with depth shading", "met": false },
-        { "criterion": "hslColorize() and blendColor() exported from engine/color-utils.ts", "met": false },
-        { "criterion": "Department palettes visible: dev=blue, ops=sage, etc.", "met": false },
-        { "criterion": "TypeScript compiles with no errors", "met": false }
+      "status": "pending",
+      "agent": [
+        "riley"
       ],
-      "status": "pending"
+      "dod": [
+        {
+          "criterion": "renderFloor() produces checkerboard with directional lighting and HSL colorization per room",
+          "met": false
+        },
+        {
+          "criterion": "renderWall() uses 4-bit bitmask auto-tiling with depth shading",
+          "met": false
+        },
+        {
+          "criterion": "hslColorize() and blendColor() exported from engine/color-utils.ts",
+          "met": false
+        },
+        {
+          "criterion": "Department palettes visible: dev=blue, ops=sage, etc.",
+          "met": false
+        },
+        {
+          "criterion": "TypeScript compiles with no errors",
+          "met": false
+        }
+      ]
     },
     {
       "id": "furniture-overhaul",
       "title": "Rich multi-layer furniture renderers (all types, 20-40 lines each)",
       "priority": "P1",
       "complexity": "complex",
-      "phases": ["design", "build", "review"],
-      "cast": { "auditor": "sarah", "builder": "riley", "reviewers": ["sarah", "marcus"] },
+      "phases": [
+        "design",
+        "build",
+        "review"
+      ],
       "scope": "Rewrite ALL furniture tile renderers to 20-40 line multi-layer compositions. Desk: wood grain, keyboard, monitor with IDE code, coffee mug with steam, accessories. CEO desk: mahogany, dual monitors, nameplate. Conference: polished table, chairs, notepads. Whiteboard: frame, faded writing, magnets, markers. Server room: rack with LEDs, cables, fans. Mailbox: rivets, mail slot, flag. Bell: brass with specular highlight. Door: paneled wood, brass hardware.",
       "verify": "npx tsc --noEmit && npx vite build",
-      "definition_of_done": [
-        { "criterion": "Every tile renderer is 20-40 lines with multi-layer depth (base, detail, highlight, shadow)", "met": false },
-        { "criterion": "Desk includes wood grain, keyboard, monitor with code lines, coffee mug with steam, 2+ accessories", "met": false },
-        { "criterion": "All furniture uses highlight (top-left) and shadow (bottom-right) for 3D depth", "met": false },
-        { "criterion": "Visuals clearly superior to flat-color rectangles — qualitative bar: pixel-agents/claw-empire level", "met": false },
-        { "criterion": "TypeScript compiles with no errors", "met": false }
+      "status": "pending",
+      "agent": [
+        "riley"
       ],
-      "status": "pending"
+      "dod": [
+        {
+          "criterion": "Every tile renderer is 20-40 lines with multi-layer depth (base, detail, highlight, shadow)",
+          "met": false
+        },
+        {
+          "criterion": "Desk includes wood grain, keyboard, monitor with code lines, coffee mug with steam, 2+ accessories",
+          "met": false
+        },
+        {
+          "criterion": "All furniture uses highlight (top-left) and shadow (bottom-right) for 3D depth",
+          "met": false
+        },
+        {
+          "criterion": "Visuals clearly superior to flat-color rectangles — qualitative bar: pixel-agents/claw-empire level",
+          "met": false
+        },
+        {
+          "criterion": "TypeScript compiles with no errors",
+          "met": false
+        }
+      ]
     },
     {
       "id": "character-sprites",
       "title": "Character sprites via HSL palette-swap from MetroCity source",
       "priority": "P1",
       "complexity": "moderate",
-      "phases": ["build", "review"],
-      "cast": { "auditor": "sarah", "builder": "riley", "reviewers": ["sarah", "marcus"] },
+      "phases": [
+        "build",
+        "review"
+      ],
       "scope": "12 character PNGs (char_0..11.png) loaded at startup. char_0..5 are original pixel-agents MetroCity-based sprites. char_6..11 generated by scripts/export-characters.ts via HSL palette-swap from char_0.png — preserving all shading, highlights, and detail. 112x96 sprite sheets: 7 frames x 16px, 3 direction rows x 32px. Frame order: walk1-3, type1-2, read1-2. Left-facing generated by flipping right at runtime. New agents added by defining a palette in the export script and running it.",
       "verify": "npx tsc --noEmit && npx vite build",
-      "definition_of_done": [
-        { "criterion": "12 character PNGs loaded with distinct color palettes for all agents", "met": true },
-        { "criterion": "Palette-swap export script (pngjs) produces quality matching pixel-agents originals", "met": true },
-        { "criterion": "All agents render in-game with walk/type/read animations per direction", "met": true },
-        { "criterion": "Left-facing sprites generated by runtime flip of right-facing frames", "met": true },
-        { "criterion": "TypeScript compiles with no errors", "met": true }
+      "status": "completed",
+      "agent": [
+        "riley"
       ],
-      "status": "completed"
+      "dod": [
+        {
+          "criterion": "12 character PNGs loaded with distinct color palettes for all agents",
+          "met": true
+        },
+        {
+          "criterion": "Palette-swap export script (pngjs) produces quality matching pixel-agents originals",
+          "met": true
+        },
+        {
+          "criterion": "All agents render in-game with walk/type/read animations per direction",
+          "met": true
+        },
+        {
+          "criterion": "Left-facing sprites generated by runtime flip of right-facing frames",
+          "met": true
+        },
+        {
+          "criterion": "TypeScript compiles with no errors",
+          "met": true
+        }
+      ]
     },
     {
       "id": "animation-loop",
       "title": "Animation tick system with character state machine",
       "priority": "P1",
       "complexity": "moderate",
-      "phases": ["build", "tech-review"],
-      "cast": { "auditor": "sarah", "builder": "riley", "reviewers": ["sarah"] },
+      "phases": [
+        "build",
+        "tech-review"
+      ],
       "scope": "Animation tick system in engine/animation.ts. AnimationState type, tick(dt), getFrame(). Integrate with CanvasOffice rAF loop — continuous rendering with delta time. Map agent statuses to animations: working=typing, waiting=idle, idle=breathe, error=error-pose. Subtle idle breathing (2-frame cycle).",
       "verify": "npx tsc --noEmit && npx vite build",
-      "definition_of_done": [
-        { "criterion": "engine/animation.ts with configurable frame durations per animation type", "met": false },
-        { "criterion": "rAF loop runs continuously with delta time calculation", "met": false },
-        { "criterion": "Agent status maps to animation state correctly", "met": false },
-        { "criterion": "Walk animation cycles at consistent speed regardless of frame rate", "met": false },
-        { "criterion": "TypeScript compiles with no errors", "met": false }
+      "status": "pending",
+      "agent": [
+        "riley"
       ],
-      "status": "pending"
+      "dod": [
+        {
+          "criterion": "engine/animation.ts with configurable frame durations per animation type",
+          "met": false
+        },
+        {
+          "criterion": "rAF loop runs continuously with delta time calculation",
+          "met": false
+        },
+        {
+          "criterion": "Agent status maps to animation state correctly",
+          "met": false
+        },
+        {
+          "criterion": "Walk animation cycles at consistent speed regardless of frame rate",
+          "met": false
+        },
+        {
+          "criterion": "TypeScript compiles with no errors",
+          "met": false
+        }
+      ]
     },
     {
       "id": "room-atmosphere",
       "title": "Room atmosphere overlays and department decorations",
       "priority": "P2",
       "complexity": "moderate",
-      "phases": ["build", "review"],
-      "cast": { "auditor": "sarah", "builder": "riley", "reviewers": ["marcus"] },
+      "phases": [
+        "build",
+        "review"
+      ],
       "scope": "Room atmosphere rendering pass: per-room gradient overlays, accent stripes, bottom shadows. Decoration overlays: windows on exterior walls, wall clocks, area rugs, ceiling lights. Department palettes: dev=blue, design=purple, ops=sage, qa=rose. Decorations render as overlays on existing tiles based on room zone data, integrated with z-sort.",
       "verify": "npx tsc --noEmit && npx vite build",
-      "definition_of_done": [
-        { "criterion": "Each room zone renders subtle gradient overlay matching department palette", "met": false },
-        { "criterion": "4+ decoration types: windows, clocks, rugs, ceiling lights", "met": false },
-        { "criterion": "Department colors visually distinct across rooms", "met": false },
-        { "criterion": "Decorations integrate with z-sort correctly", "met": false },
-        { "criterion": "TypeScript compiles with no errors", "met": false }
+      "status": "pending",
+      "agent": [
+        "riley"
       ],
-      "status": "pending"
+      "dod": [
+        {
+          "criterion": "Each room zone renders subtle gradient overlay matching department palette",
+          "met": false
+        },
+        {
+          "criterion": "4+ decoration types: windows, clocks, rugs, ceiling lights",
+          "met": false
+        },
+        {
+          "criterion": "Department colors visually distinct across rooms",
+          "met": false
+        },
+        {
+          "criterion": "Decorations integrate with z-sort correctly",
+          "met": false
+        },
+        {
+          "criterion": "TypeScript compiles with no errors",
+          "met": false
+        }
+      ]
     }
   ],
-  "reviewers": ["sarah", "marcus"]
+  "priority": "P0",
+  "agent": [
+    "riley"
+  ],
+  "description": "Game Visual Quality Overhaul — Exceed pixel-agents and claw-empire",
+  "scope": {
+    "in": [
+      "Room grid data model + z-sort rendering pipeline",
+      "Textured floors with HSL colorization + auto-tiling walls with depth",
+      "Rich multi-layer furniture renderers (all types, 20-40 lines each)",
+      "Character sprites via HSL palette-swap from MetroCity source",
+      "Animation tick system with character state machine",
+      "Room atmosphere overlays and department decorations"
+    ],
+    "out": []
+  },
+  "dod": [
+    {
+      "criterion": "Room type exists in engine/types.ts with id, department, colorPalette, and bounds",
+      "met": false
+    },
+    {
+      "criterion": "rooms.ts exports ROOMS array and resolveRoomAt(row, col)",
+      "met": false
+    },
+    {
+      "criterion": "render() uses painter's algorithm — ZDrawable[] sorted by zY",
+      "met": false
+    },
+    {
+      "criterion": "Existing tile renderers produce identical visual output (no regression)",
+      "met": false
+    },
+    {
+      "criterion": "TypeScript compiles with no errors",
+      "met": false
+    },
+    {
+      "criterion": "renderFloor() produces checkerboard with directional lighting and HSL colorization per room",
+      "met": false
+    },
+    {
+      "criterion": "renderWall() uses 4-bit bitmask auto-tiling with depth shading",
+      "met": false
+    },
+    {
+      "criterion": "hslColorize() and blendColor() exported from engine/color-utils.ts",
+      "met": false
+    },
+    {
+      "criterion": "Department palettes visible: dev=blue, ops=sage, etc.",
+      "met": false
+    },
+    {
+      "criterion": "TypeScript compiles with no errors",
+      "met": false
+    },
+    {
+      "criterion": "Every tile renderer is 20-40 lines with multi-layer depth (base, detail, highlight, shadow)",
+      "met": false
+    },
+    {
+      "criterion": "Desk includes wood grain, keyboard, monitor with code lines, coffee mug with steam, 2+ accessories",
+      "met": false
+    },
+    {
+      "criterion": "All furniture uses highlight (top-left) and shadow (bottom-right) for 3D depth",
+      "met": false
+    },
+    {
+      "criterion": "Visuals clearly superior to flat-color rectangles — qualitative bar: pixel-agents/claw-empire level",
+      "met": false
+    },
+    {
+      "criterion": "TypeScript compiles with no errors",
+      "met": false
+    },
+    {
+      "criterion": "12 character PNGs loaded with distinct color palettes for all agents",
+      "met": true
+    },
+    {
+      "criterion": "Palette-swap export script (pngjs) produces quality matching pixel-agents originals",
+      "met": true
+    },
+    {
+      "criterion": "All agents render in-game with walk/type/read animations per direction",
+      "met": true
+    },
+    {
+      "criterion": "Left-facing sprites generated by runtime flip of right-facing frames",
+      "met": true
+    },
+    {
+      "criterion": "TypeScript compiles with no errors",
+      "met": true
+    },
+    {
+      "criterion": "engine/animation.ts with configurable frame durations per animation type",
+      "met": false
+    },
+    {
+      "criterion": "rAF loop runs continuously with delta time calculation",
+      "met": false
+    },
+    {
+      "criterion": "Agent status maps to animation state correctly",
+      "met": false
+    },
+    {
+      "criterion": "Walk animation cycles at consistent speed regardless of frame rate",
+      "met": false
+    },
+    {
+      "criterion": "TypeScript compiles with no errors",
+      "met": false
+    },
+    {
+      "criterion": "Each room zone renders subtle gradient overlay matching department palette",
+      "met": false
+    },
+    {
+      "criterion": "4+ decoration types: windows, clocks, rugs, ceiling lights",
+      "met": false
+    },
+    {
+      "criterion": "Department colors visually distinct across rooms",
+      "met": false
+    },
+    {
+      "criterion": "Decorations integrate with z-sort correctly",
+      "met": false
+    },
+    {
+      "criterion": "TypeScript compiles with no errors",
+      "met": false
+    }
+  ]
 }

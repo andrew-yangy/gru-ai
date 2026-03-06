@@ -1,12 +1,14 @@
 import { TileType, TILE_SIZE, CharacterState } from '../pixel-types'
 import type { TileType as TileTypeVal, FurnitureInstance, Character, SpriteData, Seat, FloorColor } from '../pixel-types'
 import { getCachedSprite, getOutlineSprite } from '../sprites/spriteCache'
-import { getCharacterSprites, BUBBLE_PERMISSION_SPRITE, BUBBLE_WAITING_SPRITE } from '../sprites/spriteData'
+import { getCharacterSprites, BUBBLE_PERMISSION_SPRITE, BUBBLE_WAITING_SPRITE, BUBBLE_CHAT_SPRITE } from '../sprites/spriteData'
+import { STATUS_ICON_SPRITES } from '../sprites/statusIcons'
 import { getCharacterSprite } from './characters'
 import { renderMatrixEffect } from './matrixEffect'
 import { getColorizedFloorSprite, hasFloorSprites, WALL_COLOR } from '../floorTiles'
 import { hasWallSprites, getWallInstances, wallColorToHex } from '../wallTiles'
 import { hasTilesetCache, getScaledTileCanvas } from '../tilesetCache'
+import { renderBitmapText, measureBitmapText } from '../sprites/bitmapFont'
 import type { AgentStatus } from '../types'
 import {
   CHARACTER_SITTING_OFFSET_PX,
@@ -40,26 +42,77 @@ import {
   SELECTION_HIGHLIGHT_COLOR,
   DELETE_BUTTON_BG,
   ROTATE_BUTTON_BG,
-  NAME_LABEL_FONT,
-  NAME_LABEL_BG,
-  NAME_LABEL_TEXT_COLOR,
-  NAME_LABEL_PADDING_X,
-  NAME_LABEL_PADDING_Y,
-  NAME_LABEL_BORDER_RADIUS,
   NAME_LABEL_VERTICAL_OFFSET_PX,
   NAME_LABEL_SITTING_OFFSET_PX,
-  STATUS_DOT_RADIUS,
-  STATUS_DOT_BORDER_WIDTH,
-  STATUS_DOT_BORDER_COLOR,
-  STATUS_DOT_GAP_PX,
-  STATUS_COLOR_WORKING,
-  STATUS_COLOR_IDLE,
-  STATUS_COLOR_WAITING,
-  STATUS_COLOR_ERROR,
-  STATUS_COLOR_OFFLINE,
+  IDENTITY_PLATE_PAD_X,
+  IDENTITY_PLATE_PAD_Y,
+  IDENTITY_PLATE_BG_ALPHA,
+  IDENTITY_PLATE_HEIGHT,
+  STATUS_ICON_GAP_PX,
+  CEO_CROWN_COLOR,
+  CEO_GLOW_ALPHA,
+  COLLISION_FLASH_DURATION_SEC,
+  COLLISION_FLASH_COLOR,
+  PROXIMITY_HIGHLIGHT_BASE_ALPHA,
+  PROXIMITY_HIGHLIGHT_PULSE_AMPLITUDE,
+  PROXIMITY_HIGHLIGHT_PULSE_SPEED,
 } from '../constants'
 
+// ── CEO crown sprite (7x5 pixel art, gold tones) ───────────────
+const CEO_CROWN_SPRITE: SpriteData = [
+  ['',        '#FFD700', '',        '#FFD700', '',        '#FFD700', ''],
+  ['',        '#FFD700', '#FFC000', '#FFD700', '#FFC000', '#FFD700', ''],
+  ['#FFD700', '#FFD700', '#FFC000', '#FFD700', '#FFC000', '#FFD700', '#FFD700'],
+  ['#FFD700', '#FFC000', '#FFD700', '#FFC000', '#FFD700', '#FFC000', '#FFD700'],
+  ['#DAA520', '#DAA520', '#DAA520', '#DAA520', '#DAA520', '#DAA520', '#DAA520'],
+]
+
+// ── Gold outline sprite generation ─────────────────────────────
+const goldOutlineCache = new WeakMap<SpriteData, SpriteData>()
+
+/** Generate a 1px gold outline SpriteData (2px larger in each dimension) */
+function getGoldOutlineSprite(sprite: SpriteData): SpriteData {
+  const cached = goldOutlineCache.get(sprite)
+  if (cached) return cached
+
+  const rows = sprite.length
+  const cols = sprite[0].length
+  const outline: string[][] = []
+  for (let r = 0; r < rows + 2; r++) {
+    outline.push(new Array<string>(cols + 2).fill(''))
+  }
+
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      if (sprite[r][c] === '') continue
+      const er = r + 1
+      const ec = c + 1
+      if (outline[er - 1][ec] === '') outline[er - 1][ec] = CEO_CROWN_COLOR
+      if (outline[er + 1][ec] === '') outline[er + 1][ec] = CEO_CROWN_COLOR
+      if (outline[er][ec - 1] === '') outline[er][ec - 1] = CEO_CROWN_COLOR
+      if (outline[er][ec + 1] === '') outline[er][ec + 1] = CEO_CROWN_COLOR
+    }
+  }
+
+  // Clear pixels that overlap with original opaque pixels
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      if (sprite[r][c] !== '') {
+        outline[r + 1][c + 1] = ''
+      }
+    }
+  }
+
+  goldOutlineCache.set(sprite, outline)
+  return outline
+}
+
 // ── Render functions ────────────────────────────────────────────
+
+/** GID layer split:
+ *  - Layers 0-2 (FLOORS, FURNITURE, TABLES): flat, always below characters
+ *  - Layers 3+ (LAPTOP, DECO, TOP): overlay, always above characters */
+const GID_BASE_LAYER_COUNT = 3
 
 export function renderTileGrid(
   ctx: CanvasRenderingContext2D,
@@ -76,11 +129,13 @@ export function renderTileGrid(
   const tmCols = tmRows > 0 ? tileMap[0].length : 0
   const layoutCols = cols ?? tmCols
 
-  // Direct TMX GID rendering — draw all layers bottom-to-top
+  // Direct TMX GID rendering — draw base layers (below characters)
   const useGids = gidLayers && gidLayers.length > 0 && hasTilesetCache()
 
   if (useGids) {
-    for (const layer of gidLayers) {
+    const flatCount = Math.min(GID_BASE_LAYER_COUNT, gidLayers.length)
+    for (let li = 0; li < flatCount; li++) {
+      const layer = gidLayers[li]
       for (let r = 0; r < tmRows; r++) {
         for (let c = 0; c < tmCols; c++) {
           const gid = layer[r * layoutCols + c]
@@ -134,6 +189,38 @@ interface ZDrawable {
   draw: (ctx: CanvasRenderingContext2D) => void
 }
 
+/** Render GID overlay layers (laptop, deco, top) — called after characters */
+export function renderGidOverlayLayers(
+  ctx: CanvasRenderingContext2D,
+  tileMap: TileTypeVal[][],
+  offsetX: number,
+  offsetY: number,
+  zoom: number,
+  cols?: number,
+  gidLayers?: number[][],
+): void {
+  if (!gidLayers || gidLayers.length <= GID_BASE_LAYER_COUNT || !hasTilesetCache()) return
+  const s = TILE_SIZE * zoom
+  const tmRows = tileMap.length
+  const tmCols = tmRows > 0 ? tileMap[0].length : 0
+  const layoutCols = cols ?? tmCols
+
+  for (let li = GID_BASE_LAYER_COUNT; li < gidLayers.length; li++) {
+    const layer = gidLayers[li]
+    for (let r = 0; r < tmRows; r++) {
+      for (let c = 0; c < tmCols; c++) {
+        const gid = layer[r * layoutCols + c]
+        if (!gid || gid === 0) continue
+        const tileCanvas = getScaledTileCanvas(gid, zoom)
+        if (tileCanvas) {
+          ctx.drawImage(tileCanvas, offsetX + c * s, offsetY + r * s)
+        }
+      }
+    }
+  }
+}
+
+
 export function renderScene(
   ctx: CanvasRenderingContext2D,
   furniture: FurnitureInstance[],
@@ -143,6 +230,7 @@ export function renderScene(
   zoom: number,
   selectedAgentId: number | null,
   hoveredAgentId: number | null,
+  time?: number,
 ): void {
   const drawables: ZDrawable[] = []
 
@@ -159,9 +247,10 @@ export function renderScene(
     })
   }
 
-  // Characters
+  // Characters — skip if PNG assets haven't loaded yet
   for (const ch of characters) {
     const sprites = getCharacterSprites(ch.palette, ch.hueShift)
+    if (!sprites) continue
     const spriteData = getCharacterSprite(ch, sprites)
     const cached = getCachedSprite(spriteData, zoom)
     // Sitting offset: shift character down when seated so they visually sit in the chair
@@ -190,10 +279,11 @@ export function renderScene(
       continue
     }
 
-    // White outline: full opacity for selected, 50% for hover
+    // Outline priority: selected > hovered > CEO glow > proximity highlight
     const isSelected = selectedAgentId !== null && ch.id === selectedAgentId
     const isHovered = hoveredAgentId !== null && ch.id === hoveredAgentId
     if (isSelected || isHovered) {
+      // White outline for selected/hovered
       const outlineAlpha = isSelected ? SELECTED_OUTLINE_ALPHA : HOVERED_OUTLINE_ALPHA
       const outlineData = getOutlineSprite(spriteData)
       const outlineCached = getCachedSprite(outlineData, zoom)
@@ -208,6 +298,39 @@ export function renderScene(
           c.restore()
         },
       })
+    } else if (ch.isPlayerControlled) {
+      // CEO gold glow outline (always-on when not selected/hovered)
+      const goldOutlineData = getGoldOutlineSprite(spriteData)
+      const goldOutlineCached = getCachedSprite(goldOutlineData, zoom)
+      const olDrawX = drawX - zoom
+      const olDrawY = drawY - zoom
+      drawables.push({
+        zY: charZY - OUTLINE_Z_SORT_OFFSET,
+        draw: (c) => {
+          c.save()
+          c.globalAlpha = CEO_GLOW_ALPHA
+          c.drawImage(goldOutlineCached, olDrawX, olDrawY)
+          c.restore()
+        },
+      })
+    } else if (ch.isNearPlayer) {
+      // Proximity highlight: soft gold pulse for nearby non-CEO agents
+      const goldOutlineData = getGoldOutlineSprite(spriteData)
+      const goldOutlineCached = getCachedSprite(goldOutlineData, zoom)
+      const olDrawX = drawX - zoom
+      const olDrawY = drawY - zoom
+      const t = time ?? 0
+      const pulseAlpha = PROXIMITY_HIGHLIGHT_BASE_ALPHA
+        + PROXIMITY_HIGHLIGHT_PULSE_AMPLITUDE * Math.sin(t * PROXIMITY_HIGHLIGHT_PULSE_SPEED)
+      drawables.push({
+        zY: charZY - OUTLINE_Z_SORT_OFFSET,
+        draw: (c) => {
+          c.save()
+          c.globalAlpha = pulseAlpha
+          c.drawImage(goldOutlineCached, olDrawX, olDrawY)
+          c.restore()
+        },
+      })
     }
 
     drawables.push({
@@ -216,6 +339,22 @@ export function renderScene(
         c.drawImage(cached, drawX, drawY)
       },
     })
+
+    // CEO crown: draw above the character sprite
+    if (ch.isPlayerControlled) {
+      const crownCached = getCachedSprite(CEO_CROWN_SPRITE, zoom)
+      const crownW = crownCached.width
+      const crownH = crownCached.height
+      // Center crown above character head
+      const crownX = Math.round(drawX + cached.width / 2 - crownW / 2)
+      const crownY = Math.round(drawY - crownH)
+      drawables.push({
+        zY: charZY + 0.001, // sort just after character so crown draws on top
+        draw: (c) => {
+          c.drawImage(crownCached, crownX, crownY)
+        },
+      })
+    }
   }
 
   // Sort by Y (lower = in front = drawn later)
@@ -493,81 +632,155 @@ export interface IdentityOverlay {
   nameMap: Map<number, string>
   /** Map from character id to current agent status */
   statusMap: Map<number, AgentStatus>
+  /** Map from character id to hex color (e.g. '#FFD700') */
+  colorMap: Map<number, string>
+  /** Map from character id to current task description (shown below nameplate) */
+  taskTextMap: Map<number, string>
+  /** Map from character id to id of agent they're interacting with (subagent relationship) */
+  interactionMap: Map<number, number>
   /** Monotonically increasing time (seconds) for animation */
   time: number
 }
 
-function getStatusColor(status: AgentStatus): string {
-  switch (status) {
-    case 'working': return STATUS_COLOR_WORKING
-    case 'idle': return STATUS_COLOR_IDLE
-    case 'waiting': return STATUS_COLOR_WAITING
-    case 'error': return STATUS_COLOR_ERROR
-    case 'offline': return STATUS_COLOR_OFFLINE
-  }
+
+/** Bounding rect for nameplate collision detection */
+interface PlateRect {
+  x: number
+  y: number
+  w: number
+  h: number
 }
 
-export function renderNameLabels(
+/** Check if two rects overlap by more than 50% of the smaller rect's area */
+function platesOverlap(a: PlateRect, b: PlateRect): boolean {
+  const overlapX = Math.max(0, Math.min(a.x + a.w, b.x + b.w) - Math.max(a.x, b.x))
+  const overlapY = Math.max(0, Math.min(a.y + a.h, b.y + b.h) - Math.max(a.y, b.y))
+  const overlapArea = overlapX * overlapY
+  const smallerArea = Math.min(a.w * a.h, b.w * b.h)
+  return smallerArea > 0 && overlapArea > smallerArea * 0.5
+}
+
+export function renderIdentityPlates(
   ctx: CanvasRenderingContext2D,
   characters: Character[],
   offsetX: number,
   offsetY: number,
   zoom: number,
   identity: IdentityOverlay,
+  selectedId: number | null,
 ): void {
-  // Scale font with zoom: base 8px, clamped to stay readable
-  const fontSize = Math.max(7, Math.min(12, Math.round(8 * zoom / 3)))
-  ctx.font = `bold ${fontSize}px monospace`
-  ctx.textAlign = 'center'
-  ctx.textBaseline = 'bottom'
+  // Hide entirely at low zoom (bitmap text is unreadable below zoom 2)
+  if (zoom < 2) return
+
+  // Pre-compute plate data and bounding rects for collision detection
+  const plates: Array<{
+    ch: Character
+    name: string
+    brandColor: string
+    plateW: number
+    screenX: number
+    screenY: number
+    rect: PlateRect
+  }> = []
 
   for (const ch of characters) {
-    // Skip characters in matrix effect (spawning/despawning)
     if (ch.matrixEffect) continue
 
     const name = identity.nameMap.get(ch.id)
     if (!name) continue
 
+    const brandColor = identity.colorMap.get(ch.id) ?? '#FFFFFF'
+
+    // Measure text width (pre-zoom pixels)
+    const nameSize = measureBitmapText(name)
+
+    // Plate width: pad + name + pad
+    const plateW = IDENTITY_PLATE_PAD_X + nameSize.width + IDENTITY_PLATE_PAD_X
+
+    // Position: centered above character head
     const sittingOff = ch.state === CharacterState.TYPE ? NAME_LABEL_SITTING_OFFSET_PX : 0
-    // Position above the character's head
-    const labelX = offsetX + ch.x * zoom
-    const labelY = offsetY + (ch.y + sittingOff - NAME_LABEL_VERTICAL_OFFSET_PX) * zoom
+    const centerX = offsetX + ch.x * zoom
+    const bottomY = offsetY + (ch.y + sittingOff - NAME_LABEL_VERTICAL_OFFSET_PX) * zoom
 
-    // Measure text for background rect
-    const metrics = ctx.measureText(name)
-    const textW = metrics.width
-    const padX = NAME_LABEL_PADDING_X * (zoom / 3)
-    const padY = NAME_LABEL_PADDING_Y * (zoom / 3)
-    const rectW = textW + padX * 2
-    const rectH = fontSize + padY * 2
-    const rectX = labelX - rectW / 2
-    const rectY = labelY - rectH
+    // Screen-space plate rect (pixel-aligned)
+    const scaledW = Math.floor(plateW * zoom)
+    const scaledH = Math.floor(IDENTITY_PLATE_HEIGHT * zoom)
+    const screenX = Math.floor(centerX - scaledW / 2)
+    const screenY = Math.floor(bottomY - scaledH)
 
-    // Draw background rounded rect
+    plates.push({
+      ch,
+      name,
+      brandColor,
+      plateW,
+      screenX,
+      screenY,
+      rect: { x: screenX, y: screenY, w: scaledW, h: scaledH },
+    })
+  }
+
+  // Collision detection: track placed rects, reduce alpha on overlap
+  const placedRects: PlateRect[] = []
+
+  for (const plate of plates) {
+    const isSelected = plate.ch.id === selectedId
+
+    // Check for overlap with already-placed plates
+    let alpha = 1.0
+    if (!isSelected) {
+      for (const placed of placedRects) {
+        if (platesOverlap(plate.rect, placed)) {
+          alpha = 0.4
+          break
+        }
+      }
+    }
+    placedRects.push(plate.rect)
+
     ctx.save()
-    ctx.fillStyle = NAME_LABEL_BG
-    ctx.beginPath()
-    const r = NAME_LABEL_BORDER_RADIUS * (zoom / 3)
-    ctx.moveTo(rectX + r, rectY)
-    ctx.lineTo(rectX + rectW - r, rectY)
-    ctx.arcTo(rectX + rectW, rectY, rectX + rectW, rectY + r, r)
-    ctx.lineTo(rectX + rectW, rectY + rectH - r)
-    ctx.arcTo(rectX + rectW, rectY + rectH, rectX + rectW - r, rectY + rectH, r)
-    ctx.lineTo(rectX + r, rectY + rectH)
-    ctx.arcTo(rectX, rectY + rectH, rectX, rectY + rectH - r, r)
-    ctx.lineTo(rectX, rectY + r)
-    ctx.arcTo(rectX, rectY, rectX + r, rectY, r)
-    ctx.closePath()
-    ctx.fill()
+    ctx.globalAlpha = alpha
 
-    // Draw text
-    ctx.fillStyle = NAME_LABEL_TEXT_COLOR
-    ctx.fillText(name, labelX, labelY - padY)
+    // Background: semi-transparent dark plate
+    ctx.fillStyle = `rgba(0, 0, 0, ${IDENTITY_PLATE_BG_ALPHA})`
+    ctx.fillRect(plate.screenX, plate.screenY, plate.rect.w, plate.rect.h)
+
+    // Name in brand color, centered in plate
+    const textX = plate.screenX + Math.floor(IDENTITY_PLATE_PAD_X * zoom)
+    const textY = plate.screenY + Math.floor(IDENTITY_PLATE_PAD_Y * zoom)
+    renderBitmapText(ctx, plate.name, plate.brandColor, textX, textY, zoom)
+
+    // ── Task context line (below nameplate, no background) ──
+    const status = identity.statusMap.get(plate.ch.id)
+    if (status === 'working' || status === 'waiting') {
+      const rawTask = identity.taskTextMap.get(plate.ch.id)
+      if (rawTask && rawTask.length > 0) {
+        const taskText = rawTask.length > 20 ? rawTask.slice(0, 18) + '..' : rawTask
+        const taskSize = measureBitmapText(taskText)
+        const taskGap = Math.floor(1 * zoom)
+        const taskTextX = Math.floor(plate.screenX + plate.rect.w / 2 - Math.floor(taskSize.width * zoom) / 2)
+        const taskTextY = plate.screenY + plate.rect.h + taskGap
+
+        // Dimmed white text, no background plate
+        const prevAlpha = ctx.globalAlpha
+        ctx.globalAlpha = prevAlpha * 0.35
+        renderBitmapText(ctx, taskText, '#FFFFFF', taskTextX, taskTextY, zoom)
+        ctx.globalAlpha = prevAlpha
+      }
+    }
+
     ctx.restore()
   }
 }
 
-export function renderStatusIndicators(
+// ── Status dot fallback colors (zoom < 2) ─────────────────────
+const STATUS_DOT_COLORS: Record<string, string> = {
+  working: '#22c55e',
+  idle: '#9ca3af',
+  error: '#ef4444',
+  waiting: '#eab308',
+}
+
+export function renderStatusIcons(
   ctx: CanvasRenderingContext2D,
   characters: Character[],
   offsetX: number,
@@ -575,11 +788,8 @@ export function renderStatusIndicators(
   zoom: number,
   identity: IdentityOverlay,
 ): void {
-  const fontSize = Math.max(7, Math.min(12, Math.round(8 * zoom / 3)))
-  const padY = NAME_LABEL_PADDING_Y * (zoom / 3)
-  const dotR = Math.max(2, STATUS_DOT_RADIUS * (zoom / 3))
-  const borderW = Math.max(1, STATUS_DOT_BORDER_WIDTH * (zoom / 3))
-  const gap = STATUS_DOT_GAP_PX * (zoom / 3)
+  const plateH = Math.floor(IDENTITY_PLATE_HEIGHT * zoom)
+  const gap = STATUS_ICON_GAP_PX * zoom
 
   for (const ch of characters) {
     if (ch.matrixEffect) continue
@@ -592,52 +802,56 @@ export function renderStatusIndicators(
 
     const sittingOff = ch.state === CharacterState.TYPE ? NAME_LABEL_SITTING_OFFSET_PX : 0
     const labelY = offsetY + (ch.y + sittingOff - NAME_LABEL_VERTICAL_OFFSET_PX) * zoom
-    // Dot goes above the name label background
-    const rectH = fontSize + padY * 2
-    const dotCX = offsetX + ch.x * zoom
-    const dotCY = labelY - rectH - gap - dotR
+    const plateTop = labelY - plateH
 
-    ctx.save()
+    // ── Zoom < 2: simple colored dot fallback ──
+    if (zoom < 2) {
+      const dotColor = STATUS_DOT_COLORS[status]
+      if (!dotColor) continue
+      const dotR = 2 * zoom
+      const dotCX = offsetX + ch.x * zoom
+      const dotCY = plateTop - gap - dotR
 
-    // For 'working' status, pulse the dot opacity using sin wave
-    if (status === 'working') {
-      const pulse = 0.6 + 0.4 * Math.sin(identity.time * 4)
-      ctx.globalAlpha = pulse
+      ctx.save()
+      // Error: aggressive alpha pulse at 6Hz
+      if (status === 'error') {
+        const t = identity.time * 6
+        ctx.globalAlpha = 0.3 + 0.7 * (0.5 + 0.5 * Math.sin(t * Math.PI * 2))
+      }
+      ctx.beginPath()
+      ctx.arc(dotCX, dotCY, dotR, 0, Math.PI * 2)
+      ctx.fillStyle = dotColor
+      ctx.fill()
+      ctx.restore()
+      continue
     }
 
-    // White border
-    ctx.beginPath()
-    ctx.arc(dotCX, dotCY, dotR + borderW, 0, Math.PI * 2)
-    ctx.fillStyle = STATUS_DOT_BORDER_COLOR
-    ctx.fill()
+    // ── Zoom >= 2: sprite-based status icon ──
+    const frames = STATUS_ICON_SPRITES[status]
+    if (!frames || frames.length === 0) continue
 
-    // Colored dot
-    ctx.beginPath()
-    ctx.arc(dotCX, dotCY, dotR, 0, Math.PI * 2)
-    ctx.fillStyle = getStatusColor(status)
-    ctx.fill()
-
-    // For 'error' status, add a small exclamation mark inside
-    if (status === 'error' && dotR >= 3) {
-      ctx.fillStyle = '#ffffff'
-      ctx.font = `bold ${Math.round(dotR * 1.4)}px monospace`
-      ctx.textAlign = 'center'
-      ctx.textBaseline = 'middle'
-      ctx.fillText('!', dotCX, dotCY)
+    // Determine animation frame from identity.time
+    let frameIndex: number
+    switch (status) {
+      case 'working': frameIndex = Math.floor(identity.time * 3) % 4; break
+      case 'idle':    frameIndex = Math.floor(identity.time * 1) % 2; break
+      case 'error':   frameIndex = Math.floor(identity.time * 6) % 4; break
+      case 'waiting': frameIndex = Math.floor(identity.time * 1) % 2; break
+      default:        frameIndex = 0
     }
+    const sprite = frames[frameIndex]
 
-    // For 'idle' status, render tiny "z" above the dot
-    if (status === 'idle') {
-      ctx.globalAlpha = 0.5 + 0.3 * Math.sin(identity.time * 2)
-      ctx.fillStyle = STATUS_COLOR_IDLE
-      ctx.font = `bold ${Math.max(6, Math.round(dotR * 1.2))}px monospace`
-      ctx.textAlign = 'left'
-      ctx.textBaseline = 'bottom'
-      const zOff = Math.sin(identity.time * 1.5) * 1.5
-      ctx.fillText('z', dotCX + dotR + 1, dotCY - dotR + zOff)
-    }
+    // Cap effective zoom at 6 so icons don't dominate the character sprite
+    const effectiveZoom = Math.min(zoom, 6)
+    const iconCanvas = getCachedSprite(sprite, effectiveZoom)
+    const iconW = iconCanvas.width
+    const iconH = iconCanvas.height
 
-    ctx.restore()
+    // Center horizontally above the plate
+    const iconX = Math.floor(offsetX + ch.x * zoom - iconW / 2)
+    const iconY = Math.floor(plateTop - gap - iconH)
+
+    ctx.drawImage(iconCanvas, iconX, iconY)
   }
 }
 
@@ -675,6 +889,44 @@ export function renderBubbles(
     if (alpha < 1.0) ctx.globalAlpha = alpha
     ctx.drawImage(cached, bubbleX, bubbleY)
     ctx.restore()
+  }
+}
+
+/** Render small chat bubbles above agents that are interacting with each other */
+export function renderChatBubbles(
+  ctx: CanvasRenderingContext2D,
+  characters: Character[],
+  offsetX: number,
+  offsetY: number,
+  zoom: number,
+  identity: IdentityOverlay,
+): void {
+  if (identity.interactionMap.size === 0) return
+
+  const cached = getCachedSprite(BUBBLE_CHAT_SPRITE, zoom)
+  // Track which pairs we've already rendered (avoid double-drawing)
+  const rendered = new Set<number>()
+
+  for (const ch of characters) {
+    const partnerId = identity.interactionMap.get(ch.id)
+    if (partnerId === undefined || rendered.has(ch.id)) continue
+    rendered.add(ch.id)
+    rendered.add(partnerId)
+
+    // Draw chat bubble above this character
+    const sittingOff = ch.state === CharacterState.TYPE ? CHARACTER_SITTING_OFFSET_PX : 0
+    const bubbleX = Math.round(offsetX + ch.x * zoom - cached.width / 2)
+    const bubbleY = Math.round(offsetY + (ch.y + sittingOff - BUBBLE_VERTICAL_OFFSET_PX) * zoom - cached.height - 1 * zoom)
+    ctx.drawImage(cached, bubbleX, bubbleY)
+
+    // Draw chat bubble above partner too
+    const partner = characters.find(c => c.id === partnerId)
+    if (partner) {
+      const pSittingOff = partner.state === CharacterState.TYPE ? CHARACTER_SITTING_OFFSET_PX : 0
+      const pBubbleX = Math.round(offsetX + partner.x * zoom - cached.width / 2)
+      const pBubbleY = Math.round(offsetY + (partner.y + pSittingOff - BUBBLE_VERTICAL_OFFSET_PX) * zoom - cached.height - 1 * zoom)
+      ctx.drawImage(cached, pBubbleX, pBubbleY)
+    }
   }
 }
 
@@ -720,6 +972,8 @@ export interface SelectionRenderState {
   hoveredTile: { col: number; row: number } | null
   seats: Map<string, Seat>
   characters: Map<number, Character>
+  /** Active collision flash overlay, or null */
+  collisionFlash?: { col: number; row: number; timer: number } | null
 }
 
 export function renderFrame(
@@ -762,6 +1016,20 @@ export function renderFrame(
     renderSeatIndicators(ctx, selection.seats, selection.characters, selection.selectedAgentId, selection.hoveredTile, offsetX, offsetY, zoom)
   }
 
+  // Collision flash overlay (after floor, before characters)
+  const collisionFlash = selection?.collisionFlash ?? null
+  if (collisionFlash && collisionFlash.timer > 0) {
+    const s = TILE_SIZE * zoom
+    const flashX = offsetX + collisionFlash.col * s
+    const flashY = offsetY + collisionFlash.row * s
+    const flashAlpha = collisionFlash.timer / COLLISION_FLASH_DURATION_SEC
+    ctx.save()
+    ctx.globalAlpha = flashAlpha
+    ctx.fillStyle = COLLISION_FLASH_COLOR
+    ctx.fillRect(flashX, flashY, s, s)
+    ctx.restore()
+  }
+
   // Build wall instances for z-sorting with furniture and characters
   // Skip wall auto-tile sprites when using direct GID rendering (walls are already drawn as tiles)
   const wallInstances = (!useGidMode && hasWallSprites())
@@ -774,16 +1042,28 @@ export function renderFrame(
   // Draw walls + furniture + characters (z-sorted)
   const selectedId = selection?.selectedAgentId ?? null
   const hoveredId = selection?.hoveredAgentId ?? null
-  renderScene(ctx, allFurniture, characters, offsetX, offsetY, zoom, selectedId, hoveredId)
+  const sceneTime = identity?.time
+  renderScene(ctx, allFurniture, characters, offsetX, offsetY, zoom, selectedId, hoveredId, sceneTime)
 
-  // Name labels + status indicators (above characters, below bubbles)
+  // GID overlay layers (laptop, deco, top) — drawn above characters so
+  // surface items like laptops aren't covered by typing characters
+  if (useGidMode) {
+    renderGidOverlayLayers(ctx, tileMap, offsetX, offsetY, zoom, layoutCols, gidLayers)
+  }
+
+  // Identity plates + status indicators (above characters, below bubbles)
   if (identity) {
-    renderNameLabels(ctx, characters, offsetX, offsetY, zoom, identity)
-    renderStatusIndicators(ctx, characters, offsetX, offsetY, zoom, identity)
+    renderIdentityPlates(ctx, characters, offsetX, offsetY, zoom, identity, selectedId)
+    renderStatusIcons(ctx, characters, offsetX, offsetY, zoom, identity)
   }
 
   // Speech bubbles (always on top of characters)
   renderBubbles(ctx, characters, offsetX, offsetY, zoom)
+
+  // Chat bubbles for agent interactions (subagent relationships)
+  if (identity) {
+    renderChatBubbles(ctx, characters, offsetX, offsetY, zoom, identity)
+  }
 
   // Editor overlays
   if (editor) {

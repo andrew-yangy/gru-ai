@@ -1,0 +1,14 @@
+{
+  "goal": "Test heavyweight",
+  "projects": [
+    {
+      "id": "test-project",
+      "title": "Test project",
+      "cast": { "builder": "riley", "auditor": "sarah", "reviewers": ["sarah"] },
+      "tasks": [
+        { "id": "task-1", "title": "First task" },
+        { "id": "task-2", "title": "Second task" }
+      ]
+    }
+  ]
+}

@@ -1,8 +1,8 @@
 <!-- Pipeline doc: 04-challenge.md | Source: SKILL.md restructure -->
 
-## Step 2b: C-Suite Challenge (Heavyweight Directives Only)
+## Challenge: C-Suite Challenge (Heavyweight Directives Only)
 
-**Default behavior:** Challenge is INLINED into Morgan's planning prompt (see Step 3). Morgan identifies the top 3 risks and flags over-engineering concerns as part of her planning output.
+**Default behavior:** Challenge is INLINED into Morgan's planning prompt (see plan step). Morgan identifies the top 3 risks and flags over-engineering concerns as part of her planning output.
 
 **Separate challenger agents are only spawned when:**
 - The CEO explicitly flags the directive as controversial
@@ -35,4 +35,4 @@ Agent tool call (per challenger):
 
 **Parse responses** as JSON. If any fail to parse, log the error and continue.
 
-**Store challenges** — they get presented alongside Morgan's plan in Step 4.
+**Store challenges** — they get presented alongside Morgan's plan in the approve step.

@@ -1,0 +1,139 @@
+{
+  "id": "char-interaction",
+  "title": "Character Interaction System — Agent-to-Agent Visual Communication",
+  "goal_id": "game",
+  "status": "completed",
+  "priority": "P0",
+  "agent": ["riley"],
+  "reviewers": ["sarah", "marcus"],
+  "description": "Make agents visually communicate with each other. Nameplate polish, task context formatting, chat bubbles + facing direction for subagent interactions, brainstorm → meeting room movement, reviewer walks to builder's desk.",
+  "source_directive": "char-interaction",
+  "scope": {
+    "in": [
+      "Nameplate polish: smaller plates, no role tags, brand-colored name text",
+      "Task context text: formatActivity() with tool verbs + filename extraction",
+      "Chat bubble + facing direction for parent-subagent interactions",
+      "Meeting room routing for brainstorm sessions (3+ subagents)",
+      "Reviewer walks to builder's desk during review phase"
+    ],
+    "out": [
+      "DOM overlays or HTML-based tooltips",
+      "New CharacterState enum values",
+      "Offline agent visual dimming"
+    ]
+  },
+  "dod": [
+    { "criterion": "Nameplates render compact with brand-colored name text, no role tags", "met": true },
+    { "criterion": "Task context text shows readable verb+filename below nameplate for working agents", "met": true },
+    { "criterion": "Chat bubbles appear above both agents in parent-subagent interactions", "met": true },
+    { "criterion": "Interacting agents face each other (non-walking only)", "met": true },
+    { "criterion": "3+ simultaneous subagents triggers meeting room routing", "met": true },
+    { "criterion": "Reviewer walks to builder's desk during review sessions", "met": true },
+    { "criterion": "All dead code (roleMap, unused constants) cleaned up", "met": true },
+    { "criterion": "Type-check and build pass", "met": true }
+  ],
+  "browser_test": true,
+  "created": "2026-03-05T13:24:18.183Z",
+  "updated": "2026-03-05T13:42:00.000Z",
+  "completed": "2026-03-05T13:42:00.000Z",
+  "tasks": [
+    {
+      "id": "review-nameplate-polish",
+      "title": "Review: Nameplate Polish",
+      "status": "completed",
+      "priority": "P0",
+      "complexity": "simple",
+      "phases": ["code-review", "review"],
+      "agent": ["riley"],
+      "cast": { "auditor": "sarah", "builder": "riley", "reviewers": ["sarah"] },
+      "scope": "Code review of nameplate changes: role tag removal, reduced plate size, brand color text. Clean dead code (roleMap, unused constants).",
+      "user_scenario": "Agent nameplates are compact with name text in the agent's brand color, no role tags cluttering the display.",
+      "dod": [
+        { "criterion": "renderIdentityPlates no longer renders role tags", "met": true },
+        { "criterion": "Name text renders in agent brand color (from colorMap)", "met": true },
+        { "criterion": "Plate dimensions are smaller than previous version", "met": true },
+        { "criterion": "No dead constants or unreachable code paths", "met": true },
+        { "criterion": "Type-check passes", "met": true }
+      ]
+    },
+    {
+      "id": "review-task-context-formatting",
+      "title": "Review: Task Context Text Formatting",
+      "status": "completed",
+      "priority": "P0",
+      "complexity": "simple",
+      "phases": ["code-review", "review"],
+      "agent": ["riley"],
+      "cast": { "auditor": "sarah", "builder": "riley", "reviewers": ["sarah"] },
+      "scope": "Code review of formatActivity() and taskTextMap integration. Fix edge cases and add missing tool verbs.",
+      "user_scenario": "Below each working agent's nameplate, a readable verb+filename summary appears instead of raw tool+path strings.",
+      "dod": [
+        { "criterion": "formatActivity correctly maps all known tool names to readable verbs", "met": true },
+        { "criterion": "Path stripping extracts filename from full paths", "met": true },
+        { "criterion": "Edge cases handled: empty/undefined detail, unknown tools, long filenames", "met": true },
+        { "criterion": "Task text renders at reduced opacity below nameplate for working/waiting agents", "met": true },
+        { "criterion": "Type-check passes", "met": true }
+      ]
+    },
+    {
+      "id": "review-chat-bubble-facing",
+      "title": "Review: Chat Bubble + Facing Direction",
+      "status": "completed",
+      "priority": "P0",
+      "complexity": "simple",
+      "phases": ["code-review", "review"],
+      "agent": ["riley"],
+      "cast": { "auditor": "sarah", "builder": "riley", "reviewers": ["sarah"] },
+      "scope": "Code review of agentInteractions prop flow, interactionMap, renderChatBubbles, and facing direction save/restore.",
+      "user_scenario": "When two agents have a parent-subagent relationship, both display chat bubbles and face each other.",
+      "dod": [
+        { "criterion": "agentInteractions derived correctly from parent/subagent session pairs", "met": true },
+        { "criterion": "interactionMap built without duplicates", "met": true },
+        { "criterion": "Facing direction override only applies to non-walking agents", "met": true },
+        { "criterion": "Original facing direction restored after render", "met": true },
+        { "criterion": "Chat bubbles render centered above both interacting agents", "met": true },
+        { "criterion": "Stale pairs clean up when subagent sessions end", "met": true },
+        { "criterion": "Type-check passes", "met": true }
+      ]
+    },
+    {
+      "id": "brainstorm-meeting-room",
+      "title": "Move Agent Group to Meeting Room for Brainstorm Sessions",
+      "status": "completed",
+      "priority": "P1",
+      "complexity": "simple",
+      "phases": ["build", "code-review", "review"],
+      "agent": ["riley"],
+      "cast": { "auditor": "sarah", "builder": "riley", "reviewers": ["sarah", "marcus"] },
+      "scope": "Detect 3+ active subagents per parent, route group to meeting room waypoints. Track meeting state, clear when count drops below 3.",
+      "user_scenario": "When the directive pipeline spawns a brainstorm with 3+ subagents, the parent and subagents walk to the conference room.",
+      "dod": [
+        { "criterion": "Parent agent with 3+ active subagents triggers meeting room routing", "met": true },
+        { "criterion": "Parent and all subagents walk to meeting room waypoints", "met": true },
+        { "criterion": "Meeting state tracked per parent agent ID", "met": true },
+        { "criterion": "When subagent count drops below 3, agents return to normal positions", "met": true },
+        { "criterion": "No new CharacterState enum values added", "met": true },
+        { "criterion": "Type-check and build pass", "met": true }
+      ]
+    },
+    {
+      "id": "reviewer-walks-to-builder",
+      "title": "Reviewer Agent Walks to Builder's Desk During Review",
+      "status": "completed",
+      "priority": "P1",
+      "complexity": "simple",
+      "phases": ["build", "code-review", "review"],
+      "agent": ["riley"],
+      "cast": { "auditor": "sarah", "builder": "riley", "reviewers": ["sarah", "marcus"] },
+      "scope": "Detect review interactions from session metadata. Route reviewer to walkable tile adjacent to builder's seat. Return to normal when review ends.",
+      "user_scenario": "During a code review, the reviewer character walks over to the builder's desk.",
+      "dod": [
+        { "criterion": "Review interaction detected from subagent session metadata", "met": true },
+        { "criterion": "Reviewer character walks to a walkable tile adjacent to builder's seat", "met": true },
+        { "criterion": "Reviewer returns to normal routing when review session ends", "met": true },
+        { "criterion": "No new CharacterState enum values added", "met": true },
+        { "criterion": "Type-check and build pass", "met": true }
+      ]
+    }
+  ]
+}

@@ -1,33 +1,17 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useDashboardStore } from '@/stores/dashboard-store';
-import { Badge } from '@/components/ui/badge';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@/components/ui/tooltip';
-import {
-  Building2,
-  Users,
-  Monitor,
-  FileText,
-  Zap,
-  AlertTriangle,
-  Clock,
-  Maximize,
-  Minimize,
-} from 'lucide-react';
+import { useCallback, useEffect, useState } from 'react';
+import { Users, Zap, Activity, GitBranch, ScrollText, Maximize2, Minimize2 } from 'lucide-react';
+import { useBadgeCounts } from './hooks/useBadgeCounts';
 
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
 
-export type HudPanel = 'team' | 'sessions' | 'reports';
+export type HudPanel = 'team' | 'action' | 'ops' | 'directive' | 'log';
 
 interface GameHeaderProps {
   onPanelRequest?: (panel: HudPanel) => void;
   gameContainerRef?: React.RefObject<HTMLDivElement | null>;
+  activePanel?: HudPanel | null;
 }
 
 // ---------------------------------------------------------------------------
@@ -51,12 +35,78 @@ function formatGameDate(date: Date): string {
 }
 
 // ---------------------------------------------------------------------------
+// Wood / parchment header theme
+// ---------------------------------------------------------------------------
+
+const HEADER = {
+  bg: '#5C3D2E',           // dark wood
+  bgLight: '#6B4C3B',      // lighter wood for hover
+  text: '#F5ECD7',          // parchment text
+  textDim: '#C4A265',       // gold/muted
+  border: '#3D2B1F',        // dark border
+  highlight: '#C4A265',     // gold highlight
+  buttonBg: '#4A2F20',      // button background
+  buttonActive: '#3D2B1F',  // pressed button
+  buttonBorder: 'inset -1px -1px 0 0 #2A1A10, inset 1px 1px 0 0 #7A5A42',
+  buttonBorderActive: 'inset 1px 1px 0 0 #2A1A10, inset -1px -1px 0 0 #7A5A42',
+} as const;
+
+// ---------------------------------------------------------------------------
+// HudButton
+// ---------------------------------------------------------------------------
+
+interface HudButtonProps {
+  icon: React.ReactNode;
+  label: string;
+  onClick: () => void;
+  active?: boolean;
+  ariaLabel: string;
+  badge?: number;
+}
+
+function HudButton({ icon, label, onClick, active, ariaLabel, badge, glow }: HudButtonProps & { glow?: boolean }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label={ariaLabel}
+      className={`flex items-center gap-1.5 px-2.5 py-1 font-mono text-[12px] select-none transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400`}
+      style={{
+        backgroundColor: active ? HEADER.buttonActive : HEADER.buttonBg,
+        color: active ? HEADER.highlight : HEADER.text,
+        imageRendering: 'pixelated',
+        borderRadius: '2px',
+        boxShadow: [
+          active ? HEADER.buttonBorderActive : HEADER.buttonBorder,
+          glow ? `0 0 8px ${HEADER.highlight}40` : '',
+        ].filter(Boolean).join(', '),
+        ...(active ? { textShadow: `0 0 6px ${HEADER.highlight}40` } : {}),
+      }}
+    >
+      <span aria-hidden="true" className="flex items-center">{icon}</span>
+      {label && <span>{label}</span>}
+      {badge !== undefined && badge > 0 && (
+        <span
+          className="ml-0.5 min-w-[18px] text-center px-1 rounded text-[10px] font-bold leading-tight"
+          style={{
+            backgroundColor: '#B83A2A',
+            color: '#fff',
+            boxShadow: 'inset -1px -1px 0 0 #8A2010, inset 1px 1px 0 0 #D05040',
+          }}
+        >
+          {badge}
+        </span>
+      )}
+    </button>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Component
 // ---------------------------------------------------------------------------
 
-export default function GameHeader({ onPanelRequest, gameContainerRef }: GameHeaderProps) {
-  const sessions = useDashboardStore((s) => s.sessions);
-  const directiveState = useDashboardStore((s) => s.directiveState);
+export default function GameHeader({ onPanelRequest, gameContainerRef, activePanel }: GameHeaderProps) {
+  const badges = useBadgeCounts();
 
   // Fullscreen state
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -74,7 +124,7 @@ export default function GameHeader({ onPanelRequest, gameContainerRef }: GameHea
       const el = gameContainerRef?.current ?? document.documentElement;
       el.requestFullscreen();
     }
-  }, []);
+  }, [gameContainerRef]);
 
   // Live clock
   const [now, setNow] = useState(() => new Date());
@@ -83,237 +133,98 @@ export default function GameHeader({ onPanelRequest, gameContainerRef }: GameHea
     return () => clearInterval(id);
   }, []);
 
-  // Derived counts
-  const { activeCount, idleCount, attentionCount, errorCount } = useMemo(() => {
-    let active = 0;
-    let idle = 0;
-    let attention = 0;
-    let error = 0;
-    for (const s of sessions) {
-      switch (s.status) {
-        case 'working':
-          active++;
-          break;
-        case 'waiting-approval':
-        case 'waiting-input':
-          attention++;
-          break;
-        case 'error':
-          error++;
-          attention++;
-          break;
-        case 'idle':
-        case 'paused':
-        case 'done':
-          idle++;
-          break;
-      }
-    }
-    return { activeCount: active, idleCount: idle, attentionCount: attention, errorCount: error };
-  }, [sessions]);
-
-  // Directive counts
-  const pendingDirectives = useMemo(() => {
-    if (!directiveState) return 0;
-    return directiveState.initiatives.filter(
-      (i) => i.status === 'pending' || i.status === 'in_progress',
-    ).length;
-  }, [directiveState]);
+  // Total badge for header = Team + Action + Directive
+  const totalBadge = badges.team + badges.action + badges.directive;
 
   const dateStr = formatGameDate(now);
   const timeStr = formatGameTime(now);
 
   return (
-    <TooltipProvider delayDuration={300}>
-      <header className="bg-gray-950 text-gray-100 px-3 sm:px-4 py-1.5 flex items-center justify-between text-sm border-b border-gray-800/80 select-none">
-        {/* ── Left: HQ branding ── */}
-        <div className="flex items-center gap-2">
-          <div className="flex items-center gap-1.5">
-            <Building2
-              className="h-4 w-4 text-amber-400"
-              aria-hidden="true"
-            />
-            <span className="font-bold tracking-tight text-base text-amber-50">
-              HQ
-            </span>
-          </div>
-
-          {/* Connection indicator */}
-          <span
-            className="h-1.5 w-1.5 rounded-full bg-emerald-500 inline-block"
-            aria-label="Connected"
-          />
-        </div>
-
-        {/* ── Center: Date & Time ── */}
-        <div className="hidden sm:flex items-center gap-2 text-xs text-gray-400 font-mono">
-          <Clock className="h-3 w-3 text-gray-500" aria-hidden="true" />
-          <span>{dateStr}</span>
-          <span className="text-gray-600" aria-hidden="true">|</span>
-          <span className="text-gray-300 tabular-nums">{timeStr}</span>
-        </div>
-
-        {/* Mobile: time only */}
-        <span className="sm:hidden text-xs text-gray-400 font-mono tabular-nums">
-          {timeStr}
+    <header
+      className="px-3 sm:px-4 py-1.5 flex items-center justify-between text-sm select-none"
+      style={{
+        backgroundColor: HEADER.bg,
+        color: HEADER.text,
+        imageRendering: 'pixelated',
+        borderBottom: `2px solid ${HEADER.border}`,
+        boxShadow: `inset 0 1px 0 0 ${HEADER.bgLight}`,
+      }}
+    >
+      {/* Left: Office branding */}
+      <div className="flex items-center gap-2">
+        <span
+          className="font-mono font-bold text-base tracking-tight"
+          style={{ color: HEADER.highlight, textShadow: `0 1px 2px ${HEADER.border}` }}
+        >
+          Office
         </span>
+        <span
+          className="h-2 w-2 rounded-full bg-emerald-400 inline-block"
+          style={{ boxShadow: '0 0 4px #34d399' }}
+          aria-label="Connected"
+        />
+      </div>
 
-        {/* ── Right: Badges + Quick-access ── */}
-        <div className="flex items-center gap-1.5 sm:gap-2">
-          {/* Status badges */}
-          <div className="flex items-center gap-1 sm:gap-1.5">
-            {/* Active sessions */}
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Badge
-                  className="bg-emerald-900/60 text-emerald-300 border-emerald-700/50 hover:bg-emerald-900/80 px-1.5 py-0 text-[11px] gap-1 cursor-default"
-                >
-                  <Zap className="h-3 w-3" aria-hidden="true" />
-                  {activeCount}
-                </Badge>
-              </TooltipTrigger>
-              <TooltipContent side="bottom">
-                <p>{activeCount} active session{activeCount !== 1 ? 's' : ''}</p>
-              </TooltipContent>
-            </Tooltip>
+      {/* Center: Date & Time */}
+      <div className="hidden sm:flex items-center gap-2 font-mono text-xs" style={{ color: HEADER.textDim }}>
+        <span>{dateStr}</span>
+        <span style={{ color: HEADER.border }} aria-hidden="true">&#x2022;</span>
+        <span className="tabular-nums" style={{ color: HEADER.text }}>{timeStr}</span>
+      </div>
 
-            {/* Idle sessions */}
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Badge
-                  className="bg-gray-800/60 text-gray-400 border-gray-700/50 hover:bg-gray-800/80 px-1.5 py-0 text-[11px] gap-1 cursor-default"
-                >
-                  <span
-                    className="h-2 w-2 rounded-full bg-gray-500 inline-block"
-                    aria-hidden="true"
-                  />
-                  {idleCount}
-                </Badge>
-              </TooltipTrigger>
-              <TooltipContent side="bottom">
-                <p>{idleCount} idle session{idleCount !== 1 ? 's' : ''}</p>
-              </TooltipContent>
-            </Tooltip>
+      {/* Mobile: time only */}
+      <span className="sm:hidden font-mono text-xs tabular-nums" style={{ color: HEADER.text }}>
+        {timeStr}
+      </span>
 
-            {/* Pending directives */}
-            {pendingDirectives > 0 && (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Badge
-                    className="bg-blue-900/60 text-blue-300 border-blue-700/50 hover:bg-blue-900/80 px-1.5 py-0 text-[11px] gap-1 cursor-default"
-                  >
-                    <FileText className="h-3 w-3" aria-hidden="true" />
-                    {pendingDirectives}
-                  </Badge>
-                </TooltipTrigger>
-                <TooltipContent side="bottom">
-                  <p>{pendingDirectives} pending directive{pendingDirectives !== 1 ? 's' : ''}</p>
-                </TooltipContent>
-              </Tooltip>
-            )}
-
-            {/* Attention / error badge */}
-            {attentionCount > 0 && (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Badge
-                    className={
-                      'bg-red-900/60 text-red-300 border-red-700/50 hover:bg-red-900/80 px-1.5 py-0 text-[11px] gap-1 cursor-default' +
-                      (errorCount > 0 ? ' animate-pulse' : '')
-                    }
-                  >
-                    <AlertTriangle className="h-3 w-3" aria-hidden="true" />
-                    {attentionCount}
-                  </Badge>
-                </TooltipTrigger>
-                <TooltipContent side="bottom">
-                  <p>
-                    {attentionCount} session{attentionCount !== 1 ? 's' : ''} need attention
-                    {errorCount > 0 ? ` (${errorCount} error${errorCount !== 1 ? 's' : ''})` : ''}
-                  </p>
-                </TooltipContent>
-              </Tooltip>
-            )}
-          </div>
-
-          {/* Separator */}
-          <div
-            className="hidden sm:block h-4 w-px bg-gray-700/60"
-            aria-hidden="true"
-          />
-
-          {/* Quick-access buttons */}
-          <div className="hidden sm:flex items-center gap-0.5">
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <button
-                  type="button"
-                  onClick={() => onPanelRequest?.('team')}
-                  className="p-1 rounded text-gray-400 hover:text-gray-200 hover:bg-gray-800/60 transition-colors focus:outline-none focus-visible:ring-1 focus-visible:ring-amber-500"
-                  aria-label="Team overview"
-                >
-                  <Users className="h-3.5 w-3.5" />
-                </button>
-              </TooltipTrigger>
-              <TooltipContent side="bottom">
-                <p>Team overview</p>
-              </TooltipContent>
-            </Tooltip>
-
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <button
-                  type="button"
-                  onClick={() => onPanelRequest?.('sessions')}
-                  className="p-1 rounded text-gray-400 hover:text-gray-200 hover:bg-gray-800/60 transition-colors focus:outline-none focus-visible:ring-1 focus-visible:ring-amber-500"
-                  aria-label="Active sessions"
-                >
-                  <Monitor className="h-3.5 w-3.5" />
-                </button>
-              </TooltipTrigger>
-              <TooltipContent side="bottom">
-                <p>Active sessions</p>
-              </TooltipContent>
-            </Tooltip>
-
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <button
-                  type="button"
-                  onClick={() => onPanelRequest?.('reports')}
-                  className="p-1 rounded text-gray-400 hover:text-gray-200 hover:bg-gray-800/60 transition-colors focus:outline-none focus-visible:ring-1 focus-visible:ring-amber-500"
-                  aria-label="Reports"
-                >
-                  <FileText className="h-3.5 w-3.5" />
-                </button>
-              </TooltipTrigger>
-              <TooltipContent side="bottom">
-                <p>Reports</p>
-              </TooltipContent>
-            </Tooltip>
-
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <button
-                  type="button"
-                  onClick={toggleFullscreen}
-                  className="p-1 rounded text-gray-400 hover:text-gray-200 hover:bg-gray-800/60 transition-colors focus:outline-none focus-visible:ring-1 focus-visible:ring-amber-500"
-                  aria-label={isFullscreen ? 'Exit fullscreen' : 'Enter fullscreen'}
-                >
-                  {isFullscreen ? (
-                    <Minimize className="h-3.5 w-3.5" />
-                  ) : (
-                    <Maximize className="h-3.5 w-3.5" />
-                  )}
-                </button>
-              </TooltipTrigger>
-              <TooltipContent side="bottom">
-                <p>{isFullscreen ? 'Exit fullscreen' : 'Fullscreen'}</p>
-              </TooltipContent>
-            </Tooltip>
-          </div>
-        </div>
-      </header>
-    </TooltipProvider>
+      {/* Right: Game-style buttons */}
+      <div className="flex items-center gap-1.5">
+        <HudButton
+          icon={<Users className="h-3.5 w-3.5" />}
+          label="Team"
+          onClick={() => onPanelRequest?.('team')}
+          active={activePanel === 'team'}
+          ariaLabel="Team overview"
+          badge={badges.team > 0 ? badges.team : undefined}
+        />
+        <HudButton
+          icon={<Zap className="h-3.5 w-3.5" />}
+          label="Action"
+          onClick={() => onPanelRequest?.('action')}
+          active={activePanel === 'action'}
+          ariaLabel="Action items"
+          badge={badges.action > 0 ? badges.action : undefined}
+        />
+        <HudButton
+          icon={<Activity className="h-3.5 w-3.5" />}
+          label="Ops"
+          onClick={() => onPanelRequest?.('ops')}
+          active={activePanel === 'ops'}
+          ariaLabel="Operations overview"
+          badge={badges.ops > 0 ? badges.ops : undefined}
+        />
+        <HudButton
+          icon={<GitBranch className="h-3.5 w-3.5" />}
+          label="Directive"
+          onClick={() => onPanelRequest?.('directive')}
+          active={activePanel === 'directive'}
+          ariaLabel="Active directives"
+          badge={badges.directive > 0 ? badges.directive : undefined}
+        />
+        <HudButton
+          icon={<ScrollText className="h-3.5 w-3.5" />}
+          label="Log"
+          onClick={() => onPanelRequest?.('log')}
+          active={activePanel === 'log'}
+          ariaLabel="Activity log"
+        />
+        <HudButton
+          icon={isFullscreen ? <Minimize2 className="h-3.5 w-3.5" /> : <Maximize2 className="h-3.5 w-3.5" />}
+          label=""
+          onClick={toggleFullscreen}
+          ariaLabel={isFullscreen ? 'Exit fullscreen' : 'Enter fullscreen'}
+        />
+      </div>
+    </header>
   );
 }

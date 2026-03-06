@@ -1,0 +1,60 @@
+{
+  "initiatives": [
+    {
+      "id": "review-nameplate-polish",
+      "baseline": "renderIdentityPlates renders name text in brandColor, no role tag, plate sized to name-only (IDENTITY_PLATE_HEIGHT=9px, PAD_X=2, PAD_Y=1). BitmapFont caches by text+color key.",
+      "active_files": ["src/components/game/engine/renderer.ts", "src/components/game/constants.ts", "src/components/game/CanvasOffice.tsx", "src/components/game/sprites/bitmapFont.ts"],
+      "dead_code": ["constants.ts: TOOL_OVERLAY_VERTICAL_OFFSET, PULSE_ANIMATION_DURATION_SEC, CEO_GLOW_COLOR (never imported)", "renderer.ts: roleMap in IdentityOverlay interface (populated but never read)"],
+      "findings": "Code is clean and correct. roleMap is dead weight (declared, populated, never read). 3 unused constants remain in constants.ts.",
+      "recommended_approach": "Review-only. Delete dead roleMap field + 3 unused constants as low-risk follow-up.",
+      "follow_ups": [
+        {"action": "Delete unused constants: TOOL_OVERLAY_VERTICAL_OFFSET, PULSE_ANIMATION_DURATION_SEC, CEO_GLOW_COLOR", "risk": "low", "rationale": "Never imported", "files": ["src/components/game/constants.ts"]},
+        {"action": "Remove roleMap from IdentityOverlay + AGENT_ID_TO_ROLE in CanvasOffice.tsx", "risk": "low", "rationale": "Dead interface field", "files": ["src/components/game/engine/renderer.ts", "src/components/game/CanvasOffice.tsx"]}
+      ]
+    },
+    {
+      "id": "review-task-context-formatting",
+      "baseline": "formatActivity maps 9 tools via TOOL_VERBS. Task text truncated to 20 chars. Rendered at 35% opacity.",
+      "active_files": ["src/components/game/CanvasOffice.tsx", "src/components/game/engine/renderer.ts"],
+      "dead_code": [],
+      "findings": "Code is correct. Minor: trailing-slash path edge case (.pop() on split gives empty string), TOOL_VERBS missing TodoRead/TodoWrite/TaskOutput.",
+      "recommended_approach": "Review-only. Minor fixes as low-risk follow-ups.",
+      "follow_ups": [
+        {"action": "Add TodoRead, TodoWrite, TaskOutput to TOOL_VERBS", "risk": "low", "rationale": "Better display text", "files": ["src/components/game/CanvasOffice.tsx"]},
+        {"action": "Guard trailing-slash: use .filter(Boolean).pop()", "risk": "low", "rationale": "Prevents empty string", "files": ["src/components/game/CanvasOffice.tsx"]}
+      ]
+    },
+    {
+      "id": "review-chat-bubble-facing",
+      "baseline": "agentInteractions from GamePage, bidirectional interactionMap in CanvasOffice, facing save/restore, renderChatBubbles with dedup Set.",
+      "active_files": ["src/components/game/GamePage.tsx", "src/components/game/CanvasOffice.tsx", "src/components/game/engine/renderer.ts"],
+      "dead_code": [],
+      "findings": "Implementation is correct. Bidirectional interactionMap, save/restore scoped properly, walking agents excluded, stale cleanup via reactive derivation.",
+      "recommended_approach": "Review-only. No bugs found. No follow-ups needed.",
+      "follow_ups": []
+    },
+    {
+      "id": "brainstorm-meeting-room",
+      "baseline": "subagentMeta exists for parent→subagent tracking. ROOM_ZONES.meeting has 5 waypoints. chooseDestination() already routes Agent tool to meeting room.",
+      "active_files": ["src/components/game/engine/officeState.ts", "src/components/game/engine/roomZones.ts", "src/components/game/pixel-types.ts"],
+      "dead_code": [],
+      "findings": "Infrastructure exists. Use subagentMeta to count active subagents per parent. Use routingZone field. Add meetingParents Set for hysteresis.",
+      "recommended_approach": "In update(), count active subagents per parent from subagentMeta. For 3+, set routingZone='meeting' and route to ROOM_ZONES.meeting waypoints. Add meetingParents Set on OfficeState.",
+      "follow_ups": [
+        {"action": "Add 2-3 more waypoints to ROOM_ZONES.meeting for large meetings", "risk": "low", "rationale": "5 waypoints may not fit 6+ participants", "files": ["src/components/game/engine/roomZones.ts"]}
+      ]
+    },
+    {
+      "id": "reviewer-walks-to-builder",
+      "baseline": "No review detection exists. Session has feature/agentName fields. Seat lookup via Character.seatId → OfficeState.seats. Pathfinding infrastructure exists.",
+      "active_files": ["src/components/game/engine/officeState.ts", "src/components/game/engine/roomZones.ts", "src/components/game/GamePage.tsx", "src/components/game/CanvasOffice.tsx", "src/components/game/pixel-types.ts"],
+      "dead_code": [],
+      "findings": "Review detection via session.feature string matching ('review'/'audit'). All pathfinding infrastructure exists. Need new reviewInteractions prop + setReviewPairs method.",
+      "recommended_approach": "Derive reviewInteractions in GamePage (filter sessions with 'review' in feature). Pass to CanvasOffice → OfficeState. Route reviewer to walkable tile adjacent to builder's seat.",
+      "follow_ups": [
+        {"action": "Verify Session.feature reliably contains 'review' for review sessions", "risk": "medium", "rationale": "Detection heuristic depends on watcher data", "files": ["src/stores/types.ts"]},
+        {"action": "Add review-specific bubble sprite for visual distinction", "risk": "low", "rationale": "Same chat bubble for all interactions", "files": ["src/components/game/sprites/spriteData.ts"]}
+      ]
+    }
+  ]
+}

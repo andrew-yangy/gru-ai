@@ -1,0 +1,12 @@
+{
+  "id": "test-medium-full",
+  "title": "Test medium with all artifacts",
+  "status": "in_progress",
+  "weight": "medium",
+  "pipeline": {
+    "triage": { "status": "completed" },
+    "read": { "status": "completed" },
+    "context": { "status": "completed" },
+    "approve": { "status": "completed" }
+  }
+}

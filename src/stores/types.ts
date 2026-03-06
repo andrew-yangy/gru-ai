@@ -99,22 +99,41 @@ export interface SessionActivity {
   active: boolean;
 }
 
-export interface DirectiveInitiative {
+export interface DirectiveProject {
   id: string;
   title: string;
   status: 'pending' | 'in_progress' | 'completed' | 'skipped' | 'failed';
   phase: 'audit' | 'design' | 'build' | 'review' | null;
+  totalTasks?: number;
+  completedTasks?: number;
+}
+
+export type PipelineStepStatus = 'pending' | 'active' | 'completed' | 'skipped' | 'failed';
+
+export interface PipelineStep {
+  id: string;
+  label: string;
+  status: PipelineStepStatus;
+  artifacts?: Record<string, string>;
+  /** Whether this step needs CEO action (e.g. approval) */
+  needsAction?: boolean;
+  /** ISO timestamp when this step started (for elapsed time) */
+  startedAt?: string;
 }
 
 export interface DirectiveState {
   directiveName: string;
-  status: 'in_progress' | 'completed' | 'failed';
-  totalInitiatives: number;
-  currentInitiative: number;
+  title?: string;
+  status: 'in_progress' | 'awaiting_completion' | 'completed' | 'failed';
+  totalProjects: number;
+  currentProject: number;
   currentPhase: string;
-  initiatives: DirectiveInitiative[];
+  projects: DirectiveProject[];
   startedAt: string;
   lastUpdated: string;
+  pipelineSteps?: PipelineStep[];
+  currentStepId?: string;
+  weight?: string;
 }
 
 export interface GoalInventory {
@@ -152,6 +171,7 @@ export interface DashboardState {
   events: HookEvent[];
   sessionActivities: Record<string, SessionActivity>;
   directiveState: DirectiveState | null;
+  directiveHistory: DirectiveState[];
   goalInventory: GoalInventory | null;
   lastUpdated: string;
 }
@@ -295,7 +315,7 @@ export interface ArtifactRecord extends BaseWorkItem {
 
 export interface DirectiveRecord extends BaseWorkItem {
   type: 'directive';
-  initiatives: string[];
+  projects: string[];
   checkpoint?: string;
   reportPath?: string;
   // Structured fields from directive.json

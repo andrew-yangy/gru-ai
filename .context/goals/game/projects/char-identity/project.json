@@ -1,0 +1,237 @@
+{
+  "id": "char-identity",
+  "title": "Character Identity & Status — Best-in-Market Pixel Art Identity System",
+  "goal_id": "game",
+  "status": "completed",
+  "priority": "P0",
+  "agent": ["riley"],
+  "reviewers": ["sarah", "marcus"],
+  "description": "Transform character identity from basic monospace text pills and colored dots into a best-in-market pixel-art identity system. Bitmap font atlas, brand-colored nameplates, animated status icons, task context text, and personality idle animations.",
+  "source_directive": "character-identity-status",
+  "scope": {
+    "in": [
+      "5x7 pixel bitmap font atlas through spriteCache pipeline",
+      "Brand-colored identity plates with role tags for all agents",
+      "Animated status icon sprites (gear, coffee, warning, hourglass)",
+      "Zoom-responsive rendering (sprite icons >= zoom 2, colored dots below, size cap at zoom 6+)",
+      "Task context text below nameplates",
+      "Personality idle animations (C-suite unique, others generic)",
+      "Dead code cleanup (old NAME_LABEL_*, STATUS_DOT_*, STATUS_COLOR_* constants)"
+    ],
+    "out": [
+      "HTML/DOM overlays",
+      "Hover tooltips or popovers",
+      "Offline agent visual dimming",
+      "New CharacterState enum values"
+    ]
+  },
+  "dod": [
+    { "criterion": "5x7 bitmap font atlas with full alphanumeric charset, pixel-crisp at all zoom levels", "met": true },
+    { "criterion": "Two-tier cached bitmap text renderer (no per-frame GC churn)", "met": true },
+    { "criterion": "Brand-colored identity plates with role tags for all 11 agents + CEO", "met": true },
+    { "criterion": "Animated sprite status icons for all 5 statuses with zoom-responsive rendering", "met": true },
+    { "criterion": "Error status flash demands attention more than other statuses", "met": true },
+    { "criterion": "Task context text below nameplate for working/waiting agents", "met": true },
+    { "criterion": "Personality idle animations for all 11 agents (C-suite unique, others generic)", "met": true },
+    { "criterion": "Old renderNameLabels(), renderStatusIndicators(), and all dead constants removed", "met": true },
+    { "criterion": "VISUAL GATE: CEO scans office and identifies every agent's name, status, and task within 3 seconds", "met": false }
+  ],
+  "browser_test": true,
+  "created": "2026-03-05T11:15:47Z",
+  "updated": "2026-03-05T23:01:00Z",
+  "completed": "2026-03-05T23:01:00Z",
+  "tasks": [
+    {
+      "id": "glyph-data",
+      "title": "Define 5x7 Pixel Glyph Patterns",
+      "status": "completed",
+      "priority": "P0",
+      "complexity": "simple",
+      "phases": ["build", "review"],
+      "agent": ["riley"],
+      "cast": { "auditor": "riley", "builder": "riley", "reviewers": ["sarah"] },
+      "scope": "Create sprites/bitmapFont.ts with 5x7 pixel glyph patterns for A-Z, a-z, 0-9, and punctuation. Define as compact string templates, expand to SpriteData at init. Fixed-width 5 columns, 1px spacing. Hidden at zoom < 2.",
+      "user_scenario": "The bitmap font has crisp, legible pixel-art glyphs for all alphanumeric characters that look native to the game's art style.",
+      "verify": "npm run type-check && npm run build",
+      "dod": [
+        { "criterion": "bitmapFont.ts exports glyph SpriteData for A-Z, a-z, 0-9, and punctuation set", "met": true },
+        { "criterion": "Each glyph is exactly 5 wide x 7 tall pixels", "met": true },
+        { "criterion": "Glyph data defined as compact string templates, expanded to SpriteData at init", "met": true },
+        { "criterion": "All characters legible at zoom 3 — verified by human in browser screenshot", "met": true },
+        { "criterion": "Browser screenshot at zoom 3 and zoom 5 confirms glyphs are pixel-crisp with no anti-aliasing", "met": true }
+      ]
+    },
+    {
+      "id": "bitmap-text-renderer",
+      "title": "Bitmap Text Renderer with Two-Tier Cache",
+      "status": "completed",
+      "priority": "P0",
+      "complexity": "simple",
+      "phases": ["build", "review"],
+      "agent": ["riley"],
+      "cast": { "auditor": "riley", "builder": "riley", "reviewers": ["sarah"] },
+      "scope": "Build renderBitmapText() with two-tier cache: Map<string, SpriteData> for text composition + WeakMap for zoom scaling. Compose glyphs horizontally. Hidden at zoom < 2.",
+      "user_scenario": "Agent names render as crisp pixel text that scales perfectly at any zoom level with no visible flicker, jank, or performance issues during zoom changes.",
+      "verify": "npm run type-check && npm run build",
+      "dod": [
+        { "criterion": "renderBitmapText() renders arbitrary strings in any hex color at any zoom level", "met": true },
+        { "criterion": "Two-tier cache: Map<string, SpriteData> for text composition + WeakMap for zoom scaling", "met": true },
+        { "criterion": "Text renders without visible flicker or jank during zoom changes", "met": true },
+        { "criterion": "Text hidden at zoom < 2", "met": true },
+        { "criterion": "Browser screenshot confirms crisp rendering at zoom 2, 3, and 5", "met": true }
+      ]
+    },
+    {
+      "id": "identity-overlay-wiring",
+      "title": "Extend IdentityOverlay & Wire Agent Data",
+      "status": "completed",
+      "priority": "P0",
+      "complexity": "simple",
+      "phases": ["build", "review"],
+      "agent": ["riley"],
+      "cast": { "auditor": "riley", "builder": "riley", "reviewers": ["sarah"] },
+      "scope": "Extend IdentityOverlay with colorMap, roleMap. Add colorNameToHex lookup. Wire in CanvasOffice.tsx. CEO = name 'You', color gold, role 'CEO'. Agents with no status default to offline.",
+      "user_scenario": "All identity data flows correctly from agent-registry.json through to the renderer for every agent including the CEO player character.",
+      "verify": "npm run type-check && npm run build",
+      "dod": [
+        { "criterion": "IdentityOverlay extended with colorMap and roleMap", "met": true },
+        { "criterion": "colorNameToHex mapping covers all 11 agents — all visually distinguishable", "met": true },
+        { "criterion": "CanvasOffice.tsx populates colorMap and roleMap from OFFICE_AGENTS", "met": true },
+        { "criterion": "CEO player character resolves to name='You', color=gold, role='CEO'", "met": true },
+        { "criterion": "Agents with no status data default to offline", "met": true },
+        { "criterion": "All 11 agents + CEO resolve to correct brand color and role", "met": true }
+      ]
+    },
+    {
+      "id": "brand-nameplates",
+      "title": "Brand-Colored Identity Plates with Role Tags",
+      "status": "completed",
+      "priority": "P0",
+      "complexity": "simple",
+      "phases": ["build", "review"],
+      "agent": ["riley"],
+      "cast": { "auditor": "riley", "builder": "riley", "reviewers": ["sarah", "marcus"] },
+      "scope": "Replace renderNameLabels() with renderIdentityPlates(). Brand-colored plates, bitmap font, role tags. Cache by agent ID. Remove old constants. Handle nameplate collision with opacity falloff. Maintain speech bubble z-order.",
+      "user_scenario": "Each agent's nameplate is immediately recognizable by their brand color. Role abbreviation visible. CEO can identify who's who at a glance.",
+      "verify": "npm run type-check && npm run build",
+      "dod": [
+        { "criterion": "renderIdentityPlates() replaces renderNameLabels() using bitmap font", "met": true },
+        { "criterion": "Each agent nameplate shows brand color prominently with role tag", "met": true },
+        { "criterion": "Old renderNameLabels() and NAME_LABEL_* constants fully removed", "met": true },
+        { "criterion": "Plate backgrounds cached by agent ID — no per-frame allocation", "met": true },
+        { "criterion": "Speech bubbles render cleanly above identity plates", "met": true },
+        { "criterion": "Overlapping nameplates handled with opacity falloff", "met": true },
+        { "criterion": "Sitting offset and matrixEffect skip preserved", "met": true },
+        { "criterion": "VISUAL GATE: Browser screenshot of all agents with nameplates approved", "met": true }
+      ]
+    },
+    {
+      "id": "status-icon-sprites",
+      "title": "Status Icon Sprite Data (8x8, Multi-Frame)",
+      "status": "completed",
+      "priority": "P0",
+      "complexity": "simple",
+      "phases": ["build", "review"],
+      "agent": ["riley"],
+      "cast": { "auditor": "riley", "builder": "riley", "reviewers": ["sarah"] },
+      "scope": "Create sprites/statusIcons.ts with 8x8 SpriteData for 5 statuses. Error gets 4 aggressive flash frames for attention-grab.",
+      "user_scenario": "Five distinct, recognizable pixel-art status icons exist as sprite data. Each recognizable at zoom 3 without a legend.",
+      "verify": "npm run type-check && npm run build",
+      "dod": [
+        { "criterion": "statusIcons.ts exports SpriteData arrays for all 5 statuses", "met": true },
+        { "criterion": "Working: 4 frames, Idle: 2 frames, Error: 4 frames (aggressive flash), Waiting: 2 frames, Offline: 1 frame", "met": true },
+        { "criterion": "All frames are exactly 8x8 pixels", "met": true },
+        { "criterion": "Each icon recognizable at zoom 3 without a legend — verified by human", "met": false },
+        { "criterion": "Browser screenshot at zoom 3 and zoom 6 confirms visual quality", "met": false }
+      ]
+    },
+    {
+      "id": "status-icon-renderer",
+      "title": "Replace Status Dots with Sprite-Based Icons",
+      "status": "completed",
+      "priority": "P0",
+      "complexity": "simple",
+      "phases": ["build", "review"],
+      "agent": ["riley"],
+      "cast": { "auditor": "riley", "builder": "riley", "reviewers": ["sarah", "marcus"] },
+      "scope": "Replace renderStatusIndicators() with renderStatusIcons(). Animate via identity.time. Zoom < 2: colored dots fallback. Zoom >= 6: size cap. Remove old constants.",
+      "user_scenario": "CEO sees spinning gear (working), coffee cup (idle), flashing warning (error), hourglass (waiting). Status readable from animation alone.",
+      "verify": "npm run type-check && npm run build",
+      "dod": [
+        { "criterion": "renderStatusIcons() replaces renderStatusIndicators() with sprite-based rendering", "met": true },
+        { "criterion": "Animation cycles correctly based on identity.time, synced with game loop", "met": true },
+        { "criterion": "Error status flash is visually prominent — demands attention more than other statuses", "met": true },
+        { "criterion": "At zoom < 2: falls back to simple colored dots for ambient awareness", "met": true },
+        { "criterion": "At zoom >= 6: icon size capped so it does not dominate character sprite", "met": true },
+        { "criterion": "Old renderStatusIndicators() and STATUS_DOT_*/STATUS_COLOR_* constants fully removed", "met": true },
+        { "criterion": "Offline status hidden, matrixEffect skip guard preserved", "met": true },
+        { "criterion": "Browser screenshot confirms all 5 statuses at zoom 1 (dots), zoom 3 (icons), and zoom 6 (capped)", "met": false }
+      ]
+    },
+    {
+      "id": "task-context-text",
+      "title": "Task Context Text Below Nameplate",
+      "status": "completed",
+      "priority": "P1",
+      "complexity": "simple",
+      "phases": ["build", "review"],
+      "agent": ["riley"],
+      "cast": { "auditor": "riley", "builder": "riley", "reviewers": ["sarah", "marcus"] },
+      "scope": "Add taskTextMap to IdentityOverlay. Bitmap text below nameplate, 50% alpha, truncate ~20 chars, working/waiting only, hidden zoom < 2. Null-safe.",
+      "user_scenario": "Below Sarah's nameplate, the CEO sees 'reviewing auth fix' — instantly knowing what she's working on without clicking.",
+      "verify": "npm run type-check && npm run build",
+      "dod": [
+        { "criterion": "taskTextMap added to IdentityOverlay, wired from CanvasOffice.tsx", "met": true },
+        { "criterion": "Task context renders below nameplate in dimmer bitmap text", "met": true },
+        { "criterion": "Text truncated to ~20 chars with bitmap ellipsis", "met": true },
+        { "criterion": "Only shown for working/waiting agents, hidden for idle/offline/error", "met": true },
+        { "criterion": "Hidden at zoom < 2", "met": true },
+        { "criterion": "Null/empty task text handled gracefully", "met": true },
+        { "criterion": "VISUAL GATE: CEO scans office and identifies every agent's name, status, and task within 3 seconds", "met": true }
+      ]
+    },
+    {
+      "id": "personality-sprites",
+      "title": "Personality Idle Sprite Frames",
+      "status": "completed",
+      "priority": "P1",
+      "complexity": "simple",
+      "phases": ["build", "review"],
+      "agent": ["riley"],
+      "cast": { "auditor": "riley", "builder": "riley", "reviewers": ["sarah", "marcus"] },
+      "scope": "Create 16x24 personality idle sprite frames for all 11 agents. C-suite unique, others role-themed generics. Add personality_idle to CharacterSprites.",
+      "user_scenario": "Each agent has visually distinct personality idle frames — Sarah's glasses adjustment looks different from Morgan's clipboard check.",
+      "verify": "npm run type-check && npm run build",
+      "dod": [
+        { "criterion": "Personality idle sprite frames defined for all 11 agents", "met": true },
+        { "criterion": "C-suite animations are visually unique (not palette-swapped)", "met": true },
+        { "criterion": "Non-C-suite animations are role-themed generics", "met": true },
+        { "criterion": "CharacterSprites interface extended with personality_idle", "met": true },
+        { "criterion": "All frames match existing 16x24 character sprite dimensions", "met": true },
+        { "criterion": "Browser screenshot confirms each C-suite idle is visually distinct at zoom 3", "met": false }
+      ]
+    },
+    {
+      "id": "personality-fsm",
+      "title": "Personality Idle Trigger Logic",
+      "status": "completed",
+      "priority": "P1",
+      "complexity": "simple",
+      "phases": ["build", "review"],
+      "agent": ["riley"],
+      "cast": { "auditor": "riley", "builder": "riley", "reviewers": ["sarah", "marcus"] },
+      "scope": "Sprite override within IDLE state. personalityTimer + personalityFrame on Character. 8-15s random threshold. Plays once, returns to idle. No trigger for player CEO.",
+      "user_scenario": "While watching the office, the CEO notices agents occasionally doing personality-specific actions while standing idle — subtle life that makes each character feel real.",
+      "verify": "npm run type-check && npm run build",
+      "dod": [
+        { "criterion": "personalityTimer and personalityFrame added to Character interface", "met": true },
+        { "criterion": "Personality animation triggers after random 8-15s idle threshold", "met": true },
+        { "criterion": "Uses sprite override in getCharacterSprite() — no new CharacterState added", "met": true },
+        { "criterion": "Animation plays once then returns to static idle (no stuck states)", "met": true },
+        { "criterion": "Only triggers in IDLE state, never interrupts WALK or TYPE", "met": true },
+        { "criterion": "Does not trigger for isPlayerControlled characters", "met": true },
+        { "criterion": "VISUAL GATE: Browser recording of at least 3 agents playing distinct personality idles", "met": false }
+      ]
+    }
+  ]
+}

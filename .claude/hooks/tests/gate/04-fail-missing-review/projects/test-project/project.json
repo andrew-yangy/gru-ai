@@ -1,0 +1,9 @@
+{
+  "id": "test-project",
+  "title": "Test project",
+  "status": "in_progress",
+  "tasks": [
+    { "id": "task-a", "title": "Task A", "status": "completed" },
+    { "id": "task-b", "title": "Task B", "status": "completed" }
+  ]
+}

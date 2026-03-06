@@ -1,0 +1,8 @@
+{
+  "id": "test-project",
+  "title": "Test project",
+  "status": "in_progress",
+  "tasks": [
+    { "id": "t1", "title": "Task 1", "status": "pending" }
+  ]
+}

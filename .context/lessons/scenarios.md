@@ -82,10 +82,10 @@
 - **Goal**: Execute the directive end-to-end, produce a project with completed tasks, update all state.
 - **Critical path**:
   1. Directive session reads directive from .context/directives/{name}.md
-  2. Morgan plans initiatives with phases and agent casting
+  2. Morgan plans projects with agent casting
   3. Auditor scans codebase, produces baseline findings
   4. CEO approves plan (heavyweight) or auto-approved (medium)
-  5. Engineers execute initiatives — each phase produces artifacts in goals/{goal}/projects/{project}/
+  5. Engineers execute tasks -- each phase produces artifacts in goals/{goal}/projects/{project}/
   6. Reviewers verify DOD criteria are met
   7. project.json is created/updated with tasks, DOD status, and verification results
   8. directive.json status updated to "completed", digest written to .context/reports/

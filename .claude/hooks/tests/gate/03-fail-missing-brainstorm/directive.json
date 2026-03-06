@@ -1,0 +1,11 @@
+{
+  "id": "test-no-brainstorm",
+  "title": "Test missing brainstorm for heavyweight",
+  "status": "in_progress",
+  "weight": "heavyweight",
+  "pipeline": {
+    "triage": { "status": "completed" },
+    "read": { "status": "completed" },
+    "context": { "status": "completed" }
+  }
+}

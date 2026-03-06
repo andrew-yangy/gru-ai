@@ -1,0 +1,8 @@
+{
+  "id": "test-project",
+  "title": "Test project",
+  "status": "in_progress",
+  "tasks": [
+    { "id": "widget", "title": "Build widget", "status": "in_progress" }
+  ]
+}

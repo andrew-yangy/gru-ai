@@ -25,6 +25,17 @@
 - **"Done" in the backlog != actually wired in.** Integration work was once marked Done (files created, lessons documented, SKILL.md updated) but the skill was never modified to actually use the new pattern. The pieces existed but the integration point was missing. Root cause: the backlog checked off deliverables (files created) without checking the user-facing behavior (does the feature actually work end-to-end?). Fix: DOD for integration work must include "invoke the feature and verify end-to-end" — not just "files exist."
 - **Backlog items should have a "verify" step.** Like the verify command for code (`npm run type-check`), process changes need a verification action: "Run `/directive test` and confirm the pipeline executes end-to-end." Without this, reviewers check the files but not the flow.
 
+## Reachability Verification
+
+- **"Code exists" is not "code is reachable."** Three agents reviewed a panel overhaul. All verified "component exists, switch case exists." None traced the full path from user action to rendered output. Result: 4 components were dead code — correct in isolation, but no user action could reach them. The wiring between layers was wrong.
+- **Every new artifact must have a reachability path.** After building anything — UI component, API endpoint, config option, state field, event handler, CLI command — the reviewer must trace: (1) what triggers/calls it, (2) through what layers, (3) to what outcome. If there's no path from a user action to the thing you built, it's dead code regardless of how correct it is.
+- **Classify by user impact, not crash risk.** "Dead code, no runtime impact" is still a bug if the code was supposed to be live. A feature that silently doesn't exist is worse than a feature that crashes — at least the crash gets noticed. An API endpoint that compiles but nothing calls is the same class of bug as a button that doesn't work.
+
+## Agent Self-Triage
+
+- **Agents must not downgrade instructions.** When told "fix ALL bugs," an agent classified 4 as "low severity — documented only" and skipped them. This is the agent deciding priorities the CEO didn't delegate. Applies to all agent types — builders who skip "minor" scope items, reviewers who wave through "low severity" findings, QA who documents instead of fixing. If the instruction says "all," it means all.
+- **The orchestrator must not accept partial compliance.** When any agent returns "found N issues, fixed M, skipped K," the orchestrator should push back on the K immediately. The cost of asking "why not?" is low; the cost of shipping known issues is high. "Documented but not fixed" is not a valid completion state unless the CEO explicitly deprioritized it.
+
 ## Verify artifact_paths
 
 - **Verify artifact_paths schema covers all process types.** The checkpoint-resume directive created artifact_paths with only 4 keys, but 7 process types produce 12 distinct artifact files. Sarah's review caught this during request-clarify-loops — always expand schema examples to match all known variants.

@@ -108,7 +108,7 @@ Your standing responsibility: monitor the external product landscape for competi
 - Use WebSearch and WebFetch to research competitors, forums, and review sites
 - Focus on user pain points over feature lists — what problems are underserved?
 - Assess competitive threats: "they just launched X which directly competes with our Y" vs "they added something irrelevant to us"
-- Propose initiatives that address real user needs backed by evidence
+- Propose projects that address real user needs backed by evidence
 
 ## Challenge Mode
 

@@ -1,0 +1,12 @@
+{
+  "id": "test-lightweight",
+  "title": "Test lightweight directive",
+  "status": "in_progress",
+  "weight": "lightweight",
+  "pipeline": {
+    "triage": { "status": "completed" },
+    "read": { "status": "completed" },
+    "context": { "status": "completed" },
+    "approve": { "status": "completed" }
+  }
+}

@@ -1,0 +1,43 @@
+{
+  "goal": "ui",
+  "goal_folder": ".context/goals/ui",
+  "challenges": {
+    "risks": [
+      "History feature scope creep: reading ALL directive.json files for history + building a selector UI could balloon. Keep it simple.",
+      "Cross-page integration means touching 3 different component trees with different design systems (pixel-art vs shadcn).",
+      "CEO action buttons require wiring to state updates. CompletionGateBanner pattern exists for completion — generalize for approve step."
+    ],
+    "over_engineering_flags": [
+      "14 step-specific icons is a static map, not architecture. No concern.",
+      "History: simple list is 80% of value. No filtering/search needed.",
+      "Artifact links: display file paths as text is sufficient."
+    ],
+    "recommendation": "Proceed. 8 problems are real and well-scoped. 2 projects: server data → frontend overhaul."
+  },
+  "projects": [
+    {
+      "id": "pipeline-server-data",
+      "title": "Pipeline server: skipped steps + directive history",
+      "priority": "P0",
+      "scope_summary": "Fix buildPipelineFromDirective to keep skipped steps (change .filter to .map with status=skipped). Extend DirectiveWatcher to expose ALL directives (not just active) via a new directiveHistory array in the aggregator/WS payload. Ensure title field populates from directive.json.",
+      "complexity": "simple",
+      "agent": ["jordan"],
+      "reviewers": ["sarah"],
+      "auditor": "sarah",
+      "depends_on": [],
+      "touches_files_hint": ["server/watchers/directive-watcher.ts", "server/types.ts", "server/state/aggregator.ts", "src/stores/types.ts"]
+    },
+    {
+      "id": "pipeline-stepper-ux",
+      "title": "Pipeline stepper UX overhaul: icons, actions, history, cross-page",
+      "priority": "P0",
+      "scope_summary": "Complete frontend overhaul: step-specific icons, skipped-step visuals, inline CEO action buttons, clickable artifact links, directive history section, visual polish, title not slug, fix Projects page and Game UI integration.",
+      "complexity": "complex",
+      "agent": ["riley"],
+      "reviewers": ["marcus"],
+      "auditor": "marcus",
+      "depends_on": ["pipeline-server-data"],
+      "touches_files_hint": ["src/components/shared/PipelineStepper.tsx", "src/components/dashboard/DirectiveProgress.tsx", "src/components/projects/DirectivePipeline.tsx", "src/components/game/panels/ProjectsPanel.tsx", "src/stores/types.ts", "src/stores/dashboard-store.ts"]
+    }
+  ]
+}

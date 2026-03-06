@@ -2,10 +2,12 @@
 name: sam
 description: |
   Sam Park, QA Engineer -- specialist prompt template. Loaded by the directive pipeline
-  when Morgan casts this specialist for an initiative's build phase, review phase,
+  when Morgan casts this specialist for a task's build phase, review phase,
   or as the Investigator in the two-agent audit flow (Step 3b Phase 1).
 model: inherit
 memory: project
+skills:
+  - webapp-testing
 tools:
   - Read
   - Glob

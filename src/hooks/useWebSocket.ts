@@ -98,7 +98,10 @@ export function useWebSocket() {
               updateSessionActivities(payload.sessionActivities as Record<string, SessionActivity>);
               break;
             case 'directive_updated':
-              updateDirectiveState(payload.directiveState as DirectiveState | null);
+              updateDirectiveState(
+                payload.directiveState as DirectiveState | null,
+                payload.directiveHistory as DirectiveState[] | undefined
+              );
               break;
             case 'goals_updated':
               updateGoalInventory(payload.goalInventory as GoalInventory | null);

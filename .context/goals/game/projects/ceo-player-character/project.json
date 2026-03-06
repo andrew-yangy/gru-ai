@@ -1,0 +1,130 @@
+{
+  "id": "ceo-player-character",
+  "title": "CEO Player Character — Full Redo",
+  "goal_id": "game",
+  "status": "completed",
+  "priority": "P0",
+  "agent": ["riley"],
+  "reviewers": ["marcus"],
+  "description": "Redo the CEO player-controlled character: continuous WASD movement, camera follow, click/deselect separation, visual distinction, collision feedback, proximity highlights.",
+  "source_directive": "ceo-player-character",
+  "scope": {
+    "in": "Player movement engine (characters.ts), canvas input handling (CanvasOffice.tsx), camera scroll follow, renderer visual effects (renderer.ts), OfficeState additions, constants",
+    "out": "Renderer pipeline restructuring, tileset changes, sprite sheet modifications, AI agent FSM changes"
+  },
+  "browser_test": true,
+  "dod": [
+    { "criterion": "Holding WASD moves CEO continuously tile-by-tile", "met": true },
+    { "criterion": "Camera smoothly tracks CEO with deadzone", "met": true },
+    { "criterion": "CEO visually distinct with crown and glow", "met": true },
+    { "criterion": "Click-to-move and click-to-select are separate interactions", "met": true },
+    { "criterion": "Keyboard input works regardless of UI panel focus", "met": true },
+    { "criterion": "Walking near agents highlights them", "met": true },
+    { "criterion": "Collision feedback when walking into walls", "met": true },
+    { "criterion": "Type-check passes", "met": true }
+  ],
+  "tasks": [
+    {
+      "id": "continuous-wasd-movement",
+      "title": "Continuous WASD movement with held-key tracking",
+      "status": "completed",
+      "priority": "P0",
+      "agent": ["riley"],
+      "phases": ["build", "review"],
+      "scope": "Replace keydown-only handler with keydown+keyup held-keys tracking on window. Store heldKeys Set on OfficeState. In updateCharacter(), auto-queue next tile when step completes. Add blur handler to clear keys.",
+      "verify": "npm run type-check",
+      "dod": [
+        { "criterion": "Holding WASD moves CEO continuously tile-by-tile without releasing the key", "met": true },
+        { "criterion": "Key listeners are on window, not canvas — keyboard input works regardless of focus", "met": true },
+        { "criterion": "Movement direction changes immediately when switching held keys mid-walk", "met": true },
+        { "criterion": "Releasing all keys stops movement at the next tile boundary", "met": true },
+        { "criterion": "Arrow keys work as aliases for WASD", "met": true }
+      ]
+    },
+    {
+      "id": "camera-scroll-follow",
+      "title": "Camera follow via programmatic scroll tracking",
+      "status": "completed",
+      "priority": "P0",
+      "agent": ["riley"],
+      "phases": ["build", "review"],
+      "scope": "In animation loop, compute CEO screen position. If outside deadzone, lerp scroll parent container. Use CAMERA_FOLLOW_LERP. Set cameraFollowId. Initial scroll-to-CEO on load.",
+      "verify": "npm run type-check",
+      "dod": [
+        { "criterion": "CEO character stays visible in viewport as they walk", "met": true },
+        { "criterion": "Scroll follows with smooth lerp, not instant snap", "met": true },
+        { "criterion": "Deadzone prevents jitter on small movements", "met": true },
+        { "criterion": "cameraFollowId is set and consumed (no longer dead code)", "met": true },
+        { "criterion": "Manual scroll by user is respected — camera only re-centers when CEO moves outside deadzone", "met": true }
+      ]
+    },
+    {
+      "id": "click-move-deselect-separation",
+      "title": "Separate click-to-move from click-to-deselect",
+      "status": "completed",
+      "priority": "P0",
+      "agent": ["riley"],
+      "phases": ["build", "review"],
+      "scope": "In processClick empty-space branch, remove deselection calls (keep only walkToTile). Apply same to touch handler. Add Escape key handler on window for deselection.",
+      "verify": "npm run type-check",
+      "dod": [
+        { "criterion": "Left-clicking empty floor moves CEO without deselecting current selection", "met": true },
+        { "criterion": "Pressing Escape deselects the currently selected agent/item", "met": true },
+        { "criterion": "Clicking an agent still toggles selection (unchanged)", "met": true },
+        { "criterion": "Clicking furniture still selects it (unchanged)", "met": true }
+      ]
+    },
+    {
+      "id": "ceo-visual-distinction",
+      "title": "Distinct CEO character appearance with crown and glow",
+      "status": "completed",
+      "priority": "P1",
+      "agent": ["riley"],
+      "phases": ["build", "review"],
+      "scope": "In renderScene, for isPlayerControlled characters: draw gold outline using existing getOutlineSprite mechanism. Add small crown SpriteData (7x5 pixel art) above head. Add CEO constants.",
+      "verify": "npm run type-check",
+      "dod": [
+        { "criterion": "CEO character has a visible golden crown drawn above their sprite", "met": true },
+        { "criterion": "CEO character has a subtle glow/outline distinct from selection highlight", "met": true },
+        { "criterion": "Crown and glow render correctly at all zoom levels", "met": true },
+        { "criterion": "Other agents are visually unchanged", "met": true },
+        { "criterion": "isPlayerControlled flag on Character is used to determine CEO rendering", "met": true }
+      ]
+    },
+    {
+      "id": "collision-feedback",
+      "title": "Collision feedback when walking into walls",
+      "status": "completed",
+      "priority": "P1",
+      "agent": ["riley"],
+      "phases": ["build", "review"],
+      "scope": "Add collisionFlash state to OfficeState. Set on walkToTile failure. Tick timer in update(). Render fading red overlay on blocked tile in renderFrame.",
+      "verify": "npm run type-check",
+      "dod": [
+        { "criterion": "Walking into a wall or blocked tile shows a brief red flash on that tile", "met": true },
+        { "criterion": "Flash fades out over ~0.3 seconds", "met": true },
+        { "criterion": "Flash does not persist — one-shot visual indicator", "met": true },
+        { "criterion": "No flash on successful movement", "met": true }
+      ]
+    },
+    {
+      "id": "proximity-highlight",
+      "title": "Proximity highlight when CEO walks near agents",
+      "status": "completed",
+      "priority": "P1",
+      "agent": ["riley"],
+      "phases": ["build", "review"],
+      "scope": "Add isNearPlayer boolean to Character type. In OfficeState.update(), compute proximity to CEO. In renderScene, draw soft gold outline for nearby characters. Pulse alpha slightly.",
+      "verify": "npm run type-check",
+      "dod": [
+        { "criterion": "Agents within 2 tiles of CEO get a visible proximity highlight", "met": true },
+        { "criterion": "Highlight is visually distinct from selection and hover highlights", "met": true },
+        { "criterion": "Highlight updates in real-time as CEO moves", "met": true },
+        { "criterion": "Highlight disappears when CEO moves away", "met": true },
+        { "criterion": "isNearPlayer flag is added to Character type", "met": true }
+      ]
+    }
+  ],
+  "created": "2026-03-05T14:30:00Z",
+  "updated": "2026-03-05T16:00:00Z"
+}

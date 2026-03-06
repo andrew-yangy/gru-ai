@@ -1,0 +1,171 @@
+{
+  "id": "game-hud-redesign",
+  "title": "Game HUD Panel Redesign — 5-Tab CEO Command Center",
+  "goal_id": "game",
+  "status": "done",
+  "priority": "P0",
+  "agent": ["riley"],
+  "reviewers": ["marcus"],
+  "description": "Replace the 3-tab HUD (Team/Decisions/Reports) with 5 purpose-built tabs: Team (activity feed), Inbox (actionable items), Projects (drill-down navigator), Intel (full report browser), Wiki (knowledge browser). Every tab supports progressive disclosure.",
+  "source_directive": "game-hud-redesign",
+  "scope": {
+    "in": [
+      "5-tab header: Team, Inbox, Projects, Intel, Wiki",
+      "Type system updates across GameHeader, GamePage, SidePanel, types.ts",
+      "Team panel polish: activity-first with task names and time elapsed",
+      "Inbox panel: rename from Decisions with context",
+      "Projects panel: new drill-down Goals > Projects > Tasks",
+      "Intel panel: new full report browser replacing Reports",
+      "Wiki panel: new lessons/knowledge browser",
+      "Cleanup old panel references"
+    ],
+    "out": [
+      "Action layer (approving from game UI)",
+      "Custom pixel-art fonts or sprite assets",
+      "New API endpoints or store changes"
+    ]
+  },
+  "browser_test": true,
+  "created": "2026-03-06T11:40:00Z",
+  "updated": "2026-03-06T12:15:00Z",
+  "tasks": [
+    {
+      "id": "hud-types-and-header",
+      "title": "Update HUD types and header buttons for 5-tab system",
+      "priority": "P0",
+      "complexity": "simple",
+      "phases": ["build", "review"],
+      "scope": "Update HudPanel, HudTab, TileType for 5 tabs. Update GameHeader buttons with icons. Update SidePanel and GamePage mappings.",
+      "status": "done",
+      "agent": ["riley"],
+      "dod": [
+        { "criterion": "HudPanel and HudTab types include all 5 tabs", "met": true },
+        { "criterion": "GameHeader renders 5 HudButtons with correct icons", "met": true },
+        { "criterion": "TileType includes hud-team, hud-inbox, hud-projects, hud-intel, hud-wiki", "met": true },
+        { "criterion": "SidePanel and GamePage mappings updated", "met": true },
+        { "criterion": "TypeScript compiles", "met": true }
+      ]
+    },
+    {
+      "id": "sidepanel-5tab-routing",
+      "title": "Wire SidePanel content routing for 5 tabs",
+      "priority": "P0",
+      "complexity": "simple",
+      "phases": ["build", "review"],
+      "scope": "Update PanelContent to route all 5 tabs. Import new panel components (stub if needed). Tab strip renders all 5.",
+      "status": "done",
+      "agent": ["riley"],
+      "dod": [
+        { "criterion": "PanelContent routes all 5 tab values", "met": true },
+        { "criterion": "Tab strip renders 5 tabs", "met": true },
+        { "criterion": "App compiles and each button shows corresponding tab", "met": true }
+      ]
+    },
+    {
+      "id": "team-panel-polish",
+      "title": "Polish Team panel activity-first layout",
+      "priority": "P1",
+      "complexity": "simple",
+      "phases": ["build", "review"],
+      "scope": "Show full task name, add time-since-started for working agents. Core layout already correct.",
+      "status": "done",
+      "agent": ["riley"],
+      "dod": [
+        { "criterion": "Working agents show full task name", "met": true },
+        { "criterion": "Working agent cards show time-since-started", "met": true },
+        { "criterion": "Idle agents in compact grid", "met": true },
+        { "criterion": "Renders correctly with 0 active agents", "met": true }
+      ]
+    },
+    {
+      "id": "inbox-panel",
+      "title": "Build Inbox panel (rename from Decisions)",
+      "priority": "P1",
+      "complexity": "simple",
+      "phases": ["build", "review"],
+      "scope": "Create InboxPanel.tsx from DecisionsPanel. Rename, update empty state. Export from index.ts.",
+      "status": "done",
+      "agent": ["riley"],
+      "dod": [
+        { "criterion": "InboxPanel.tsx exists and exports from panels/index.ts", "met": true },
+        { "criterion": "Shows approvals, errors, waiting-input with context", "met": true },
+        { "criterion": "Routed correctly from SidePanel tab", "met": true }
+      ]
+    },
+    {
+      "id": "projects-panel",
+      "title": "Build Projects drill-down panel",
+      "priority": "P1",
+      "complexity": "simple",
+      "phases": ["build", "review"],
+      "scope": "Create ProjectsPanel.tsx with 3-level drill-down: goals -> projects -> tasks. Uses workState from store. Back button. Parchment styling.",
+      "status": "done",
+      "agent": ["riley"],
+      "dod": [
+        { "criterion": "ProjectsPanel.tsx exists and exports from panels/index.ts", "met": true },
+        { "criterion": "Goal list shows all goals with status and project counts", "met": true },
+        { "criterion": "Clicking a goal shows its projects with progress", "met": true },
+        { "criterion": "Back button works at each level", "met": true },
+        { "criterion": "Handles empty state", "met": true }
+      ]
+    },
+    {
+      "id": "intel-panel",
+      "title": "Build Intel panel (full report browser)",
+      "priority": "P1",
+      "complexity": "simple",
+      "phases": ["build", "review"],
+      "scope": "Create IntelPanel.tsx. All reports chronological + detail view via artifact-content API. Active directive section. Back button.",
+      "status": "done",
+      "agent": ["riley"],
+      "dod": [
+        { "criterion": "IntelPanel.tsx exists and exports from panels/index.ts", "met": true },
+        { "criterion": "Shows ALL reports, not limited to 5", "met": true },
+        { "criterion": "Click loads and displays full content", "met": true },
+        { "criterion": "Back button returns to list", "met": true },
+        { "criterion": "Active directive progress shown if exists", "met": true }
+      ]
+    },
+    {
+      "id": "wiki-panel",
+      "title": "Build Wiki panel (lessons knowledge browser)",
+      "priority": "P1",
+      "complexity": "simple",
+      "phases": ["build", "review"],
+      "scope": "Create WikiPanel.tsx. Topic list from workState.conductor.lessons + detail view via artifact-content API. Back button.",
+      "status": "done",
+      "agent": ["riley"],
+      "dod": [
+        { "criterion": "WikiPanel.tsx exists and exports from panels/index.ts", "met": true },
+        { "criterion": "Shows all lesson topics from store", "met": true },
+        { "criterion": "Click loads and displays full content", "met": true },
+        { "criterion": "Back button returns to list", "met": true },
+        { "criterion": "Handles empty state", "met": true }
+      ]
+    },
+    {
+      "id": "cleanup-old-panels",
+      "title": "Remove old DecisionsPanel and ReportsPanel references",
+      "priority": "P2",
+      "complexity": "simple",
+      "phases": ["build", "review"],
+      "scope": "Remove old panels if unused. Update index.ts exports. Clean imports. Remove old tile types.",
+      "status": "done",
+      "agent": ["riley"],
+      "dod": [
+        { "criterion": "No imports of old panels remain", "met": true },
+        { "criterion": "index.ts exports new panels", "met": true },
+        { "criterion": "No old hud-decisions/hud-reports references", "met": true },
+        { "criterion": "TypeScript compiles clean", "met": true }
+      ]
+    }
+  ],
+  "dod": [
+    { "criterion": "5 header buttons: Team, Inbox, Projects, Intel, Wiki", "met": true },
+    { "criterion": "Each tab shows real data from dashboard store", "met": true },
+    { "criterion": "Projects tab drills down Goals > Projects > Tasks with back button", "met": true },
+    { "criterion": "Intel tab shows ALL reports with click-to-read and back", "met": true },
+    { "criterion": "Wiki tab shows all lessons with click-to-read and back", "met": true },
+    { "criterion": "No dead code from old 3-tab system", "met": true }
+  ]
+}

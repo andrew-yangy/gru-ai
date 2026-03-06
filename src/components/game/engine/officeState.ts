@@ -15,12 +15,15 @@ import {
   STATUS_CHANGE_DEBOUNCE_SEC,
   LINGER_MIN_SEC,
   LINGER_MAX_SEC,
+  COLLISION_FLASH_DURATION_SEC,
+  PROXIMITY_RADIUS_TILES,
+  MEETING_SUBAGENT_THRESHOLD,
 } from '../constants'
 import type { Character, Seat, FurnitureInstance, TileType as TileTypeVal, OfficeLayout, PlacedFurniture, AgentStatus, SessionInfo } from '../pixel-types'
 import { createCharacter, updateCharacter } from './characters'
 import { matrixEffectSeeds } from './matrixEffect'
 import { isWalkable, getWalkableTiles, findPath } from '../layout/tileMap'
-import { chooseDestination } from './roomZones'
+import { chooseDestination, pickWaypoint } from './roomZones'
 import {
   createDefaultLayout,
   layoutToTileMap,
@@ -45,10 +48,22 @@ export class OfficeState {
   cameraFollowId: number | null = null
   hoveredAgentId: number | null = null
   hoveredTile: { col: number; row: number } | null = null
+  /** Keys currently held down by the player (for continuous WASD movement) */
+  heldKeys: Set<string> = new Set()
+  /** Collision flash overlay for blocked tile feedback */
+  collisionFlash: { col: number; row: number; timer: number } | null = null
   /** Maps "parentId:toolId" → sub-agent character ID (negative) */
   subagentIdMap: Map<string, number> = new Map()
   /** Reverse lookup: sub-agent character ID → parent info */
   subagentMeta: Map<number, { parentAgentId: number; parentToolId: string }> = new Map()
+  /** Whether a conference meeting is currently active */
+  meetingActive = false
+  /** All agent IDs participating in the current meeting */
+  meetingAgents: Set<number> = new Set()
+  /** Active review pairs: reviewerId -> builderId (reviewer walks to builder's desk) */
+  reviewPairs: Map<number, number> = new Map()
+  /** Session-derived subagent counts: parentId → childIds (for meeting detection from props) */
+  sessionSubagentsByParent: Map<number, number[]> = new Map()
   private nextSubagentId = -1
 
   constructor(layout?: OfficeLayout) {
@@ -369,6 +384,59 @@ export class OfficeState {
     }
   }
 
+  /**
+   * "Stand up" from a seat — teleport to the nearest walkable tile.
+   * Used when the player is at a surrounded desk and wants to move.
+   * Returns true if the character was moved.
+   */
+  standUpFromSeat(agentId: number): boolean {
+    const ch = this.characters.get(agentId)
+    if (!ch) return false
+    // Only teleport if completely surrounded (no adjacent walkable tile)
+    const adjDirs = [{ dc: 0, dr: -1 }, { dc: 0, dr: 1 }, { dc: -1, dr: 0 }, { dc: 1, dr: 0 }]
+    for (const d of adjDirs) {
+      if (isWalkable(ch.tileCol + d.dc, ch.tileRow + d.dr, this.tileMap, this.blockedTiles)) {
+        return false // Has walkable neighbor, normal movement should work
+      }
+    }
+    // BFS outward from current tile to find nearest walkable tile
+    const key = (c: number, r: number) => `${c},${r}`
+    const visited = new Set<string>()
+    visited.add(key(ch.tileCol, ch.tileRow))
+    const queue: Array<{ col: number; row: number }> = [{ col: ch.tileCol, row: ch.tileRow }]
+    const dirs = [{ dc: 0, dr: -1 }, { dc: 0, dr: 1 }, { dc: -1, dr: 0 }, { dc: 1, dr: 0 }]
+    while (queue.length > 0) {
+      const curr = queue.shift()!
+      for (const d of dirs) {
+        const nc = curr.col + d.dc
+        const nr = curr.row + d.dr
+        const nk = key(nc, nr)
+        if (visited.has(nk)) continue
+        visited.add(nk)
+        if (isWalkable(nc, nr, this.tileMap, this.blockedTiles)) {
+          // Found a walkable tile — teleport there
+          ch.tileCol = nc
+          ch.tileRow = nr
+          ch.x = nc * TILE_SIZE + TILE_SIZE / 2
+          ch.y = nr * TILE_SIZE + TILE_SIZE / 2
+          ch.path = []
+          ch.moveProgress = 0
+          ch.state = CharacterState.IDLE
+          ch.frame = 0
+          ch.frameTimer = 0
+          return true
+        }
+        // Continue BFS through blocked tiles to find walkable ones
+        const rows = this.tileMap.length
+        const cols = rows > 0 ? this.tileMap[0].length : 0
+        if (nc >= 0 && nc < cols && nr >= 0 && nr < rows) {
+          queue.push({ col: nc, row: nr })
+        }
+      }
+    }
+    return false
+  }
+
   /** Walk an agent to an arbitrary walkable tile (right-click command) */
   walkToTile(agentId: number, col: number, row: number): boolean {
     const ch = this.characters.get(agentId)
@@ -376,11 +444,39 @@ export class OfficeState {
     if (!isWalkable(col, row, this.tileMap, this.blockedTiles)) {
       // Also allow walking to own seat tile (blocked for others but not self)
       const key = this.ownSeatKey(ch)
-      if (!key || key !== `${col},${row}`) return false
+      if (!key || key !== `${col},${row}`) {
+        // Trigger collision flash for player-controlled characters
+        if (ch.isPlayerControlled) {
+          this.collisionFlash = { col, row, timer: COLLISION_FLASH_DURATION_SEC }
+        }
+        return false
+      }
     }
     const path = this.withOwnSeatUnblocked(ch, () =>
       findPath(ch.tileCol, ch.tileRow, col, row, this.tileMap, this.blockedTiles)
     )
+    if (path.length === 0) {
+      // Trigger collision flash for player-controlled characters when pathfinding fails
+      if (ch.isPlayerControlled && (ch.tileCol !== col || ch.tileRow !== row)) {
+        this.collisionFlash = { col, row, timer: COLLISION_FLASH_DURATION_SEC }
+      }
+      return false
+    }
+    ch.path = path
+    ch.moveProgress = 0
+    ch.state = CharacterState.WALK
+    ch.frame = 0
+    ch.frameTimer = 0
+    return true
+  }
+
+  /** Internal: walk any character (including subagents) to a tile. No player guards. */
+  private walkCharacterToTile(ch: Character, col: number, row: number): boolean {
+    // Check walkability with own seat unblocked (target may be own seat tile)
+    const path = this.withOwnSeatUnblocked(ch, () => {
+      if (!isWalkable(col, row, this.tileMap, this.blockedTiles)) return []
+      return findPath(ch.tileCol, ch.tileRow, col, row, this.tileMap, this.blockedTiles)
+    })
     if (path.length === 0) return false
     ch.path = path
     ch.moveProgress = 0
@@ -612,8 +708,11 @@ export class OfficeState {
     if (!nowActive && wasActive) {
       // Went inactive — use the sentinel to skip long seat rest
       ch.seatTimer = -1
-      ch.path = []
-      ch.moveProgress = 0
+      // Don't clear path if agent is en route to a meeting/review seat
+      if (!ch.routingZone) {
+        ch.path = []
+        ch.moveProgress = 0
+      }
 
       // Start linger timer — agent stays at desk before routing to break room
       if (previousStatus === 'working' && (status === 'idle' || status === 'offline')) {
@@ -636,6 +735,8 @@ export class OfficeState {
   private routeAgent(ch: Character, status: AgentStatus): void {
     // If lingering after task completion, don't route yet (update() handles it)
     if (ch.lingerTimer > 0) return
+    // If in a brainstorm meeting or review, don't override — those systems manage routing
+    if (ch.routingZone === 'meeting' || ch.routingZone === 'review') return
 
     const result = chooseDestination(ch, status, ch.sessionInfo)
 
@@ -664,6 +765,100 @@ export class OfficeState {
     if (ch) {
       ch.isBusy = busy
     }
+  }
+
+  /**
+   * Set active review pairs (reviewerId -> builderId).
+   * Routes reviewers to a walkable tile adjacent to the builder's seat.
+   * When a pair is removed, the reviewer returns to normal routing.
+   */
+  setReviewPairs(pairs: Map<number, number>): void {
+    // Detect removed pairs — return those reviewers to normal routing
+    for (const [reviewerId] of this.reviewPairs) {
+      if (!pairs.has(reviewerId)) {
+        const ch = this.characters.get(reviewerId)
+        if (ch && !ch.isPlayerControlled && ch.routingZone === 'review') {
+          ch.routingZone = null
+          this.routeAgent(ch, ch.agentStatus)
+        }
+      }
+    }
+
+    // Detect new pairs — route reviewer to builder's desk area
+    for (const [reviewerId, builderId] of pairs) {
+      if (!this.reviewPairs.has(reviewerId) || this.reviewPairs.get(reviewerId) !== builderId) {
+        const reviewerCh = this.characters.get(reviewerId)
+        const builderCh = this.characters.get(builderId)
+        if (!reviewerCh || !builderCh || reviewerCh.isPlayerControlled) continue
+        // Skip if reviewer is in a brainstorm meeting (higher priority)
+        if (reviewerCh.routingZone === 'meeting') continue
+
+        // Stand up from desk if surrounded by blocked tiles
+        this.standUpFromSeat(reviewerId)
+
+        // Find builder's seat tile
+        const builderSeat = builderCh.seatId ? this.seats.get(builderCh.seatId) : null
+        const targetCol = builderSeat ? builderSeat.seatCol : builderCh.tileCol
+        const targetRow = builderSeat ? builderSeat.seatRow : builderCh.tileRow
+
+        // Find a walkable adjacent tile (4 cardinal directions)
+        const adjDirs = [
+          { dc: 0, dr: -1 }, { dc: 0, dr: 1 },
+          { dc: -1, dr: 0 }, { dc: 1, dr: 0 },
+        ]
+        let walked = false
+        for (const d of adjDirs) {
+          const ac = targetCol + d.dc
+          const ar = targetRow + d.dr
+          if (isWalkable(ac, ar, this.tileMap, this.blockedTiles)) {
+            walked = this.walkToTile(reviewerCh.id, ac, ar)
+            if (walked) break
+          }
+        }
+
+        // Fallback: BFS for nearest walkable tile within 3 tiles
+        if (!walked) {
+          const visited = new Set<string>()
+          const queue: Array<{ col: number; row: number; dist: number }> = []
+          visited.add(`${targetCol},${targetRow}`)
+          queue.push({ col: targetCol, row: targetRow, dist: 0 })
+          while (queue.length > 0) {
+            const curr = queue.shift()!
+            if (curr.dist > 3) break
+            for (const d of adjDirs) {
+              const nc = curr.col + d.dc
+              const nr = curr.row + d.dr
+              const key = `${nc},${nr}`
+              if (visited.has(key)) continue
+              visited.add(key)
+              if (isWalkable(nc, nr, this.tileMap, this.blockedTiles)) {
+                walked = this.walkToTile(reviewerCh.id, nc, nr)
+                if (walked) break
+              }
+              if (curr.dist + 1 < 3) {
+                const rows = this.tileMap.length
+                const cols = rows > 0 ? this.tileMap[0].length : 0
+                if (nc >= 0 && nc < cols && nr >= 0 && nr < rows) {
+                  queue.push({ col: nc, row: nr, dist: curr.dist + 1 })
+                }
+              }
+            }
+            if (walked) break
+          }
+        }
+        // Only set routing zone if we actually managed to walk
+        if (walked) {
+          reviewerCh.routingZone = 'review'
+        }
+      }
+    }
+
+    this.reviewPairs = pairs
+  }
+
+  /** Update session-derived parent→children map for meeting room detection */
+  setSubagentsByParent(map: Map<number, number[]>): void {
+    this.sessionSubagentsByParent = map
   }
 
   /** Rebuild furniture instances with auto-state applied (active agents turn electronics ON) */
@@ -771,6 +966,14 @@ export class OfficeState {
   }
 
   update(dt: number): void {
+    // Tick collision flash timer
+    if (this.collisionFlash) {
+      this.collisionFlash.timer -= dt
+      if (this.collisionFlash.timer <= 0) {
+        this.collisionFlash = null
+      }
+    }
+
     // Tick status debounce timers and apply pending status changes
     for (const ch of this.characters.values()) {
       if (ch.pendingStatus !== null && ch.statusChangeTimer > 0) {
@@ -797,6 +1000,129 @@ export class OfficeState {
       }
     }
 
+    // ── Brainstorm meeting detection ──────────────────────────
+    // Merge two sources: dynamically-spawned subagent characters (subagentMeta)
+    // and session-derived parent→child relationships (sessionSubagentsByParent)
+    const activeSubsPerParent = new Map<number, number[]>()
+
+    // Source 1: Dynamic subagent characters (from addSubagent)
+    for (const [subId, meta] of this.subagentMeta) {
+      const subCh = this.characters.get(subId)
+      if (!subCh || subCh.matrixEffect === 'despawn') continue
+      const list = activeSubsPerParent.get(meta.parentAgentId)
+      if (list) {
+        list.push(subId)
+      } else {
+        activeSubsPerParent.set(meta.parentAgentId, [subId])
+      }
+    }
+
+    // Source 2: Session-derived interactions (existing office agents acting as subagents)
+    for (const [parentId, childIds] of this.sessionSubagentsByParent) {
+      const existing = activeSubsPerParent.get(parentId) ?? []
+      for (const childId of childIds) {
+        if (!existing.includes(childId) && this.characters.has(childId)) {
+          existing.push(childId)
+        }
+      }
+      if (existing.length > 0) activeSubsPerParent.set(parentId, existing)
+    }
+
+    // Collect all unique agents across all qualifying parent groups
+    const meetingCandidates = new Set<number>()
+    for (const [parentId, subIds] of activeSubsPerParent) {
+      if (subIds.length >= MEETING_SUBAGENT_THRESHOLD) {
+        meetingCandidates.add(parentId)
+        for (const id of subIds) meetingCandidates.add(id)
+      }
+    }
+    const shouldMeet = meetingCandidates.size >= MEETING_SUBAGENT_THRESHOLD
+
+    if (shouldMeet && !this.meetingActive) {
+      // ── ENTER meeting ──
+      this.meetingActive = true
+
+      // Collect reachable conference room seats
+      const meetingBounds = { minCol: 17, maxCol: 30, minRow: 2, maxRow: 10 }
+      const adjDirs = [{ dc: 0, dr: -1 }, { dc: 0, dr: 1 }, { dc: -1, dr: 0 }, { dc: 1, dr: 0 }]
+      const confSeats: string[] = []
+      for (const [seatId, seat] of this.seats) {
+        if (seat.seatCol >= meetingBounds.minCol && seat.seatCol <= meetingBounds.maxCol &&
+            seat.seatRow >= meetingBounds.minRow && seat.seatRow <= meetingBounds.maxRow) {
+          const hasAccess = adjDirs.some(d =>
+            isWalkable(seat.seatCol + d.dc, seat.seatRow + d.dr, this.tileMap, this.blockedTiles)
+          )
+          if (hasAccess) confSeats.push(seatId)
+        }
+      }
+      let seatIdx = 0
+
+      for (const agentId of meetingCandidates) {
+        const ch = this.characters.get(agentId)
+        if (!ch || ch.isPlayerControlled) continue
+        ch.routingZone = 'meeting'
+        this.standUpFromSeat(agentId)
+        if (seatIdx < confSeats.length) {
+          const confSeatId = confSeats[seatIdx++]
+          const confSeat = this.seats.get(confSeatId)
+          if (confSeat) {
+            const deskSeatId = ch.seatId
+            if (!ch.originalSeatId) ch.originalSeatId = deskSeatId
+            ch.seatId = confSeatId
+            const deskSeat = deskSeatId ? this.seats.get(deskSeatId) : null
+            const deskKey = deskSeat ? `${deskSeat.seatCol},${deskSeat.seatRow}` : null
+            const confKey = `${confSeat.seatCol},${confSeat.seatRow}`
+            if (deskKey) this.blockedTiles.delete(deskKey)
+            this.blockedTiles.delete(confKey)
+            const path = findPath(ch.tileCol, ch.tileRow, confSeat.seatCol, confSeat.seatRow, this.tileMap, this.blockedTiles)
+            if (deskKey) this.blockedTiles.add(deskKey)
+            this.blockedTiles.add(confKey)
+            if (path.length > 0) {
+              ch.path = path
+              ch.moveProgress = 0
+              ch.state = CharacterState.WALK
+              ch.frame = 0
+              ch.frameTimer = 0
+            }
+          }
+        } else {
+          const dest = pickWaypoint('meeting')
+          this.walkCharacterToTile(ch, dest.waypoint.col, dest.waypoint.row)
+        }
+        this.meetingAgents.add(agentId)
+      }
+    } else if (shouldMeet && this.meetingActive) {
+      // ── ONGOING meeting — route late joiners only ──
+      for (const agentId of meetingCandidates) {
+        if (this.meetingAgents.has(agentId)) continue
+        const ch = this.characters.get(agentId)
+        if (!ch || ch.isPlayerControlled || ch.routingZone === 'meeting') continue
+        ch.routingZone = 'meeting'
+        this.standUpFromSeat(agentId)
+        const dest = pickWaypoint('meeting')
+        this.walkCharacterToTile(ch, dest.waypoint.col, dest.waypoint.row)
+        this.meetingAgents.add(agentId)
+      }
+    } else if (!shouldMeet && this.meetingActive) {
+      // ── EXIT meeting — return all agents to normal ──
+      for (const agentId of this.meetingAgents) {
+        const ch = this.characters.get(agentId)
+        if (ch && ch.routingZone === 'meeting') {
+          ch.routingZone = null
+          if (ch.originalSeatId) {
+            ch.seatId = ch.originalSeatId
+            ch.originalSeatId = null
+          }
+          if (!ch.isSubagent && !ch.isPlayerControlled) {
+            this.standUpFromSeat(agentId)
+            this.routeAgent(ch, ch.agentStatus)
+          }
+        }
+      }
+      this.meetingAgents.clear()
+      this.meetingActive = false
+    }
+
     const toDelete: number[] = []
     for (const ch of this.characters.values()) {
       // Handle matrix effect animation
@@ -817,9 +1143,17 @@ export class OfficeState {
       }
 
       // Temporarily unblock own seat so character can pathfind to it
+      // Pass heldKeys only for player-controlled characters
+      const keys = ch.isPlayerControlled ? this.heldKeys : undefined
       this.withOwnSeatUnblocked(ch, () =>
-        updateCharacter(ch, dt, this.walkableTiles, this.seats, this.tileMap, this.blockedTiles)
+        updateCharacter(ch, dt, this.walkableTiles, this.seats, this.tileMap, this.blockedTiles, keys)
       )
+
+      // Consume blockedTile signal from player character → collision flash
+      if (ch.isPlayerControlled && ch.blockedTile) {
+        this.collisionFlash = { col: ch.blockedTile.col, row: ch.blockedTile.row, timer: COLLISION_FLASH_DURATION_SEC }
+        ch.blockedTile = null
+      }
 
       // Tick bubble timer for waiting bubbles
       if (ch.bubbleType === 'waiting') {
@@ -833,6 +1167,31 @@ export class OfficeState {
     // Remove characters that finished despawn
     for (const id of toDelete) {
       this.characters.delete(id)
+    }
+
+    // Compute proximity to player-controlled character
+    let playerCh: Character | null = null
+    for (const ch of this.characters.values()) {
+      if (ch.isPlayerControlled && !ch.matrixEffect) {
+        playerCh = ch
+        break
+      }
+    }
+    for (const ch of this.characters.values()) {
+      if (ch.isPlayerControlled || ch.matrixEffect) {
+        ch.isNearPlayer = false
+        continue
+      }
+      if (!playerCh) {
+        ch.isNearPlayer = false
+        continue
+      }
+      // Chebyshev distance (max of abs deltas)
+      const dist = Math.max(
+        Math.abs(ch.tileCol - playerCh.tileCol),
+        Math.abs(ch.tileRow - playerCh.tileRow),
+      )
+      ch.isNearPlayer = dist <= PROXIMITY_RADIUS_TILES
     }
   }
 
@@ -867,7 +1226,7 @@ export class OfficeState {
    * Checks GID layers to determine if there's furniture/desk/server at the tile.
    * Returns a description of the tile content, or null for empty floor.
    */
-  getTileInfoAt(worldX: number, worldY: number): { type: 'desk' | 'furniture' | 'server' | 'conference' | 'wall'; col: number; row: number; seatId?: string; agentId?: number } | null {
+  getTileInfoAt(worldX: number, worldY: number): { type: 'desk' | 'furniture' | 'server' | 'conference' | 'wall' | 'whiteboard' | 'bookshelf'; col: number; row: number; seatId?: string; agentId?: number } | null {
     const col = Math.floor(worldX / TILE_SIZE)
     const row = Math.floor(worldY / TILE_SIZE)
 
@@ -908,6 +1267,19 @@ export class OfficeState {
     // Server rack detection (GIDs 885, 1021, 1022, 1037, 1038)
     if (furnitureGid === 885 || furnitureGid === 1021 || furnitureGid === 1022 || furnitureGid === 1037 || furnitureGid === 1038) {
       return { type: 'server', col, row }
+    }
+
+    // Whiteboard / bookshelf detection: check if this tile overlaps a known furniture instance
+    for (const fi of this.furniture) {
+      if (fi.type === 'whiteboard' || fi.type === 'bookshelf') {
+        const fw = fi.sprite[0]?.length ?? 0
+        const fh = fi.sprite.length
+        const fcMin = Math.floor(fi.x / TILE_SIZE)
+        const frMin = Math.floor(fi.y / TILE_SIZE)
+        if (col >= fcMin && col < fcMin + Math.ceil(fw / TILE_SIZE) && row >= frMin && row < frMin + Math.ceil(fh / TILE_SIZE)) {
+          return { type: fi.type as 'whiteboard' | 'bookshelf', col, row }
+        }
+      }
     }
 
     return { type: 'furniture', col, row }

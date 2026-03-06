@@ -18,6 +18,12 @@ export const WANDER_MOVES_BEFORE_REST_MAX = 6
 export const SEAT_REST_MIN_SEC = 120.0
 export const SEAT_REST_MAX_SEC = 240.0
 
+// ── Personality Idle Animation ────────────────────────────────
+export const PERSONALITY_IDLE_MIN_SEC = 8.0
+export const PERSONALITY_IDLE_MAX_SEC = 15.0
+export const PERSONALITY_FRAME_DURATION_SEC = 0.3
+export const PERSONALITY_FRAME_COUNT = 4
+
 // ── Matrix Effect ────────────────────────────────────────────
 export const MATRIX_EFFECT_DURATION_SEC = 0.3
 export const MATRIX_TRAIL_LENGTH = 6
@@ -70,6 +76,8 @@ export const ROTATE_BUTTON_BG = 'rgba(50, 120, 200, 0.85)'
 // ── Camera ───────────────────────────────────────────────────
 export const CAMERA_FOLLOW_LERP = 0.1
 export const CAMERA_FOLLOW_SNAP_THRESHOLD = 0.5
+/** Fraction of viewport each side that forms the deadzone border (center 40% is deadzone when 0.3) */
+export const CAMERA_DEADZONE_FRACTION = 0.3
 
 // ── Zoom ─────────────────────────────────────────────────────
 export const ZOOM_MIN = 1
@@ -96,27 +104,35 @@ export const NOTIFICATION_NOTE_2_START_SEC = 0.1
 export const NOTIFICATION_NOTE_DURATION_SEC = 0.18
 export const NOTIFICATION_VOLUME = 0.14
 
-// ── Name Labels & Status Indicators ─────────────────────────
-export const NAME_LABEL_FONT = 'bold 8px monospace'
-export const NAME_LABEL_BG = 'rgba(0, 0, 0, 0.7)'
-export const NAME_LABEL_TEXT_COLOR = '#ffffff'
-export const NAME_LABEL_PADDING_X = 3
-export const NAME_LABEL_PADDING_Y = 2
-export const NAME_LABEL_BORDER_RADIUS = 2
+// ── Identity Plates & Status Indicators ─────────────────────
 export const NAME_LABEL_VERTICAL_OFFSET_PX = 28
 /** Extra offset when character is sitting (typing state) */
 export const NAME_LABEL_SITTING_OFFSET_PX = 10
+/** Identity plate horizontal padding in pre-zoom pixels */
+export const IDENTITY_PLATE_PAD_X = 2
+/** Identity plate vertical padding in pre-zoom pixels */
+export const IDENTITY_PLATE_PAD_Y = 1
+/** Identity plate background alpha */
+export const IDENTITY_PLATE_BG_ALPHA = 0.6
+/** Total plate height: glyph(7) + pad(1) + pad(1) = 9 pre-zoom px */
+export const IDENTITY_PLATE_HEIGHT = 9
 
-export const STATUS_DOT_RADIUS = 3
-export const STATUS_DOT_BORDER_WIDTH = 1.5
-export const STATUS_DOT_BORDER_COLOR = '#ffffff'
-export const STATUS_DOT_GAP_PX = 3
-/** Colors for each agent status */
-export const STATUS_COLOR_WORKING = '#22c55e'
-export const STATUS_COLOR_IDLE = '#9ca3af'
-export const STATUS_COLOR_WAITING = '#eab308'
-export const STATUS_COLOR_ERROR = '#ef4444'
-export const STATUS_COLOR_OFFLINE = '#4b5563'
+/** Gap between identity plate top and status icon bottom (pre-zoom px) */
+export const STATUS_ICON_GAP_PX = 2
+
+// ── Agent Color Name → Hex ──────────────────────────────────
+/** Maps color name strings from agent-registry.json to hex values */
+export const COLOR_NAME_TO_HEX: Record<string, string> = {
+  gold: '#FFD700',
+  purple: '#8B5CF6',
+  green: '#10B981',
+  orange: '#F97316',
+  pink: '#EC4899',
+  teal: '#14B8A6',
+  cyan: '#06B6D4',
+  lime: '#84CC16',
+  indigo: '#6366F1',
+}
 
 // ── Game Logic ───────────────────────────────────────────────
 export const MAX_DELTA_TIME_SEC = 0.1
@@ -131,11 +147,27 @@ export const AUTO_ON_FACING_DEPTH = 3
 export const AUTO_ON_SIDE_DEPTH = 2
 export const CHARACTER_HIT_HALF_WIDTH = 8
 export const CHARACTER_HIT_HEIGHT = 24
-export const TOOL_OVERLAY_VERTICAL_OFFSET = 32
-export const PULSE_ANIMATION_DURATION_SEC = 1.5
 /** Debounce delay (seconds) before applying a status change to prevent jitter from rapid updates */
 export const STATUS_CHANGE_DEBOUNCE_SEC = 0.5
 /** Minimum linger time (seconds) after task completion before routing to break room */
 export const LINGER_MIN_SEC = 2.0
 /** Maximum linger time (seconds) after task completion before routing to break room */
 export const LINGER_MAX_SEC = 5.0
+
+// ── Brainstorm Meeting ──────────────────────────────────────
+/** Minimum active (non-despawning) subagents before parent triggers meeting room routing */
+export const MEETING_SUBAGENT_THRESHOLD = 3
+
+// ── CEO Visual Distinction ──────────────────────────────────
+export const CEO_CROWN_COLOR = '#FFD700'
+export const CEO_GLOW_ALPHA = 0.6
+
+// ── Collision Feedback ──────────────────────────────────────
+export const COLLISION_FLASH_DURATION_SEC = 0.3
+export const COLLISION_FLASH_COLOR = 'rgba(255, 50, 50, 0.4)'
+
+// ── Proximity Highlight ─────────────────────────────────────
+export const PROXIMITY_RADIUS_TILES = 2
+export const PROXIMITY_HIGHLIGHT_BASE_ALPHA = 0.15
+export const PROXIMITY_HIGHLIGHT_PULSE_AMPLITUDE = 0.1
+export const PROXIMITY_HIGHLIGHT_PULSE_SPEED = 3

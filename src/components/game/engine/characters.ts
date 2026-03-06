@@ -1,7 +1,7 @@
 import { CharacterState, Direction, TILE_SIZE } from '../pixel-types'
 import type { Character, Seat, SpriteData, TileType as TileTypeVal } from '../pixel-types'
 import type { CharacterSprites } from '../sprites/spriteData'
-import { findPath } from '../layout/tileMap'
+import { findPath, isWalkable } from '../layout/tileMap'
 import {
   WALK_SPEED_PX_PER_SEC,
   WALK_FRAME_DURATION_SEC,
@@ -12,7 +12,15 @@ import {
   WANDER_MOVES_BEFORE_REST_MAX,
   SEAT_REST_MIN_SEC,
   SEAT_REST_MAX_SEC,
+  PERSONALITY_FRAME_DURATION_SEC,
+  PERSONALITY_FRAME_COUNT,
+  PERSONALITY_IDLE_MIN_SEC,
+  PERSONALITY_IDLE_MAX_SEC,
 } from '../constants'
+// Personality idle sprites removed — were hand-drawn templates that looked bad next to PNG characters.
+// Stubs return null/default so the personality timer logic still works but never overrides the sprite.
+const getPersonalityIdleFrame = (_p: number, _d: number, _f: number) => null
+const getPersonalityFrameCount = (_p: number) => PERSONALITY_FRAME_COUNT
 
 /** Tools that show reading animation instead of typing */
 const READING_TOOLS = new Set(['Read', 'Grep', 'Glob', 'WebFetch', 'WebSearch'])
@@ -87,7 +95,37 @@ export function createCharacter(
     lingerTimer: 0,
     isBusy: false,
     routingZone: null,
+    originalSeatId: null,
+    personalityTimer: 0,
+    personalityFrame: -1,
+    personalityThreshold: 8 + Math.random() * 7,
+    isNearPlayer: false,
+    blockedTile: null,
   }
+}
+
+/** Reset personality idle animation state (call when leaving IDLE) */
+function resetPersonality(ch: Character): void {
+  ch.personalityFrame = -1
+  ch.personalityTimer = 0
+  ch.personalityThreshold = 8 + Math.random() * 7
+}
+
+/** Convert held key set to a directional delta. Last-pressed wins if multiple held. */
+function heldKeysToDirection(keys: Set<string>): { dc: number; dr: number } | null {
+  // Priority: check each direction. If multiple keys are held, pick based on
+  // a fixed priority (most recent key isn't tracked, so use WASD priority order)
+  let dc = 0
+  let dr = 0
+  if (keys.has('w') || keys.has('arrowup')) dr -= 1
+  if (keys.has('s') || keys.has('arrowdown')) dr += 1
+  if (keys.has('a') || keys.has('arrowleft')) dc -= 1
+  if (keys.has('d') || keys.has('arrowright')) dc += 1
+  // If both opposing directions are held, they cancel out
+  if (dc === 0 && dr === 0) return null
+  // If diagonal, prefer the vertical axis (arbitrary but consistent)
+  if (dc !== 0 && dr !== 0) dc = 0
+  return { dc, dr }
 }
 
 export function updateCharacter(
@@ -97,6 +135,7 @@ export function updateCharacter(
   seats: Map<string, Seat>,
   tileMap: TileTypeVal[][],
   blockedTiles: Set<string>,
+  heldKeys?: Set<string>,
 ): void {
   ch.frameTimer += dt
 
@@ -108,12 +147,33 @@ export function updateCharacter(
         ch.frame = (ch.frame + 1) % 4
       }
       if (ch.path.length === 0) {
-        const center = tileCenter(ch.tileCol, ch.tileRow)
-        ch.x = center.x
-        ch.y = center.y
-        ch.state = CharacterState.IDLE
-        ch.frame = 0
-        ch.frameTimer = 0
+        // Path exhausted — check if held keys want to continue movement
+        const nextDir = heldKeys ? heldKeysToDirection(heldKeys) : null
+        if (nextDir) {
+          const targetCol = ch.tileCol + nextDir.dc
+          const targetRow = ch.tileRow + nextDir.dr
+          if (isWalkable(targetCol, targetRow, tileMap, blockedTiles)) {
+            ch.path = [{ col: targetCol, row: targetRow }]
+            ch.moveProgress = 0
+            // Continue walking — don't transition to IDLE
+          } else {
+            // Blocked — stop and signal collision
+            ch.blockedTile = { col: targetCol, row: targetRow }
+            const center = tileCenter(ch.tileCol, ch.tileRow)
+            ch.x = center.x
+            ch.y = center.y
+            ch.state = CharacterState.IDLE
+            ch.frame = 0
+            ch.frameTimer = 0
+          }
+        } else {
+          const center = tileCenter(ch.tileCol, ch.tileRow)
+          ch.x = center.x
+          ch.y = center.y
+          ch.state = CharacterState.IDLE
+          ch.frame = 0
+          ch.frameTimer = 0
+        }
         return
       }
       const nextTile = ch.path[0]
@@ -131,6 +191,36 @@ export function updateCharacter(
         ch.y = toCenter.y
         ch.path.shift()
         ch.moveProgress = 0
+        // If path is now empty and keys are held, immediately queue next tile
+        if (ch.path.length === 0 && heldKeys) {
+          const nextDirAfterStep = heldKeysToDirection(heldKeys)
+          if (nextDirAfterStep) {
+            const targetCol = ch.tileCol + nextDirAfterStep.dc
+            const targetRow = ch.tileRow + nextDirAfterStep.dr
+            if (isWalkable(targetCol, targetRow, tileMap, blockedTiles)) {
+              ch.path = [{ col: targetCol, row: targetRow }]
+              ch.moveProgress = 0
+            }
+          }
+        }
+      }
+    } else if (ch.state === CharacterState.IDLE && heldKeys && heldKeys.size > 0) {
+      // Idle but keys are held — start moving
+      const nextDir = heldKeysToDirection(heldKeys)
+      if (nextDir) {
+        const targetCol = ch.tileCol + nextDir.dc
+        const targetRow = ch.tileRow + nextDir.dr
+        if (isWalkable(targetCol, targetRow, tileMap, blockedTiles)) {
+          ch.path = [{ col: targetCol, row: targetRow }]
+          ch.moveProgress = 0
+          ch.state = CharacterState.WALK
+          ch.frame = 0
+          ch.frameTimer = 0
+          ch.dir = directionBetween(ch.tileCol, ch.tileRow, targetCol, targetRow)
+        } else {
+          // Blocked — signal collision for flash feedback
+          ch.blockedTile = { col: targetCol, row: targetRow }
+        }
       }
     }
     return
@@ -138,12 +228,16 @@ export function updateCharacter(
 
   switch (ch.state) {
     case CharacterState.TYPE: {
+      // Reset personality state if we were in an idle personality animation
+      if (ch.personalityFrame >= 0) resetPersonality(ch)
+
       if (ch.frameTimer >= TYPE_FRAME_DURATION_SEC) {
         ch.frameTimer -= TYPE_FRAME_DURATION_SEC
         ch.frame = (ch.frame + 1) % 2
       }
       // If no longer active, stand up and start wandering (after seatTimer expires)
-      if (!ch.isActive) {
+      // But stay seated if in a routed zone (meeting/review)
+      if (!ch.isActive && !ch.routingZone) {
         if (ch.seatTimer > 0) {
           ch.seatTimer -= dt
           break
@@ -160,9 +254,37 @@ export function updateCharacter(
     }
 
     case CharacterState.IDLE: {
-      // No idle animation — static pose
-      ch.frame = 0
+      // Static pose unless personality animation is playing
+      if (ch.personalityFrame < 0) {
+        ch.frame = 0
+      }
       if (ch.seatTimer < 0) ch.seatTimer = 0 // clear turn-end sentinel
+
+      // Personality idle animation (not for player-controlled characters)
+      if (!ch.isPlayerControlled) {
+        if (ch.personalityFrame === -1) {
+          // Not playing — accumulate idle time toward threshold
+          ch.personalityTimer += dt
+          if (ch.personalityTimer >= ch.personalityThreshold) {
+            ch.personalityFrame = 0
+            ch.frameTimer = 0
+          }
+        } else {
+          // Playing personality animation — advance frames
+          if (ch.frameTimer >= PERSONALITY_FRAME_DURATION_SEC) {
+            ch.frameTimer -= PERSONALITY_FRAME_DURATION_SEC
+            ch.personalityFrame++
+            if (ch.personalityFrame >= getPersonalityFrameCount(ch.palette)) {
+              // Animation complete — reset to static idle
+              ch.personalityFrame = -1
+              ch.personalityTimer = 0
+              ch.personalityThreshold = PERSONALITY_IDLE_MIN_SEC + Math.random() * (PERSONALITY_IDLE_MAX_SEC - PERSONALITY_IDLE_MIN_SEC)
+              ch.frame = 0
+            }
+          }
+        }
+      }
+
       // If became active, pathfind to seat
       if (ch.isActive) {
         if (!ch.seatId) {
@@ -191,6 +313,19 @@ export function updateCharacter(
         }
         break
       }
+      // If in a routed zone (meeting/review), sit at assigned seat if arrived
+      if (ch.routingZone && ch.seatId) {
+        const seat = seats.get(ch.seatId)
+        if (seat && ch.tileCol === seat.seatCol && ch.tileRow === seat.seatRow) {
+          ch.state = CharacterState.TYPE
+          ch.dir = seat.facingDir
+          ch.frame = 0
+          ch.frameTimer = 0
+        }
+        break
+      }
+      if (ch.routingZone) break
+
       // Countdown wander timer
       ch.wanderTimer -= dt
       if (ch.wanderTimer <= 0) {
@@ -227,6 +362,9 @@ export function updateCharacter(
     }
 
     case CharacterState.WALK: {
+      // Reset personality state if we were in an idle personality animation
+      if (ch.personalityFrame >= 0) resetPersonality(ch)
+
       // Walk animation
       if (ch.frameTimer >= WALK_FRAME_DURATION_SEC) {
         ch.frameTimer -= WALK_FRAME_DURATION_SEC
@@ -332,8 +470,14 @@ export function getCharacterSprite(ch: Character, sprites: CharacterSprites): Sp
       return sprites.typing[ch.dir][ch.frame % 2]
     case CharacterState.WALK:
       return sprites.walk[ch.dir][ch.frame % 4]
-    case CharacterState.IDLE:
+    case CharacterState.IDLE: {
+      // Check for personality idle animation override
+      if (ch.personalityFrame >= 0) {
+        const pFrame = getPersonalityIdleFrame(ch.palette, ch.dir, ch.personalityFrame)
+        if (pFrame) return pFrame
+      }
       return sprites.walk[ch.dir][1]
+    }
     default:
       return sprites.walk[ch.dir][1]
   }

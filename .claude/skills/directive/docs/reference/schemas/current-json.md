@@ -1,24 +1,5 @@
-<!-- Reference: current-json.md | Source: SKILL.md restructure -->
+# DEPRECATED — Use directive-json.md
 
-# Dashboard current.json Schema (Directive State)
+`current.json` is no longer used. The directive-watcher reads pipeline state directly from `.context/directives/{id}/directive.json`.
 
-The directive state file for dashboard tracking. Written to `~/.claude/directives/current.json`.
-
-```json
-{
-  "directiveName": "$ARGUMENTS",
-  "status": "in_progress",
-  "totalInitiatives": N,
-  "currentInitiative": 0,
-  "currentPhase": "starting",
-  "initiatives": [
-    {"id": "slug", "title": "Human-readable", "status": "pending", "phase": null}
-  ],
-  "startedAt": "ISO timestamp",
-  "lastUpdated": "ISO timestamp"
-}
-```
-
-**Update this file before each initiative and phase change** throughout Step 5. The conductor dashboard watches this file via chokidar for real-time progress display.
-
-At Step 7 (completion), update status to `"completed"` or `"failed"`.
+See [directive-json.md](./directive-json.md) for the authoritative schema.

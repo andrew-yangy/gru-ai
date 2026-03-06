@@ -10,7 +10,7 @@
 - **Reviewer agents catch real bugs that build agents miss.** Sarah caught env var mismatch, missing `return` on 403, and 11 unvalidated routes. Review is not ceremony — it finds real issues.
 - **Auditor agents find issues the directive didn't ask about.** The improve-security audit found an auth gap (`/api/search/user/[userId]`) and 5 dead code files that weren't in the directive scope. Follow-ups need structured handling (risk-based).
 
-## Initiative & User Perspective
+## Task & User Perspective
 
 - **Agents build mechanically without testing the user experience.** 9 bugs were found by the CEO in 10 seconds of use — after multiple build cycles. The root cause: no agent tested as the CEO. Fix: mandatory UX verification step in the directive pipeline where the orchestrator personally browser-tests every UI change.
 - **"Does it compile" is not "does it work."** Type-check passing gives false confidence. A component can compile perfectly but have no click handler, show wrong data, or display nothing useful. Browser testing catches what type-checking can't.

@@ -8,9 +8,9 @@ The Architect agent receives this output as input when producing design recommen
 
 ```json
 {
-  "initiatives": [
+  "projects": [
     {
-      "id": "slug matching Morgan's initiative id",
+      "id": "slug matching Morgan's project id",
       "baseline": "Real measured baseline (e.g., '4 endpoints use string interpolation for SQL')",
       "active_files": ["files that are in use and need work"],
       "dead_code": ["files that exist but aren't actively used"],
@@ -23,12 +23,12 @@ The Architect agent receives this output as input when producing design recommen
 
 ## Field Definitions
 
-- **id**: Matches the initiative slug from Morgan's plan.
+- **id**: Matches the project slug from Morgan's plan.
 - **baseline**: Exact measurements. Numbers, not vague qualifiers. "4 endpoints" not "several endpoints."
-- **active_files**: Files that exist, are actively imported/used, and need modification for this initiative.
+- **active_files**: Files that exist, are actively imported/used, and need modification for this project.
 - **dead_code**: Files that exist but have no active imports, route references, or usage. Candidates for cleanup.
 - **findings**: Factual observations about the codebase state. What patterns exist, what conventions are used, what state things are in. No recommendations.
-- **constraints**: Technical debt, naming conventions, architectural patterns, or existing abstractions that would affect how this initiative is implemented. The Architect uses these to make informed design decisions.
+- **constraints**: Technical debt, naming conventions, architectural patterns, or existing abstractions that would affect how this project is implemented. The Architect uses these to make informed design decisions.
 
 ## What This Schema Does NOT Include
 

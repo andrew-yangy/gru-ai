@@ -66,6 +66,8 @@ export interface Seat {
 
 export interface FurnitureInstance {
   sprite: SpriteData
+  /** Furniture type identifier (e.g. 'whiteboard', 'desk') */
+  type: string
   /** Pixel x (top-left) */
   x: number
   /** Pixel y (top-left) */
@@ -175,6 +177,7 @@ export type AgentStatus = 'working' | 'waiting' | 'idle' | 'error' | 'offline'
 export interface SessionInfo {
   taskName?: string
   toolName?: string
+  detail?: string
 }
 
 export interface Character {
@@ -248,4 +251,16 @@ export interface Character {
   isBusy: boolean
   /** Current routing destination zone, or null if at default location */
   routingZone: string | null
+  /** Saved desk seatId while temporarily assigned to a conference/review seat */
+  originalSeatId: string | null
+  /** Accumulator counting idle time before personality animation triggers */
+  personalityTimer: number
+  /** Current personality animation frame index (-1 = inactive, 0+ = playing) */
+  personalityFrame: number
+  /** Random threshold (8-15s) before personality idle animation triggers */
+  personalityThreshold: number
+  /** True when this character is within proximity radius of the CEO */
+  isNearPlayer: boolean
+  /** Tile that blocked movement (set by updateCharacter, consumed by OfficeState) */
+  blockedTile: { col: number; row: number } | null
 }

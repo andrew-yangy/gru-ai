@@ -1,0 +1,123 @@
+{
+  "id": "pipeline-server-data",
+  "title": "Pipeline server: skipped steps + directive history",
+  "goal_id": "ui",
+  "status": "completed",
+  "priority": "P0",
+  "agent": [
+    "jordan"
+  ],
+  "reviewers": [
+    "sarah"
+  ],
+  "description": "Fix skipped-step bug and expose directive history via WebSocket",
+  "source_directive": "pipeline-stepper-v3",
+  "browser_test": false,
+  "scope": {
+    "in": [
+      "Fix buildPipelineFromDirective to keep skipped steps",
+      "Extend DirectiveWatcher for history",
+      "Bundle history into directive_updated WS event",
+      "Update dual type definitions"
+    ],
+    "out": [
+      "Frontend rendering of skipped steps",
+      "History UI components"
+    ]
+  },
+  "tasks": [
+    {
+      "id": "fix-skipped-steps",
+      "title": "Preserve skipped pipeline steps instead of filtering them out",
+      "priority": "P0",
+      "complexity": "simple",
+      "status": "completed",
+      "agent": [
+        "jordan"
+      ],
+      "phases": [
+        "build",
+        "review"
+      ],
+      "user_scenario": "When viewing a lightweight directive pipeline, user sees all steps with skipped ones greyed out instead of a confusing subset.",
+      "scope": "In directive-watcher.ts, change buildPipelineFromDirective from .filter() to .map(), assigning status=skipped. Update both type files.",
+      "dod": [
+        {
+          "criterion": "buildPipelineFromDirective uses .map() instead of .filter(), returning all pipeline steps",
+          "met": true
+        },
+        {
+          "criterion": "Steps in SKIPPED_STEPS set get status='skipped' in the returned array",
+          "met": true
+        },
+        {
+          "criterion": "PipelineStepStatus in both server/types.ts and src/stores/types.ts includes 'skipped'",
+          "met": true
+        },
+        {
+          "criterion": "npm run type-check passes with zero errors",
+          "met": true
+        }
+      ]
+    },
+    {
+      "id": "directive-history-endpoint",
+      "title": "Expose all directives via directiveHistory in WS payload",
+      "priority": "P0",
+      "complexity": "simple",
+      "status": "completed",
+      "agent": [
+        "jordan"
+      ],
+      "phases": [
+        "build",
+        "review"
+      ],
+      "user_scenario": "Dashboard shows completed and failed directives alongside active ones, giving the CEO full work history.",
+      "scope": "Extend DirectiveWatcher to scan all directive directories. Build directiveHistory array with id, title, status, weight, timestamps. Add mtime-based caching. Bundle into directive_updated WS event. Update aggregator, types, WS handler, dashboard store.",
+      "dod": [
+        {
+          "criterion": "DirectiveWatcher exposes history for all directives regardless of status",
+          "met": true
+        },
+        {
+          "criterion": "Each history entry includes id, title, status, weight, and timestamps",
+          "met": true
+        },
+        {
+          "criterion": "History uses mtime-based cache invalidation (no full rescan on every push)",
+          "met": true
+        },
+        {
+          "criterion": "directive_updated WS payload includes both directiveState and directiveHistory",
+          "met": true
+        },
+        {
+          "criterion": "server/types.ts and src/stores/types.ts updated in lockstep",
+          "met": true
+        },
+        {
+          "criterion": "npm run type-check passes with zero errors",
+          "met": true
+        }
+      ]
+    }
+  ],
+  "created": "2026-03-06T12:35:00Z",
+  "updated": "2026-03-06T13:10:00Z",
+  "completed": "2026-03-06T13:10:00Z",
+  "dod": [
+    {
+      "criterion": "buildPipelineFromDirective returns all steps including skipped ones with status=skipped",
+      "met": true
+    },
+    {
+      "criterion": "DirectiveWatcher exposes directiveHistory array via WS for all directives",
+      "met": true
+    },
+    {
+      "criterion": "npm run type-check passes with zero errors",
+      "met": true
+    }
+  ]
+}

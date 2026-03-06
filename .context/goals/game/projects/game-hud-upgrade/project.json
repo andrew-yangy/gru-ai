@@ -1,0 +1,67 @@
+{
+  "id": "game-hud-upgrade",
+  "title": "Upgrade game side panels to reuse dashboard components",
+  "status": "completed",
+  "goal": "game",
+  "agent": ["riley"],
+  "reviewers": ["marcus"],
+  "created": "2026-03-06",
+  "tasks": [
+    {
+      "id": "team-panel-upgrade",
+      "title": "Upgrade Team panel with agent activity, status, and current work",
+      "status": "completed",
+      "agent": "riley",
+      "priority": "P0",
+      "dod": [
+        { "criterion": "Team panel shows all agents with live status dots matching dashboard OrgPage logic", "met": true },
+        { "criterion": "Each working agent displays ActivityLine with current tool/model badge", "met": true },
+        { "criterion": "Current work prompt shown truncated for agents with active sessions", "met": true },
+        { "criterion": "Session count displayed per agent", "met": true },
+        { "criterion": "Clicking an agent row opens the agent detail panel", "met": false }
+      ]
+    },
+    {
+      "id": "sessions-panel-upgrade",
+      "title": "Upgrade Sessions panel with ActivityLine, prompts, subagents, and quick actions",
+      "status": "completed",
+      "agent": "riley",
+      "priority": "P0",
+      "dod": [
+        { "criterion": "Active sessions show ActivityLine with current tool and model badge", "met": true },
+        { "criterion": "Latest prompt shown as truncated preview for each session", "met": true },
+        { "criterion": "Subagent count and name badges displayed", "met": true },
+        { "criterion": "QuickActions appear for waiting-approval and waiting-input sessions", "met": true },
+        { "criterion": "Sessions sorted by status priority (working > waiting > error > idle)", "met": true }
+      ]
+    },
+    {
+      "id": "reports-panel-upgrade",
+      "title": "Upgrade Reports panel with CeoBrief-style attention items, progress, and expandable reports",
+      "status": "completed",
+      "agent": "riley",
+      "priority": "P0",
+      "dod": [
+        { "criterion": "Attention items section shows blocked features and goals with issues", "met": true },
+        { "criterion": "Directive progress shown with progress bar and initiative list with status icons", "met": true },
+        { "criterion": "In-progress features displayed with task completion percentages", "met": true },
+        { "criterion": "Report content expandable with inline markdown rendering", "met": true },
+        { "criterion": "No useNavigate errors — all items display-only in game panel context", "met": true }
+      ]
+    },
+    {
+      "id": "agent-panel-upgrade",
+      "title": "Upgrade Agent detail panel with ActivityLine, subagents, quick actions, and send input",
+      "status": "completed",
+      "agent": "riley",
+      "priority": "P1",
+      "dod": [
+        { "criterion": "Agent panel shows all sessions for the selected agent", "met": true },
+        { "criterion": "Each session displays ActivityLine with current tool and model badge", "met": true },
+        { "criterion": "QuickActions appear for sessions in waiting-approval or waiting-input status", "met": true },
+        { "criterion": "SendInput expandable section for sessions with paneId", "met": true },
+        { "criterion": "Git branch displayed when available", "met": true }
+      ]
+    }
+  ]
+}

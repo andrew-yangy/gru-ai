@@ -2,7 +2,7 @@
   "id": "office-simulation-game",
   "title": "Office Simulation Game as Primary CEO Interface",
   "goal_id": "game",
-  "status": "in_progress",
+  "status": "completed",
   "priority": "P0",
   "agent": [
     "riley"

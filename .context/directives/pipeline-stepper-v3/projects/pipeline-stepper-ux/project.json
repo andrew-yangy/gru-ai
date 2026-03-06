@@ -1,0 +1,114 @@
+{
+  "id": "pipeline-stepper-ux",
+  "title": "Pipeline stepper UX overhaul: icons, actions, history, cross-page",
+  "goal_id": "ui",
+  "status": "completed",
+  "priority": "P0",
+  "agent": ["riley"],
+  "reviewers": ["marcus"],
+  "description": "Complete frontend overhaul with design prototype, step icons, action buttons, history, and cross-page integration",
+  "source_directive": "pipeline-stepper-v3",
+  "browser_test": true,
+  "scope": {
+    "in": ["Design prototype for CEO review", "Step-specific lucide icons", "Skipped-step visuals", "Inline CEO action buttons", "Clickable artifact links", "Directive history section", "Visual polish", "Title not slug", "Projects page fix", "Game UI compact summary"],
+    "out": ["Server-side changes (handled by pipeline-server-data)", "Full PipelineStepper in game panel (style conflict)"]
+  },
+  "tasks": [
+    {
+      "id": "design-prototype",
+      "title": "Visual prototype of pipeline stepper redesign",
+      "priority": "P0",
+      "complexity": "simple",
+      "status": "completed",
+      "agent": ["riley"],
+      "phases": ["build", "review"],
+      "user_scenario": "CEO opens dashboard in Chrome MCP and reviews a working visual prototype of the new stepper before production code is written.",
+      "scope": "Create a standalone prototype page with hardcoded mock data showing all visual elements.",
+      "dod": [
+        { "criterion": "Route or page renders full vertical timeline with at least 8 distinct step icons from stepIconMap", "met": true },
+        { "criterion": "At least 2 steps render in skipped state with SkipForward icon, strikethrough, 50% opacity, dashed connector", "met": true },
+        { "criterion": "At least 1 step renders inline action banner with visible approve/reject button", "met": true },
+        { "criterion": "Artifact links render as clickable spans with copy-to-clipboard affordance", "met": true },
+        { "criterion": "Collapsible Recent Directives history section with 3+ mock entries showing title, status badge, timestamp", "met": true }
+      ]
+    },
+    {
+      "id": "step-icons-and-skipped",
+      "title": "Step-specific icons and skipped-step visuals in PipelineStepper",
+      "priority": "P0",
+      "complexity": "simple",
+      "status": "completed",
+      "agent": ["riley"],
+      "phases": ["build", "review"],
+      "user_scenario": "CEO views active directive and recognizes each step by its unique icon, with skipped steps clearly distinguished.",
+      "scope": "Implement stepIconMap in PipelineStepper.tsx. Add skipped-step rendering.",
+      "dod": [
+        { "criterion": "stepIconMap maps all 14 pipeline steps to distinct Lucide icons", "met": true },
+        { "criterion": "Skipped steps render with SkipForward, strikethrough, 50% opacity, dashed connector", "met": true },
+        { "criterion": "Directive title (not slug) displays in stepper header", "met": true },
+        { "criterion": "No regressions in existing step status rendering (completed, active, pending)", "met": true }
+      ]
+    },
+    {
+      "id": "inline-actions-and-artifacts",
+      "title": "CEO action banners and clickable artifact links",
+      "priority": "P0",
+      "complexity": "simple",
+      "status": "completed",
+      "agent": ["riley"],
+      "phases": ["build", "review"],
+      "user_scenario": "CEO sees directive waiting for approval and can act directly from stepper, and can click artifact paths to copy them.",
+      "scope": "Add inline action banners for needsAction steps. Add clickable artifact links with copy-to-clipboard.",
+      "dod": [
+        { "criterion": "needsAction steps render visible action banner with contextual text and styled button", "met": true },
+        { "criterion": "Action banners appear for approve, completion, and challenge steps when needsAction is true", "met": true },
+        { "criterion": "Artifact file paths render as clickable spans with pointer cursor and visual affordance", "met": true },
+        { "criterion": "Clicking artifact path copies full path to clipboard with visual confirmation", "met": true }
+      ]
+    },
+    {
+      "id": "history-section",
+      "title": "Directive history section with recent completed directives",
+      "priority": "P1",
+      "complexity": "simple",
+      "status": "completed",
+      "agent": ["riley"],
+      "phases": ["build", "review"],
+      "user_scenario": "CEO scrolls below active pipeline and sees collapsible list of recently completed directives with outcomes.",
+      "scope": "Add collapsible Recent Directives section to DirectiveProgress.tsx.",
+      "dod": [
+        { "criterion": "Collapsible Recent Directives section renders below active stepper, defaults collapsed", "met": true },
+        { "criterion": "Each entry shows title (not slug), color-coded status badge, formatted timestamp", "met": true },
+        { "criterion": "Entries sourced from workState.conductor.directives, limited to 10 most recent", "met": true },
+        { "criterion": "Section expands/collapses with smooth animation", "met": true }
+      ]
+    },
+    {
+      "id": "cross-page-integration",
+      "title": "Fix Projects page stepper and game panel compact summary",
+      "priority": "P1",
+      "complexity": "simple",
+      "status": "completed",
+      "agent": ["riley"],
+      "phases": ["build", "review"],
+      "user_scenario": "CEO navigates to Projects page and sees polished stepper, then Game view shows compact step summary without style conflicts.",
+      "scope": "Update DirectivePipeline.tsx with redesigned stepper. Game panel compact summary with inline hex styles.",
+      "dod": [
+        { "criterion": "DirectivePipeline.tsx renders updated PipelineStepper with icons, skipped, actions", "met": true },
+        { "criterion": "Game ProjectsPanel renders compact single-line step summary using inline styles with hex constants", "met": true },
+        { "criterion": "No Tailwind class strings in game panel stepper rendering code", "met": true },
+        { "criterion": "npm run type-check passes across all modified files", "met": true }
+      ]
+    }
+  ],
+  "created": "2026-03-06T12:35:00Z",
+  "updated": "2026-03-06T14:00:00Z",
+  "completed": "2026-03-06T14:00:00Z",
+  "dod": [
+    { "criterion": "All 14 pipeline steps have distinct lucide icons", "met": true },
+    { "criterion": "Skipped steps visually distinct from pending (SkipForward, strikethrough, dimmed)", "met": true },
+    { "criterion": "needsAction steps show inline approve/reject buttons", "met": true },
+    { "criterion": "Directive history section shows completed directives below active stepper", "met": true },
+    { "criterion": "Projects page and Game UI both show pipeline progress without style conflicts", "met": true }
+  ]
+}

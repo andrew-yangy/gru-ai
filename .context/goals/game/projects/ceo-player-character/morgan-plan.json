@@ -1,0 +1,149 @@
+{
+  "goal": "Game — Office Simulation as Primary CEO Interface",
+  "goal_folder": "game",
+  "challenges": {
+    "risks": [
+      "Camera follow requires a fundamental architecture change — current canvas is sized to full map with native browser scroll, not a viewport with internal camera. Switching to viewport-based rendering touches the renderer, canvas sizing, scroll handling, and mouse coordinate math. High blast radius if done wrong.",
+      "Continuous WASD movement with input queuing while mid-step is tricky state machine work. The current player path in updateCharacter() assumes path is set externally and walked to completion. Continuous movement needs the engine to poll held keys each frame and queue the next tile before the current step finishes — easy to get stuttery or laggy.",
+      "CEO visual distinction (crown/glow) requires sprite-level changes in the renderer. The character drawing pipeline uses palette-based sprites from spriteData. Adding a CEO-specific overlay (crown, glow, outline) means touching the character render path, which is shared by all agents."
+    ],
+    "over_engineering_flags": [
+      "Camera follow with deadzone is the right call given the canvas is already using native scroll — but we should NOT rebuild the entire rendering pipeline to use viewport-based camera. Instead: programmatically scroll the parent container to keep CEO visible. This reuses native scroll and avoids rewriting offsetX/offsetY math.",
+      "Proximity interaction could be over-scoped — a simple highlight ring when within 1-2 tiles is sufficient. No need for speech bubbles, auto-select, or complex interaction menus.",
+      "Collision feedback — a subtle screen shake or tile flash is sufficient. No need for bounce-back animation physics."
+    ],
+    "recommendation": "Simplify: Use programmatic scroll-to-follow instead of rebuilding the camera system. The canvas is already full-map-sized with native scroll — just scrollIntoView/scrollTo the CEO's position each frame. This preserves all existing coordinate math and avoids the highest-risk refactor. Everything else proceeds as described."
+  },
+  "initiatives": [
+    {
+      "id": "continuous-wasd-movement",
+      "title": "Continuous WASD movement with held-key tracking",
+      "priority": "P0",
+      "complexity": "simple",
+      "phases": ["build", "review"],
+      "user_scenario": "CEO holds W key and character walks continuously north, tile by tile, without needing to tap repeatedly.",
+      "cast": {
+        "auditor": "riley",
+        "builder": "riley",
+        "reviewers": ["marcus"]
+      },
+      "scope": "Replace the keydown-only handler in CanvasOffice.tsx with keydown+keyup tracking using a held-keys Set. In updateCharacter() for player-controlled characters, when the current tile step completes (or character is IDLE), check the held-keys set and auto-queue the next single-tile move. Remove the early return that blocks input mid-step. Use window-level key listeners instead of canvas-level to fix focus loss. Store the held-keys Set on OfficeState so the engine can read it during update().",
+      "verify": "npm run type-check",
+      "definition_of_done": [
+        "Holding WASD moves CEO continuously tile-by-tile without releasing the key",
+        "Key listeners are on window, not canvas — keyboard input works regardless of focus",
+        "Movement direction changes immediately when switching held keys mid-walk",
+        "Releasing all keys stops movement at the next tile boundary (no partial tile stops)",
+        "Arrow keys work as aliases for WASD"
+      ]
+    },
+    {
+      "id": "camera-scroll-follow",
+      "title": "Camera follow via programmatic scroll tracking",
+      "priority": "P0",
+      "complexity": "simple",
+      "phases": ["build", "review"],
+      "user_scenario": "As the CEO walks, the browser viewport smoothly scrolls to keep the CEO character visible, with a deadzone so the view doesn't jitter on small movements.",
+      "cast": {
+        "auditor": "riley",
+        "builder": "riley",
+        "reviewers": ["marcus"]
+      },
+      "scope": "In CanvasOffice.tsx animation loop, after state.update(dt), compute the CEO character's screen position (tileCol * TILE_SIZE * zoom, tileRow * TILE_SIZE * zoom). If the CEO is outside a configurable deadzone (e.g., inner 60% of the visible viewport), smoothly scroll the parent container using scrollTo with lerp. Use CAMERA_FOLLOW_LERP from constants. Set cameraFollowId on OfficeState during init so it's no longer dead code. No changes to renderer offsetX/offsetY — native scroll handles viewport.",
+      "verify": "npm run type-check",
+      "definition_of_done": [
+        "CEO character stays visible in viewport as they walk — no walking off-screen",
+        "Scroll follows with smooth lerp, not instant snap (uses CAMERA_FOLLOW_LERP)",
+        "Deadzone prevents jitter — small movements within center region don't trigger scroll",
+        "cameraFollowId is set on OfficeState and consumed (no longer dead code)",
+        "Manual scroll by user is respected — camera only re-centers when CEO moves outside deadzone"
+      ]
+    },
+    {
+      "id": "click-move-deselect-separation",
+      "title": "Separate click-to-move from click-to-deselect",
+      "priority": "P0",
+      "complexity": "simple",
+      "phases": ["build", "review"],
+      "user_scenario": "Clicking empty floor moves the CEO there without deselecting the current agent panel. Right-click or Escape deselects instead.",
+      "cast": {
+        "auditor": "riley",
+        "builder": "riley",
+        "reviewers": ["marcus"]
+      },
+      "scope": "In processClick() in CanvasOffice.tsx, change the empty-space branch (case 3): left-click on empty floor = click-to-move CEO only (do NOT call onAgentClick('') or onItemClick(null)). Add Escape key handler to deselect (set selectedAgentId to null, call onAgentClick('')). This way click-to-move and deselect are separate intents. Keep agent-click and furniture-click behavior unchanged.",
+      "verify": "npm run type-check",
+      "definition_of_done": [
+        "Left-clicking empty floor moves CEO to that tile without deselecting current selection",
+        "Pressing Escape deselects the currently selected agent/item",
+        "Clicking an agent still toggles selection (unchanged)",
+        "Clicking furniture still selects it (unchanged)"
+      ]
+    },
+    {
+      "id": "ceo-visual-distinction",
+      "title": "Distinct CEO character appearance with crown and glow",
+      "priority": "P1",
+      "complexity": "simple",
+      "phases": ["build", "review"],
+      "user_scenario": "The CEO character is immediately identifiable by a small golden crown above their head and a subtle pulsing glow outline, without reading the nameplate.",
+      "cast": {
+        "auditor": "riley",
+        "builder": "riley",
+        "reviewers": ["marcus"]
+      },
+      "scope": "In the renderer's character drawing path (renderer.ts), after drawing the character sprite, check if the character is player-controlled (isPlayerControlled flag). If so: (1) draw a small golden crown (3-5px tall pixel art, hardcoded as a few fillRect calls) positioned above the character's head, (2) draw a subtle colored outline/glow around the character sprite using a 1px expanded stroke in a distinct color (e.g., gold). The crown and glow should be drawn at the character's world position with proper zoom scaling. Add CEO_CROWN_COLOR and CEO_GLOW_COLOR constants.",
+      "verify": "npm run type-check",
+      "definition_of_done": [
+        "CEO character has a visible golden crown drawn above their sprite",
+        "CEO character has a subtle glow/outline distinct from the selection highlight",
+        "Crown and glow render correctly at all zoom levels",
+        "Other agents are visually unchanged",
+        "isPlayerControlled flag on Character is used to determine CEO rendering"
+      ]
+    },
+    {
+      "id": "collision-feedback",
+      "title": "Collision feedback when walking into walls",
+      "priority": "P1",
+      "complexity": "simple",
+      "phases": ["build", "review"],
+      "user_scenario": "When the CEO tries to walk into a wall or blocked tile, a brief visual indicator (red flash on the blocked tile) shows the move was rejected, instead of silent failure.",
+      "cast": {
+        "auditor": "riley",
+        "builder": "riley",
+        "reviewers": ["marcus"]
+      },
+      "scope": "When continuous movement (from held keys) or click-to-move targets a non-walkable tile, set a short-lived collision indicator on OfficeState (e.g., collisionFlash: {col, row, timer}). In the renderer, draw a brief red-tinted overlay on that tile (semi-transparent red rect, fading over 0.3s). In updateCharacter or the input handler, when walkToTile returns false, populate the collision flash. Add collision flash rendering after tile grid drawing in renderFrame. Add COLLISION_FLASH_DURATION_SEC constant.",
+      "verify": "npm run type-check",
+      "definition_of_done": [
+        "Walking into a wall or blocked tile shows a brief red flash on that tile",
+        "Flash fades out over ~0.3 seconds",
+        "Flash does not persist — it's a one-shot visual indicator",
+        "No flash on successful movement"
+      ]
+    },
+    {
+      "id": "proximity-highlight",
+      "title": "Proximity highlight when CEO walks near agents",
+      "priority": "P1",
+      "complexity": "simple",
+      "phases": ["build", "review"],
+      "user_scenario": "Walking the CEO within 2 tiles of another agent causes that agent to get a subtle highlight ring, indicating they can be interacted with.",
+      "cast": {
+        "auditor": "riley",
+        "builder": "riley",
+        "reviewers": ["marcus"]
+      },
+      "scope": "In OfficeState.update(), after updating characters, compute proximity between the CEO and all other characters. Any character within 2 tiles (Manhattan distance) gets a 'proximityHighlight' flag set to true, others get false. Add proximityHighlight boolean to Character type. In the renderer, when proximityHighlight is true and the character is not already selected/hovered, draw a subtle dotted circle or soft glow around the character (distinct from selection highlight — use a lighter color like soft white or pale blue). Add PROXIMITY_RANGE_TILES and PROXIMITY_HIGHLIGHT_COLOR constants.",
+      "verify": "npm run type-check",
+      "definition_of_done": [
+        "Agents within 2 tiles of the CEO get a visible proximity highlight",
+        "Highlight is visually distinct from selection and hover highlights",
+        "Highlight updates in real-time as CEO moves",
+        "Highlight disappears when CEO moves away",
+        "proximityHighlight flag is added to Character type"
+      ]
+    }
+  ]
+}

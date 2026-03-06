@@ -1,0 +1,10 @@
+{
+  "goal": "Test medium",
+  "projects": [
+    {
+      "id": "test-project",
+      "title": "Test project",
+      "tasks": [{ "id": "t1", "title": "Task 1" }]
+    }
+  ]
+}

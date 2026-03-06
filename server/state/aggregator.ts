@@ -118,9 +118,10 @@ function propagateSubagentStatuses(sessions: Session[]): void {
     let hasAttention = false;
 
     for (const child of children) {
-      // If parent is working, upgrade stale subagents
+      // If parent is working, upgrade RECENT subagents only (within 5 min)
       if (session.status === 'working') {
-        if (child.status === 'idle' || child.status === 'paused') {
+        const childAge = Date.now() - new Date(child.lastActivity).getTime();
+        if ((child.status === 'idle' || child.status === 'paused') && childAge < FIVE_MINUTES_MS) {
           child.status = 'working';
         }
       }
@@ -162,6 +163,7 @@ export class Aggregator extends EventEmitter {
       events: [],
       sessionActivities: {},
       directiveState: null,
+      directiveHistory: [],
       goalInventory: null,
       lastUpdated: new Date().toISOString(),
     };
@@ -212,6 +214,7 @@ export class Aggregator extends EventEmitter {
       events,
       sessionActivities,
       directiveState: null,
+      directiveHistory: [],
       goalInventory: null,
       lastUpdated: new Date().toISOString(),
     };
@@ -255,8 +258,11 @@ export class Aggregator extends EventEmitter {
     this.refreshSessions();
   }
 
-  updateDirectiveState(directiveState: DirectiveState | null): void {
+  updateDirectiveState(directiveState: DirectiveState | null, directiveHistory?: DirectiveState[]): void {
     this.state.directiveState = directiveState;
+    if (directiveHistory !== undefined) {
+      this.state.directiveHistory = directiveHistory;
+    }
     this.state.lastUpdated = new Date().toISOString();
     this.emitChange('directive_updated');
   }

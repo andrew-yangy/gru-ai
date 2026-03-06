@@ -1,0 +1,216 @@
+{
+  "architect": "Sarah Chen",
+  "date": "2026-03-06",
+  "directive": "terminology-cleanup",
+
+  "projects": [
+    {
+      "id": "schema-and-directory-restructure",
+      "title": "Schema + Directory Restructure (Data Model Layer)",
+      "active_files": [
+        ".claude/skills/directive/docs/reference/schemas/directive-json.md",
+        ".claude/skills/directive/docs/reference/schemas/current-json.md",
+        ".claude/skills/directive/docs/reference/schemas/morgan-plan.md",
+        ".claude/skills/directive/docs/reference/schemas/checkpoint.md",
+        ".claude/skills/directive/docs/reference/schemas/audit-output.md",
+        ".claude/skills/directive/docs/reference/schemas/investigation-output.md",
+        "server/types.ts",
+        "server/state/work-item-types.ts",
+        "src/stores/types.ts"
+      ],
+      "risk": "high",
+      "risk_detail": "This is the data model layer — everything downstream depends on it. The DirectiveState interface (server/types.ts lines 99-116 and src/stores/types.ts lines 122-135) defines 'initiatives', 'totalInitiatives', 'currentInitiative' fields consumed by EVERY UI component and the watcher. Changing these types without synchronized changes to all consumers causes compile-time failures (good — they are caught). The real risk is the current.json schema (written by the pipeline, read by the watcher): if the pipeline writes 'tasks' but the watcher still validates Array.isArray(parsed.initiatives), the entire directive tracking goes dark with a silent null return. The directive.json schema doc still says 'initiatives[]' on line 80 — this is THE authoritative doc that agents read when writing directive.json files.",
+      "ordering": "MUST be first. All other projects read these schemas and types. The watcher project needs the new type names. The UI project needs the new interface fields. The pipeline docs need the new schema names. Ship this, verify types compile, then proceed.",
+      "recommendations": [
+        "Rename in lockstep: DirectiveInitiative -> DirectiveTask, initiatives -> tasks, totalInitiatives -> totalTasks, currentInitiative -> currentTask in ALL THREE type files (server/types.ts, src/stores/types.ts, server/state/work-item-types.ts). These are duplicated types — rename all three or the build breaks.",
+        "In DirectiveRecord (work-item-types.ts line 115 and src/stores/types.ts line 315): rename 'initiatives: z.array(z.string())' to 'projects: z.array(z.string())' — these reference produced project IDs, not tasks.",
+        "directive-json.md: Replace 'initiatives[]' section (lines 80-94) with 'tasks[]' using identical inner schema. Update the 'produced_projects' reference in the top-level fields. Add a note: 'Historical directive.json files may still use initiatives[] — the watcher handles both.'",
+        "current-json.md: Replace 'totalInitiatives' with 'totalTasks', 'currentInitiative' with 'currentTask', 'initiatives[]' with 'tasks[]'. This is the contract between pipeline and watcher.",
+        "morgan-plan.md: Rename 'initiatives[]' to 'tasks[]' in the flat schema. In the multi-project schema, rename inner 'initiatives[]' to 'tasks[]'. Update all prose references. Keep the dependency rule text, just swap the word.",
+        "DO NOT touch historical directive .json data files (the 51 flat files). They are immutable records. The watcher will handle backward compat (see watcher project)."
+      ]
+    },
+    {
+      "id": "watcher-and-dashboard",
+      "title": "Watcher + Dashboard UI (Consumer Layer)",
+      "active_files": [
+        "server/watchers/directive-watcher.ts",
+        "server/watchers/state-watcher.ts",
+        "src/components/dashboard/DirectiveProgress.tsx",
+        "src/components/dashboard/OrientationBanner.tsx",
+        "src/components/game/panels/IntelPanel.tsx",
+        "src/components/game/panels/FurniturePanels.tsx",
+        "src/components/game/panels/ProjectsPanel.tsx",
+        "src/components/game/panels/panelUtils.ts",
+        "src/components/game/GamePage.tsx"
+      ],
+      "risk": "high",
+      "risk_detail": "Two distinct risks. (1) Watcher backward compat: directive-watcher.ts line 208 has a hard gate: 'if (!parsed.directiveName || !parsed.status || !Array.isArray(parsed.initiatives))' — if current.json is written with 'tasks' by a new pipeline but the watcher still checks 'initiatives', readCurrentState returns null and the dashboard shows no directive. This is a silent failure with no error log. (2) Directory format: readDirectiveJson (line 242-249) only checks '{directiveName}.json' flat path — it cannot find 'terminology-cleanup/directive.json'. The terminology-cleanup directive is already invisible to the watcher. (3) depth:0 on the directivesWatcher (line 172) means chokidar won't fire events for files inside directive subdirectories.",
+      "ordering": "MUST come after schema-and-directory-restructure (needs the new types). Can run in parallel with pipeline-docs-rewrite since the UI consumes types, not pipeline docs.",
+      "recommendations": [
+        "Watcher backward compat for current.json: Change the validation to accept EITHER field name: 'const tasks = parsed.tasks ?? parsed.initiatives; if (!parsed.directiveName || !parsed.status || !Array.isArray(tasks))'. Then normalize: 'parsed.tasks = tasks; parsed.totalTasks = parsed.totalTasks ?? parsed.totalInitiatives ?? tasks.length; parsed.currentTask = parsed.currentTask ?? parsed.currentInitiative ?? 0;'. Delete the old fields after normalization. This lets old pipelines and new pipelines coexist during rollout.",
+        "Watcher directory format: readDirectiveJson must check BOTH paths: first '{name}/directive.json', then '{name}.json' as fallback. Two lines of code: try the directory path, catch and try flat path. This is the permanent fix — new directives use dirs, old ones stay flat.",
+        "Watcher depth: Change depth:0 to depth:1 on the directivesWatcher (line 172). This lets chokidar see '{name}/directive.json' inside subdirectories. The filter on line 177 already ensures only .json files trigger updates.",
+        "DirectiveProgress.tsx: Rename all 'initiative' references to 'task'. The InitiativeIcon component becomes TaskIcon. The 'showInitiatives' state becomes 'showTasks'. The label 'Initiatives (N/M)' becomes 'Tasks (N/M)'. This is a pure rename — no logic changes.",
+        "Game panels: GamePage.tsx lines 74-75 rename currentInitiative/totalInitiatives. ProjectsPanel.tsx lines 96-97, 123-124 same rename. IntelPanel.tsx line 191 rename .initiatives to .tasks. FurniturePanels.tsx line 191 change string 'No initiative in progress' to 'No task in progress'. panelUtils.ts lines 6, 104, 107: rename DirectiveInitiative to DirectiveTask and InitiativeStatus to TaskStatus.",
+        "OrientationBanner.tsx line 42: rename .initiatives to .tasks in the find() call.",
+        "state-watcher.ts line 306: rename 'initiatives: []' to 'projects: []' (this is DirectiveRecord.initiatives becoming DirectiveRecord.projects — it references project IDs, not tasks)."
+      ]
+    },
+    {
+      "id": "gate-script",
+      "title": "validate-cast.sh Rewrite (Enforcement Layer)",
+      "active_files": [
+        ".claude/hooks/validate-cast.sh"
+      ],
+      "risk": "medium",
+      "risk_detail": "validate-cast.sh is called during Morgan planning (Step 5). If it breaks, Morgan's plan validation fails and the pipeline halts at planning — visible and recoverable, but blocks all new directives. The jq logic on lines 56-58 constructs a tagged list from both '.initiatives[]' (flat) and '.projects[].initiatives[]' (multi-project). Both paths use 'initiatives' as the key name. Every rule reference (lines 61-94) uses '$init' and 'initiative_id' in output messages. The script is 107 lines and self-contained — full rewrite is safe because there are no importers.",
+      "ordering": "Can run in parallel with watcher-and-dashboard. Only depends on schema-and-directory-restructure being done first (to know the final field names). But practically, this script reads morgan-plan.json which gets its schema from morgan-plan.md — so the schema doc must be updated first.",
+      "recommendations": [
+        "Rename ALL jq references: '.initiatives' -> '.tasks' in both flat and multi-project paths. Line 57: '(.initiatives // [])' becomes '(.tasks // [])'. Line 58: '(.projects // [] | .[].initiatives // [])' becomes '(.projects // [] | .[].tasks // [])'.",
+        "Rename output field: 'initiative_id' -> 'task_id' in the violation objects. Update all message strings from 'Initiative X' to 'Task X'.",
+        "Rename the file comment header (lines 1-16) to reference 'tasks' instead of 'initiatives'.",
+        "Add backward compat: Before the main jq, add a normalization step that checks for BOTH field names: 'PLAN_JSON=$(echo \"$PLAN_JSON\" | jq \"if .tasks then . elif .initiatives then .initiatives as $i | del(.initiatives) | .tasks = $i else . end | if .projects then .projects |= [.[] | if .tasks then . elif .initiatives then .initiatives as $i | del(.initiatives) | .tasks = $i else . end] else . end\")'. This lets the script handle plans written with either field name during transition.",
+        "DO NOT rename the file itself yet. The pipeline docs reference it by name. Rename in the pipeline-docs project if desired.",
+        "Rule 5 (line 89-93) message says 'flat initiatives must be simple' — update to 'flat tasks must be simple'. The rule logic is unchanged."
+      ]
+    },
+    {
+      "id": "pipeline-docs-rewrite",
+      "title": "Pipeline Docs Terminology Rewrite (Behavioral Layer)",
+      "active_files": [
+        ".claude/skills/directive/docs/pipeline/09-execute-initiatives.md",
+        ".claude/skills/directive/docs/pipeline/10-wrapup.md",
+        ".claude/skills/directive/docs/pipeline/07-plan-approval.md",
+        ".claude/skills/directive/docs/pipeline/05-morgan-planning.md",
+        ".claude/skills/directive/docs/pipeline/00-delegation-and-triage.md",
+        ".claude/skills/directive/docs/pipeline/06-technical-audit.md",
+        ".claude/skills/directive/docs/pipeline/08-worktree-and-state.md",
+        ".claude/skills/directive/docs/pipeline/01-checkpoint.md",
+        ".claude/skills/directive/docs/reference/rules/casting-rules.md",
+        ".claude/skills/directive/docs/reference/rules/failure-handling.md",
+        ".claude/skills/directive/docs/reference/rules/phase-definitions.md",
+        ".claude/skills/directive/docs/reference/rules/scope-and-dod.md",
+        ".claude/skills/directive/docs/reference/templates/morgan-prompt.md",
+        ".claude/skills/directive/docs/reference/templates/digest.md",
+        ".claude/skills/directive/docs/reference/templates/architect-prompt.md",
+        ".claude/skills/directive/docs/reference/templates/auditor-prompt.md",
+        ".claude/skills/directive/docs/reference/templates/investigator-prompt.md",
+        ".claude/agents/morgan-coo.md",
+        ".claude/agents/sarah-cto.md",
+        ".claude/agents/riley-frontend.md",
+        ".claude/agents/jordan-backend.md",
+        ".claude/agents/devon-fullstack.md",
+        ".claude/agents/casey-data.md",
+        ".claude/agents/sam-qa.md",
+        ".claude/agents/taylor-content.md",
+        ".claude/agents/priya-cmo.md",
+        ".claude/agents/marcus-cpo.md"
+      ],
+      "risk": "low",
+      "risk_detail": "These are documentation files read by LLM agents, not compiled code. A missed rename means an agent sees stale terminology but will still function — the pipeline does not parse these docs mechanically (except validate-cast.sh, handled separately). The risk is behavioral drift: if 09-execute-initiatives.md still says 'initiative' but current-json.md says 'task', an agent might write the wrong field name to current.json. That said, the schema docs (updated in project 1) are authoritative — agents read the schema when writing JSON. Priority: P0 files first (09-execute, morgan-prompt), then P1 (10-wrapup, 07-plan-approval, digest), then P2-P3.",
+      "ordering": "Should be LAST. This is the highest-volume, lowest-risk work. It depends on schema-and-directory-restructure being done (so you know the final terminology). It has no code dependencies — just prose updates. Can technically run in parallel with watcher-and-dashboard, but doing it last reduces the chance of merge conflicts in shared understanding.",
+      "recommendations": [
+        "09-execute-initiatives.md (58 occurrences, 528 lines): This file should be RENAMED to 09-execute-tasks.md. Do a global find-replace of 'initiative' -> 'task' and 'Initiative' -> 'Task'. Then do a careful read for grammatical issues ('an task' -> 'a task'). Do NOT change the pipeline step semantics — this is purely a terminology pass.",
+        "morgan-prompt.md (32 occurrences): Update the output instructions to say Morgan outputs 'tasks[]' in flat schema and 'tasks[]' inside projects. Update all example JSON. Keep Morgan's thinking/planning prose unchanged where it uses 'initiative' as a planning concept — but make the OUTPUT schema crystal clear.",
+        "Agent files (.claude/agents/*.md): These have 1-2 references each. Simple find-replace. The morgan-coo.md file has 14 references — give it more attention. These files shape agent behavior, so accuracy matters.",
+        "DO NOT touch historical artifacts: completed directive reports, old brainstorm files, old audit files. They used 'initiatives' correctly at the time.",
+        "Consider renaming 09-execute-initiatives.md to 09-execute-tasks.md. The filename is loaded by the pipeline skill and referenced in CLAUDE.md MEMORY entries. Check for any hardcoded references to the filename before renaming.",
+        "For the digest template: update field names in the JSON template to match the new schema. The digest is machine-generated, so the template MUST match."
+      ]
+    }
+  ],
+
+  "cross_project_conflicts": [
+    {
+      "file": "server/types.ts",
+      "touched_by": ["schema-and-directory-restructure", "watcher-and-dashboard"],
+      "detail": "schema project changes the interface definitions; watcher project changes the watcher code in the same repo. No actual file conflict if schema project only touches types.ts and watcher project only touches watchers/directive-watcher.ts. But if both need to touch types.ts, sequence them.",
+      "mitigation": "Schema project owns ALL type changes in types.ts. Watcher project does NOT modify types.ts — it only consumes the new types."
+    },
+    {
+      "file": "src/stores/types.ts",
+      "touched_by": ["schema-and-directory-restructure", "watcher-and-dashboard"],
+      "detail": "Same pattern as server/types.ts. Schema project renames the interfaces; UI project consumes them.",
+      "mitigation": "Schema project owns ALL type changes. UI project only touches .tsx component files."
+    },
+    {
+      "file": ".claude/skills/directive/docs/reference/schemas/morgan-plan.md",
+      "touched_by": ["schema-and-directory-restructure", "pipeline-docs-rewrite"],
+      "detail": "Schema project updates the JSON schema; pipeline docs project does prose cleanup.",
+      "mitigation": "Schema project updates morgan-plan.md fully (both schema JSON and prose). Pipeline docs project skips this file."
+    }
+  ],
+
+  "migration_strategy": {
+    "approach": "Leave flat files in place. Do NOT migrate.",
+    "rationale": "39 of 51 flat directive files are completed. They are historical records. Migrating them into directories gains nothing — no code reads their internal structure after completion. The 5 pending directives will naturally adopt directory format when they next execute (the pipeline creates the directory). The watcher's dual-path lookup (try dir first, fall back to flat) handles coexistence permanently.",
+    "what_changes": "New directives created after this work will use the directory format: .context/directives/{name}/directive.json. The pipeline docs and directive-json.md schema will document the new canonical path. The old path (.context/directives/{name}.json) remains valid and readable.",
+    "risk": "Near zero. The only reader of these files is directive-watcher.ts:readDirectiveJson(), and we add fallback logic there. No other code path glob-scans directive .json files.",
+    "cleanup_later": "Optionally, in a future housekeeping pass, move the 5 pending flat directives into directories. Never touch the 39 completed ones."
+  },
+
+  "validate_cast_approach": {
+    "summary": "Normalize input, rename field references, preserve all 5 rules unchanged.",
+    "steps": [
+      "Step 1: Add a jq normalization preamble that converts .initiatives -> .tasks (and .projects[].initiatives -> .projects[].tasks) if the old field name is present. This lets the script accept both old-format and new-format morgan-plan.json during transition.",
+      "Step 2: Rewrite the main jq filter to use .tasks instead of .initiatives everywhere. The tagged list construction (line 56-58) becomes: '[ (.tasks // [] | .[] | . + {_source: \"flat\"}), (.projects // [] | .[].tasks // [] | .[] | . + {_source: \"project\"}) ]'.",
+      "Step 3: Rename 'initiative_id' -> 'task_id' in violation output objects. Update all human-readable message strings.",
+      "Step 4: Update the file header comments to reference 'tasks' terminology.",
+      "Step 5: Rule 5 (flat_must_be_simple) message updates from 'Initiative' to 'Task' in the text. Rule logic (check _source == flat && complexity != simple) is unchanged."
+    ],
+    "backward_compat": "The normalization preamble in Step 1 ensures old-format plans still validate. This is important because cached morgan-plan.json files from in-progress directives will still use 'initiatives'. The normalization is idempotent — running it on a plan that already uses 'tasks' is a no-op."
+  },
+
+  "watcher_backward_compat": {
+    "summary": "Dual-path lookup for directive.json + dual-field acceptance for current.json. No migration required.",
+    "current_json_compat": {
+      "approach": "Accept both 'initiatives' and 'tasks' field names in readCurrentState(). Normalize to the new name internally. Log a deprecation warning when old field name is encountered.",
+      "code_change": "Line 208: Replace 'Array.isArray(parsed.initiatives)' with 'const tasks = parsed.tasks ?? parsed.initiatives; if (!tasks || !Array.isArray(tasks)) return null; parsed.tasks = tasks;'. Then set parsed.totalTasks and parsed.currentTask from whichever field exists.",
+      "duration": "Keep backward compat for at least 2 weeks. All in-progress directives will have switched to new format by then."
+    },
+    "directive_json_compat": {
+      "approach": "readDirectiveJson() checks '{name}/directive.json' first, then falls back to '{name}.json'.",
+      "code_change": "Line 243: Try 'path.join(this.directivesDir, directiveName, 'directive.json')' first. If ENOENT, try 'path.join(this.directivesDir, `${directiveName}.json`)'. Return whichever succeeds.",
+      "duration": "Permanent. Old flat files never get migrated, so this fallback is forever. That is fine — it is 3 lines of code with zero maintenance burden."
+    },
+    "depth_change": {
+      "approach": "Change depth:0 to depth:1 on the directivesWatcher.",
+      "risk": "Chokidar will now fire events for ALL .json files one level deep (e.g., terminology-cleanup/directive.json). The existing filter (line 177: 'if (!filePath.endsWith(\".json\")) return;') still applies. The debounce (line 266: 300ms) prevents event storms. No performance concern — there are only ~50 directive directories max.",
+      "duration": "Permanent. This is the correct depth for the new directory structure."
+    }
+  },
+
+  "execution_order": [
+    {
+      "phase": 1,
+      "project": "schema-and-directory-restructure",
+      "rationale": "Data model first. Everything else depends on the type definitions and schema docs being correct. This project touches 9 files and defines the contract for all downstream work."
+    },
+    {
+      "phase": 2,
+      "projects": ["watcher-and-dashboard", "gate-script"],
+      "rationale": "These can run in parallel. The watcher/UI consumes the new types from phase 1. The gate script consumes the new morgan-plan schema from phase 1. They do not share any files.",
+      "parallel": true
+    },
+    {
+      "phase": 3,
+      "project": "pipeline-docs-rewrite",
+      "rationale": "Last. Highest volume (24+ files), lowest risk (prose only). By this point, all code and schemas use the new terminology, so the docs just need to catch up. Running this last also means the builder can reference the already-updated schemas as the source of truth for what the correct terms are."
+    }
+  ],
+
+  "verification_strategy": {
+    "after_phase_1": "Run 'npm run type-check' to verify all TypeScript compiles with renamed types. Any missed reference will be a compile error. This is the strongest verification we have.",
+    "after_phase_2_watcher": "Start the dev server, verify the dashboard loads directive state. Test with both a flat directive (e.g., ceo-player-character) and a directory directive (terminology-cleanup). Both should appear in the directive panel.",
+    "after_phase_2_gate": "Run validate-cast.sh against an existing morgan-plan.json (with old 'initiatives' field name) AND a manually-crafted one with 'tasks'. Both should produce valid output.",
+    "after_phase_3": "Grep for 'initiative' across all modified files. Count should be zero in code/schema files, near-zero in docs (only historical references in comments should remain)."
+  },
+
+  "things_i_would_push_back_on": [
+    "Do NOT rename 09-execute-initiatives.md to 09-execute-tasks.md. File renames in the pipeline docs cascade to every file that imports or references them (CLAUDE.md memory, other pipeline docs, agent files). The filename is not user-facing. The cost exceeds the benefit. Just update the contents.",
+    "Do NOT migrate the 51 flat directive files into directories. This was stated in the brainstorm but bears repeating: zero value, nonzero risk of breaking file watchers during migration.",
+    "Do NOT add a 'produced_projects' field to directive.json yet. The brainstorm mentions it, but the current 'initiatives' field in directive.json (lines 80-94) tracks per-task execution state, not project references. Renaming it to 'tasks' is correct. Adding a separate 'produced_projects' is a new feature that belongs in a different directive.",
+    "The GoalArea.status inconsistency (done vs completed) that Sam flagged is a pre-existing issue. Do NOT fix it in this directive — it is out of scope and changes a different data contract. File it as a backlog item."
+  ]
+}

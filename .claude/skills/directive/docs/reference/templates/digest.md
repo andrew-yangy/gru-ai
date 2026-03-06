@@ -17,16 +17,16 @@ Report file format:
 
 ## Definition of Done Assessment
 
-### {Initiative Title}
+### {Task Title}
 - [x] {criterion 1} — MET
 - [x] {criterion 2} — MET
 - [ ] {criterion 3} — NOT MET ({reason})
 
-(repeat for each initiative)
+(repeat for each task)
 
-## Initiatives
+## Tasks
 
-### {Initiative Title} — {status: completed/partial/skipped/failed}
+### {Task Title} — {status: completed/partial/skipped/failed}
 - **Phases**: {phases list}
 - **Team**: {who was involved}
 - **Scope**: {what was accomplished}
@@ -35,7 +35,7 @@ Report file format:
 - **Review findings**: {summary of reviewer feedback, if any}
 - **Notes**: {any blockers, partial work, or follow-ups}
 
-(repeat for each initiative)
+(repeat for each task)
 
 ## Follow-Up Actions
 
@@ -63,34 +63,34 @@ Report file format:
 
 ## Agent-Proposed Improvements
 
-{Collect all `proposed_improvements` from engineer build reports. These are gaps, missing features, and edge cases identified by agents during the build — not assigned work, but initiative from the builders.}
+{Collect all `proposed_improvements` from engineer build reports. These are gaps, missing features, and edge cases identified by agents during the build — not assigned work, but task from the builders.}
 
-- {improvement description} — proposed by {agent/initiative}
-- {improvement description} — proposed by {agent/initiative}
+- {improvement description} — proposed by {agent/task}
+- {improvement description} — proposed by {agent/task}
 
-{If no improvements were proposed, note: "No improvements proposed — agents completed assigned work only." This is a signal that the initiative instruction isn't working.}
+{If no improvements were proposed, note: "No improvements proposed — agents completed assigned work only." This is a signal that the task instruction isn't working.}
 
 ## Corrections Caught
 
-{Aggregate corrections_check data from all initiative reviews. For each violation found and fixed during the build cycle:}
+{Aggregate corrections_check data from all task reviews. For each violation found and fixed during the build cycle:}
 
-| Correction | Initiative | Reviewer | Resolution |
+| Correction | Task | Reviewer | Resolution |
 |------------|-----------|----------|------------|
-| {Standing Correction #N: description} | {initiative title} | {who caught it} | {Fixed in retry / Noted for follow-up} |
+| {Standing Correction #N: description} | {task title} | {who caught it} | {Fixed in retry / Noted for follow-up} |
 
-- **Corrections reviewed**: {total across all initiatives} (out of {N} standing corrections × {M} initiatives)
+- **Corrections reviewed**: {total across all tasks} (out of {N} standing corrections × {M} tasks)
 - **Violations found**: {count}
 - **Violations fixed**: {count fixed during retry vs noted}
 
-{If no violations: "All standing corrections verified across all initiatives. No violations found — the guardrails held."}
+{If no violations: "All standing corrections verified across all tasks. No violations found — the guardrails held."}
 
 ## UX Verification Results
 
-{Results from browser testing after UI initiatives:}
+{Results from browser testing after UI tasks:}
 - {page/flow tested}: {pass/fail} — {what was found}
 - Screenshots: {list of screenshots taken}
 
-{If no UI work: "No UI initiatives — UX verification skipped."}
+{If no UI work: "No UI tasks — UX verification skipped."}
 
 ## Potentially Stale Docs
 
@@ -110,16 +110,16 @@ Report file format:
 
 ### Build Success
 - Type-check passed: {yes/no}
-- Initiatives completed: {count}/{total}
+- Tasks completed: {count}/{total}
 - Build failures: {list if any}
 
 ### UX Verification
-- UI initiatives verified in browser: {count}/{total UI initiatives}
+- UI tasks verified in browser: {count}/{total UI tasks}
 - Dead-end UI found: {count} (elements that look clickable but do nothing)
 - Data mismatches found: {count} (numbers/counts that don't match backend)
 - Issues fixed during verification: {list or "none"}
 
-### Agent Initiative
+### Agent Task
 - Improvements proposed by agents: {count}
 - Improvements worth pursuing: {list or "none yet — need more data"}
 - Agents that proposed nothing: {list — these agents need better prompting}

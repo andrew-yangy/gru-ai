@@ -1,16 +1,33 @@
-import { useEffect, useCallback } from 'react';
-import { X, User, Crown, FileText, Inbox, Users, Bell, Server } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
+// ---------------------------------------------------------------------------
+// SidePanel — shell with tab strip and panel routing
+// ---------------------------------------------------------------------------
+
+import { useState, useEffect, useCallback, useMemo } from 'react';
+import { X, Users, Zap, Activity, GitBranch, ScrollText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Separator } from '@/components/ui/separator';
-import { cn, timeAgo, sessionStatusLabel } from '@/lib/utils';
-import { useDashboardStore } from '@/stores/dashboard-store';
+import { cn } from '@/lib/utils';
 import { OFFICE_AGENTS, type AgentStatus, type SelectedItem } from './types';
-import type { Session } from '@/stores/types';
+import { useBadgeCounts, type BadgeCounts } from './hooks/useBadgeCounts';
+import {
+  TeamPanel,
+  ActionPanel,
+  OpsPanel,
+  DirectivePanel,
+  LogPanel,
+  AgentPanel,
+  CeoDeskPanel,
+  WhiteboardPanel,
+  MailboxPanel,
+  ConferencePanel,
+  BellPanel,
+  ServerRoomPanel,
+  BookshelfPanel,
+  PARCHMENT,
+} from './panels';
 
 // ---------------------------------------------------------------------------
-// Props
+// Types
 // ---------------------------------------------------------------------------
 
 interface SidePanelProps {
@@ -21,335 +38,198 @@ interface SidePanelProps {
   variant?: 'side' | 'bottom';
 }
 
+type HudTab = 'team' | 'action' | 'ops' | 'directive' | 'log';
+
 // ---------------------------------------------------------------------------
-// Status badge color mapping
+// Constants
 // ---------------------------------------------------------------------------
 
-function statusBadgeVariant(status: AgentStatus): string {
-  switch (status) {
-    case 'working': return 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300';
-    case 'waiting': return 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-300';
-    case 'idle':    return 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400';
-    case 'error':   return 'bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300';
-    case 'offline': return 'bg-gray-50 text-gray-400 dark:bg-gray-900 dark:text-gray-500';
+const HUD_TYPES = new Set(['hud-team', 'hud-action', 'hud-ops', 'hud-directive', 'hud-log']);
+
+const TAB_ICONS: Record<HudTab, React.ReactNode> = {
+  team: <Users className="h-3 w-3" />,
+  action: <Zap className="h-3 w-3" />,
+  ops: <Activity className="h-3 w-3" />,
+  directive: <GitBranch className="h-3 w-3" />,
+  log: <ScrollText className="h-3 w-3" />,
+};
+
+const TAB_LIST: { id: HudTab; label: string }[] = [
+  { id: 'team', label: 'Team' },
+  { id: 'action', label: 'Action' },
+  { id: 'ops', label: 'Ops' },
+  { id: 'directive', label: 'Directive' },
+  { id: 'log', label: 'Log' },
+];
+
+function hudTypeToTab(type: string): HudTab | null {
+  switch (type) {
+    case 'hud-team': return 'team';
+    case 'hud-action': return 'action';
+    case 'hud-ops': return 'ops';
+    case 'hud-directive': return 'directive';
+    case 'hud-log': return 'log';
+    default: return null;
   }
 }
 
 // ---------------------------------------------------------------------------
-// Sub-panels
+// Panel title
 // ---------------------------------------------------------------------------
 
-function OverviewPanel({ agentStatuses }: { agentStatuses: Record<string, AgentStatus> }) {
-  const sessions = useDashboardStore((s) => s.sessions);
-  const activeCount = sessions.filter((s) => s.status === 'working').length;
-
-  return (
-    <div className="space-y-4">
-      <p className="text-sm text-muted-foreground">
-        Select an item in the office to see details.
-      </p>
-      <Separator />
-      <div className="space-y-2 text-sm">
-        <div className="flex justify-between">
-          <span className="text-muted-foreground">Agents</span>
-          <span className="font-medium">{OFFICE_AGENTS.length}</span>
-        </div>
-        <div className="flex justify-between">
-          <span className="text-muted-foreground">Active sessions</span>
-          <span className="font-medium">{activeCount}</span>
-        </div>
-      </div>
-      <Separator />
-      <div className="space-y-1.5">
-        {OFFICE_AGENTS.map((a) => {
-          const st = agentStatuses[a.agentName] ?? 'offline';
-          return (
-            <div key={a.agentName} className="flex items-center gap-2 text-xs">
-              <span className={cn('h-2 w-2 rounded-full shrink-0', statusBadgeVariant(st).split(' ')[0])} />
-              <span className="font-medium">{a.agentName}</span>
-              <span className="text-muted-foreground">{a.agentRole}</span>
-              <span className="ml-auto text-muted-foreground">{st}</span>
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
-
-function AgentPanel({ agentName, agentStatuses }: { agentName: string; agentStatuses: Record<string, AgentStatus> }) {
-  const sessions = useDashboardStore((s) => s.sessions);
-  const agent = OFFICE_AGENTS.find((a) => a.agentName === agentName);
-  const status = agentStatuses[agentName] ?? 'offline';
-  const agentSession: Session | undefined = sessions.find(
-    (s) => s.agentName === agentName && !s.isSubagent,
-  );
-
-  if (!agent) return <p className="text-sm text-muted-foreground">Unknown agent</p>;
-
-  return (
-    <div className="space-y-4">
-      <div className="flex items-center gap-2">
-        <User className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
-        <span className="font-semibold">{agent.agentName}</span>
-        <span className="text-xs text-muted-foreground">{agent.agentRole}</span>
-      </div>
-      <Badge className={cn('text-xs', statusBadgeVariant(status))}>
-        {status}
-      </Badge>
-
-      <Separator />
-
-      {agentSession ? (
-        <div className="space-y-2 text-sm">
-          <div className="flex justify-between">
-            <span className="text-muted-foreground">Status</span>
-            <span>{sessionStatusLabel(agentSession.status)}</span>
-          </div>
-          {agentSession.model && (
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Model</span>
-              <span className="font-mono text-xs">{agentSession.model}</span>
-            </div>
-          )}
-          <div className="flex justify-between">
-            <span className="text-muted-foreground">Last active</span>
-            <span>{timeAgo(agentSession.lastActivity)}</span>
-          </div>
-          {agentSession.initialPrompt && (
-            <div className="mt-2">
-              <span className="text-muted-foreground text-xs block mb-1">Current work</span>
-              <p className="text-xs bg-muted rounded p-2 line-clamp-4">
-                {agentSession.initialPrompt}
-              </p>
-            </div>
-          )}
-        </div>
-      ) : (
-        <p className="text-sm text-muted-foreground">No active session</p>
-      )}
-    </div>
-  );
-}
-
-function CeoDeskPanel() {
-  const directiveState = useDashboardStore((s) => s.directiveState);
-  const sessions = useDashboardStore((s) => s.sessions);
-  const pendingApprovals = sessions.filter(
-    (s) => s.status === 'waiting-approval',
-  ).length;
-
-  return (
-    <div className="space-y-4">
-      <div className="flex items-center gap-2">
-        <Crown className="h-4 w-4 text-yellow-500" aria-hidden="true" />
-        <span className="font-semibold">CEO Desk</span>
-      </div>
-      <Separator />
-      <div className="space-y-2 text-sm">
-        <div className="flex justify-between">
-          <span className="text-muted-foreground">Pending approvals</span>
-          <Badge variant={pendingApprovals > 0 ? 'destructive' : 'secondary'}>
-            {pendingApprovals}
-          </Badge>
-        </div>
-      </div>
-      {directiveState ? (
-        <div className="space-y-2 text-sm mt-2">
-          <span className="text-muted-foreground text-xs">Active directive</span>
-          <p className="font-medium">{directiveState.directiveName}</p>
-          <div className="flex justify-between">
-            <span className="text-muted-foreground">Phase</span>
-            <span>{directiveState.currentPhase}</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-muted-foreground">Progress</span>
-            <span>{directiveState.currentInitiative}/{directiveState.totalInitiatives}</span>
-          </div>
-        </div>
-      ) : (
-        <p className="text-sm text-muted-foreground mt-2">No active directive</p>
-      )}
-    </div>
-  );
-}
-
-function WhiteboardPanel() {
-  const workState = useDashboardStore((s) => s.workState);
-  const directives = workState?.conductor?.directives ?? [];
-
-  return (
-    <div className="space-y-4">
-      <div className="flex items-center gap-2">
-        <FileText className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
-        <span className="font-semibold">Directives</span>
-      </div>
-      <Separator />
-      {directives.length > 0 ? (
-        <div className="space-y-2">
-          {directives.map((d) => (
-            <div key={d.id} className="flex items-center justify-between text-sm">
-              <span className="truncate mr-2">{d.title}</span>
-              <Badge variant="secondary" className="text-xs shrink-0">
-                {d.status}
-              </Badge>
-            </div>
-          ))}
-        </div>
-      ) : (
-        <p className="text-sm text-muted-foreground">No active directives</p>
-      )}
-    </div>
-  );
-}
-
-function MailboxPanel() {
-  const workState = useDashboardStore((s) => s.workState);
-  const reports = workState?.conductor?.reports ?? [];
-
-  return (
-    <div className="space-y-4">
-      <div className="flex items-center gap-2">
-        <Inbox className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
-        <span className="font-semibold">Reports</span>
-      </div>
-      <Separator />
-      {reports.length > 0 ? (
-        <div className="space-y-2">
-          {reports.map((r) => (
-            <div key={r.id} className="text-sm">
-              <span className="block truncate">{r.title}</span>
-              <span className="text-xs text-muted-foreground">{timeAgo(r.updatedAt)}</span>
-            </div>
-          ))}
-        </div>
-      ) : (
-        <p className="text-sm text-muted-foreground">No reports available</p>
-      )}
-    </div>
-  );
-}
-
-function ConferencePanel() {
-  const directiveState = useDashboardStore((s) => s.directiveState);
-
-  return (
-    <div className="space-y-4">
-      <div className="flex items-center gap-2">
-        <Users className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
-        <span className="font-semibold">Conference Room</span>
-      </div>
-      <Separator />
-      {directiveState ? (
-        <div className="space-y-2 text-sm">
-          <p className="font-medium">{directiveState.directiveName}</p>
-          <div className="flex justify-between">
-            <span className="text-muted-foreground">Phase</span>
-            <span>{directiveState.currentPhase}</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-muted-foreground">Status</span>
-            <Badge variant="secondary" className="text-xs">{directiveState.status}</Badge>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-muted-foreground">Progress</span>
-            <span>{directiveState.currentInitiative}/{directiveState.totalInitiatives}</span>
-          </div>
-        </div>
-      ) : (
-        <p className="text-sm text-muted-foreground">No initiative in progress</p>
-      )}
-    </div>
-  );
-}
-
-function BellPanel() {
-  return (
-    <div className="space-y-4">
-      <div className="flex items-center gap-2">
-        <Bell className="h-4 w-4 text-yellow-500" aria-hidden="true" />
-        <span className="font-semibold">Scout Bell</span>
-      </div>
-      <Separator />
-      <p className="text-sm text-muted-foreground">
-        Ring the bell to start <span className="font-mono">/scout</span>
-      </p>
-      <p className="text-xs text-muted-foreground italic">
-        (Coming in Phase 4 — action layer)
-      </p>
-    </div>
-  );
-}
-
-function ServerRoomPanel() {
-  const sessions = useDashboardStore((s) => s.sessions);
-  const activeCount = sessions.filter((s) => s.status === 'working').length;
-
-  return (
-    <div className="space-y-4">
-      <div className="flex items-center gap-2">
-        <Server className="h-4 w-4 text-emerald-500" aria-hidden="true" />
-        <span className="font-semibold">Server Room</span>
-      </div>
-      <Separator />
-      {activeCount > 0 ? (
-        <div className="space-y-2 text-sm">
-          <div className="flex justify-between">
-            <span className="text-muted-foreground">Active sessions</span>
-            <span className="font-medium">{activeCount}</span>
-          </div>
-          <p className="text-xs text-muted-foreground">
-            {activeCount} session{activeCount !== 1 ? 's' : ''} currently processing
-          </p>
-        </div>
-      ) : (
-        <p className="text-sm text-muted-foreground">Server room is quiet</p>
-      )}
-    </div>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// Panel header titles
-// ---------------------------------------------------------------------------
-
-function panelTitle(selected: SelectedItem | null): string {
+function panelTitle(selected: SelectedItem | null, activeTab: HudTab | null): string {
+  // If showing a HUD tab, use the tab name
+  if (activeTab) {
+    const tab = TAB_LIST.find((t) => t.id === activeTab);
+    return tab?.label ?? 'Office';
+  }
   if (!selected) return 'Office Overview';
   switch (selected.type) {
-    case 'desk':        return selected.agentName ?? 'Agent Desk';
-    case 'ceo-desk':    return 'CEO Desk';
-    case 'conference':  return 'Conference Room';
-    case 'whiteboard':  return 'Whiteboard';
-    case 'mailbox':     return 'Mailbox';
-    case 'bell':        return 'Scout Bell';
-    case 'server-room': return 'Server Room';
-    case 'door':        return 'Entrance';
-    default:            return 'Office';
+    case 'desk':          return selected.agentName ?? 'Agent Desk';
+    case 'ceo-desk':      return 'CEO Desk';
+    case 'conference':    return 'Conference Room';
+    case 'whiteboard':    return 'Whiteboard';
+    case 'mailbox':       return 'Mailbox';
+    case 'bell':          return 'Scout Bell';
+    case 'server-room':   return 'Server Room';
+    case 'bookshelf':     return 'Knowledge Base';
+    case 'door':          return 'Entrance';
+    default:              return 'Office';
   }
+}
+
+// ---------------------------------------------------------------------------
+// Tab strip component
+// ---------------------------------------------------------------------------
+
+function TabStrip({
+  activeTab,
+  onTabChange,
+  badges,
+}: {
+  activeTab: HudTab;
+  onTabChange: (tab: HudTab) => void;
+  badges: BadgeCounts;
+}) {
+  return (
+    <div
+      className="flex font-mono text-[11px]"
+      style={{
+        backgroundColor: '#D4B896',
+        borderBottom: `2px solid ${PARCHMENT.border}`,
+        boxShadow: 'inset 0 -1px 0 0 #A08040',
+      }}
+      role="tablist"
+      aria-label="Panel tabs"
+    >
+      {TAB_LIST.map((tab) => {
+        const isActive = tab.id === activeTab;
+        const count = badges[tab.id];
+        return (
+          <button
+            key={tab.id}
+            type="button"
+            role="tab"
+            aria-selected={isActive}
+            className={cn(
+              'flex-1 flex items-center justify-center gap-1 px-2 py-2 transition-all select-none relative',
+              'focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-amber-500',
+            )}
+            style={{
+              color: isActive ? '#2A1A0E' : '#6B4C3B',
+              fontWeight: isActive ? 700 : 500,
+              backgroundColor: isActive ? PARCHMENT.bg : 'transparent',
+              borderBottom: isActive ? `2px solid ${PARCHMENT.bg}` : '2px solid transparent',
+              marginBottom: isActive ? '-2px' : '-2px',
+              ...(isActive ? {
+                boxShadow: `inset 0 2px 0 0 ${PARCHMENT.border}, -1px 0 0 0 ${PARCHMENT.border}, 1px 0 0 0 ${PARCHMENT.border}`,
+              } : {}),
+            }}
+            onClick={() => onTabChange(tab.id)}
+          >
+            <span className="flex items-center" style={{ opacity: isActive ? 1 : 0.6 }}>
+              {TAB_ICONS[tab.id]}
+            </span>
+            <span>{tab.label}</span>
+            {count > 0 && (
+              <span
+                className="ml-0.5 min-w-[14px] text-center px-0.5 text-[9px] font-bold leading-[14px]"
+                style={{
+                  backgroundColor: '#B83A2A',
+                  color: '#fff',
+                  borderRadius: '2px',
+                  boxShadow: 'inset -1px -1px 0 0 #8A2010, inset 1px 1px 0 0 #D05040',
+                  imageRendering: 'pixelated',
+                }}
+                aria-label={`${count} notification${count !== 1 ? 's' : ''}`}
+              >
+                {count}
+              </span>
+            )}
+          </button>
+        );
+      })}
+    </div>
+  );
 }
 
 // ---------------------------------------------------------------------------
 // Panel content renderer
 // ---------------------------------------------------------------------------
 
-function PanelContent({ selected, agentStatuses }: { selected: SelectedItem | null; agentStatuses: Record<string, AgentStatus> }) {
-  if (!selected) return <OverviewPanel agentStatuses={agentStatuses} />;
+function PanelContent({
+  selected,
+  agentStatuses,
+  activeTab,
+  agentOverride,
+  onSelectAgent,
+}: {
+  selected: SelectedItem | null;
+  agentStatuses: Record<string, AgentStatus>;
+  activeTab: HudTab | null;
+  agentOverride: string | null;
+  onSelectAgent: (name: string) => void;
+}) {
+  // If an agent was selected from team panel, show agent detail
+  if (agentOverride) {
+    return <AgentPanel agentName={agentOverride} agentStatuses={agentStatuses} />;
+  }
+
+  // If a tab is active, render the tab panel
+  if (activeTab) {
+    switch (activeTab) {
+      case 'team':
+        return <TeamPanel agentStatuses={agentStatuses} onSelectAgent={onSelectAgent} />;
+      case 'action':
+        return <ActionPanel />;
+      case 'ops':
+        return <OpsPanel />;
+      case 'directive':
+        return <DirectivePanel />;
+      case 'log':
+        return <LogPanel />;
+    }
+  }
+
+  // Otherwise, render based on selected item type
+  if (!selected) return <TeamPanel agentStatuses={agentStatuses} onSelectAgent={onSelectAgent} />;
 
   switch (selected.type) {
     case 'desk':
       return selected.agentName
         ? <AgentPanel agentName={selected.agentName} agentStatuses={agentStatuses} />
-        : <p className="text-sm text-muted-foreground">Empty desk</p>;
-    case 'ceo-desk':    return <CeoDeskPanel />;
-    case 'whiteboard':  return <WhiteboardPanel />;
-    case 'mailbox':     return <MailboxPanel />;
-    case 'conference':  return <ConferencePanel />;
-    case 'bell':        return <BellPanel />;
-    case 'server-room': return <ServerRoomPanel />;
+        : <p className="text-sm font-mono" style={{ color: PARCHMENT.text }}>Empty desk</p>;
+    case 'ceo-desk':      return <CeoDeskPanel />;
+    case 'whiteboard':    return <WhiteboardPanel />;
+    case 'mailbox':       return <MailboxPanel />;
+    case 'conference':    return <ConferencePanel />;
+    case 'bell':          return <BellPanel />;
+    case 'server-room':   return <ServerRoomPanel />;
+    case 'bookshelf':     return <BookshelfPanel />;
     case 'door':
-      return <p className="text-sm text-muted-foreground">The office entrance.</p>;
+      return <p className="text-sm font-mono" style={{ color: PARCHMENT.text }}>The office entrance.</p>;
     default:
-      return <OverviewPanel agentStatuses={agentStatuses} />;
+      return <TeamPanel agentStatuses={agentStatuses} onSelectAgent={onSelectAgent} />;
   }
 }
 
@@ -358,6 +238,44 @@ function PanelContent({ selected, agentStatuses }: { selected: SelectedItem | nu
 // ---------------------------------------------------------------------------
 
 export default function SidePanel({ selected, agentStatuses, onClose, variant = 'side' }: SidePanelProps) {
+  // Badge counts for tab notifications
+  const badges = useBadgeCounts();
+
+  // Determine if we should show the tab strip (HUD panel mode)
+  const isHudMode = selected ? HUD_TYPES.has(selected.type) : false;
+
+  // Active tab state — synced from selected.type when it's a HUD type
+  const [activeTab, setActiveTab] = useState<HudTab | null>(null);
+
+  // Agent override: when clicking an agent in TeamPanel, temporarily show their detail
+  const [agentOverride, setAgentOverride] = useState<string | null>(null);
+
+  // Sync activeTab from selected prop
+  useEffect(() => {
+    if (selected && HUD_TYPES.has(selected.type)) {
+      const tab = hudTypeToTab(selected.type);
+      setActiveTab(tab);
+      setAgentOverride(null); // Reset agent override on tab change
+    } else {
+      setActiveTab(null);
+      setAgentOverride(null);
+    }
+  }, [selected]);
+
+  const handleTabChange = useCallback((tab: HudTab) => {
+    setActiveTab(tab);
+    setAgentOverride(null);
+  }, []);
+
+  const handleSelectAgent = useCallback((agentName: string) => {
+    setAgentOverride(agentName);
+  }, []);
+
+  // Back button handler for agent override
+  const handleBackFromAgent = useCallback(() => {
+    setAgentOverride(null);
+  }, []);
+
   // Escape key dismisses bottom sheet
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
     if (e.key === 'Escape') onClose();
@@ -369,30 +287,93 @@ export default function SidePanel({ selected, agentStatuses, onClose, variant = 
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [variant, handleKeyDown]);
 
+  const title = agentOverride
+    ? agentOverride
+    : panelTitle(selected, activeTab);
+
+  // Parchment panel styles
+  const panelStyle = {
+    backgroundColor: PARCHMENT.bg,
+    color: PARCHMENT.text,
+  };
+
+  // Wood header style (matches GameHeader)
+  const headerStyle = {
+    backgroundColor: '#5C3D2E',
+    color: '#F5ECD7',
+    borderBottom: `2px solid #3D2B1F`,
+    boxShadow: 'inset 0 1px 0 0 #6B4C3B',
+  };
+
   // -- Side variant (desktop) -----------------------------------------------
   if (variant === 'side') {
     return (
-      <aside className="w-80 border-l border-border bg-card flex flex-col shrink-0">
-        {/* Header */}
-        <div className="flex items-center justify-between px-4 py-3 border-b border-border">
-          <h2 className="text-sm font-semibold">{panelTitle(selected)}</h2>
+      <aside
+        className="w-80 xl:w-96 flex flex-col shrink-0"
+        style={{
+          ...panelStyle,
+          borderLeft: `2px solid #3D2B1F`,
+        }}
+      >
+        {/* Header — wood theme */}
+        <div
+          className="flex items-center justify-between px-3 py-2"
+          style={headerStyle}
+        >
+          <div className="flex items-center gap-2 min-w-0">
+            {agentOverride && (
+              <button
+                type="button"
+                className="h-6 px-1.5 text-[11px] font-mono shrink-0 rounded transition-colors"
+                style={{ color: '#C4A265' }}
+                onClick={handleBackFromAgent}
+                aria-label="Back to tab"
+              >
+                &#9664; Back
+              </button>
+            )}
+            <h2
+              className="text-sm font-bold font-mono truncate"
+              style={{ color: '#C4A265', textShadow: '0 1px 2px #3D2B1F' }}
+            >
+              {title}
+            </h2>
+          </div>
           {selected && (
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-6 w-6"
+            <button
+              type="button"
+              className="h-6 w-6 shrink-0 flex items-center justify-center rounded transition-colors hover:bg-white/10"
               onClick={onClose}
               aria-label="Close panel"
             >
-              <X className="h-3.5 w-3.5" />
-            </Button>
+              <X className="h-3.5 w-3.5" style={{ color: '#C4A265' }} />
+            </button>
           )}
         </div>
 
-        {/* Content */}
+        {/* Tab strip — only in HUD mode */}
+        {isHudMode && activeTab && !agentOverride && (
+          <TabStrip activeTab={activeTab} onTabChange={handleTabChange} badges={badges} />
+        )}
+
+        {/* Content — with subtle inner frame */}
         <ScrollArea className="flex-1">
-          <div className="p-4">
-            <PanelContent selected={selected} agentStatuses={agentStatuses} />
+          <div
+            className="p-3"
+            style={{
+              margin: '6px',
+              borderRadius: '2px',
+              boxShadow: 'inset 1px 1px 0 0 #C4A26540, inset -1px -1px 0 0 #F5ECD740',
+              backgroundColor: '#F0E4C8',
+            }}
+          >
+            <PanelContent
+              selected={selected}
+              agentStatuses={agentStatuses}
+              activeTab={isHudMode ? activeTab : null}
+              agentOverride={agentOverride}
+              onSelectAgent={handleSelectAgent}
+            />
           </div>
         </ScrollArea>
       </aside>
@@ -414,32 +395,76 @@ export default function SidePanel({ selected, agentStatuses, onClose, variant = 
         role="dialog"
         aria-modal="true"
         aria-labelledby="sheet-title"
-        className="fixed bottom-0 left-0 right-0 z-50 bg-card border-t border-border rounded-t-2xl max-h-[55vh] flex flex-col animate-[slideUp_200ms_ease-out]"
-        style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
+        className="fixed bottom-0 left-0 right-0 z-50 rounded-t-2xl max-h-[55vh] flex flex-col animate-[slideUp_200ms_ease-out]"
+        style={{
+          ...panelStyle,
+          borderTop: `2px solid ${PARCHMENT.border}`,
+          paddingBottom: 'env(safe-area-inset-bottom, 0px)',
+        }}
       >
         {/* Drag handle */}
-        <div className="flex justify-center pt-2 pb-1">
-          <div className="w-10 h-1 rounded-full bg-muted-foreground/30" />
+        <div className="flex justify-center pt-2 pb-1" style={{ backgroundColor: '#5C3D2E' }}>
+          <div className="w-10 h-1 rounded-full" style={{ backgroundColor: '#C4A265' }} />
         </div>
 
-        {/* Header */}
-        <div className="flex items-center justify-between px-4 py-2 border-b border-border">
-          <h2 id="sheet-title" className="text-sm font-semibold">{panelTitle(selected)}</h2>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-6 w-6"
+        {/* Header — wood theme */}
+        <div
+          className="flex items-center justify-between px-3 py-2"
+          style={headerStyle}
+        >
+          <div className="flex items-center gap-2 min-w-0">
+            {agentOverride && (
+              <button
+                type="button"
+                className="h-6 px-1.5 text-[11px] font-mono shrink-0 rounded"
+                style={{ color: '#C4A265' }}
+                onClick={handleBackFromAgent}
+                aria-label="Back to tab"
+              >
+                &#9664; Back
+              </button>
+            )}
+            <h2
+              id="sheet-title"
+              className="text-sm font-bold font-mono truncate"
+              style={{ color: '#C4A265', textShadow: '0 1px 2px #3D2B1F' }}
+            >
+              {title}
+            </h2>
+          </div>
+          <button
+            type="button"
+            className="h-6 w-6 shrink-0 flex items-center justify-center rounded hover:bg-white/10"
             onClick={onClose}
             aria-label="Close panel"
           >
-            <X className="h-3.5 w-3.5" />
-          </Button>
+            <X className="h-3.5 w-3.5" style={{ color: '#C4A265' }} />
+          </button>
         </div>
 
-        {/* Content */}
+        {/* Tab strip — only in HUD mode */}
+        {isHudMode && activeTab && !agentOverride && (
+          <TabStrip activeTab={activeTab} onTabChange={handleTabChange} badges={badges} />
+        )}
+
+        {/* Content — with subtle inner frame */}
         <ScrollArea className="flex-1 min-h-0">
-          <div className="p-4 pb-4">
-            <PanelContent selected={selected} agentStatuses={agentStatuses} />
+          <div
+            className="p-3"
+            style={{
+              margin: '6px',
+              borderRadius: '2px',
+              boxShadow: 'inset 1px 1px 0 0 #C4A26540, inset -1px -1px 0 0 #F5ECD740',
+              backgroundColor: '#F0E4C8',
+            }}
+          >
+            <PanelContent
+              selected={selected}
+              agentStatuses={agentStatuses}
+              activeTab={isHudMode ? activeTab : null}
+              agentOverride={agentOverride}
+              onSelectAgent={handleSelectAgent}
+            />
           </div>
         </ScrollArea>
       </div>

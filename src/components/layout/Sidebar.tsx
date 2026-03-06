@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Building2, FolderKanban, Monitor, Settings, PanelLeftClose, PanelLeft, Lightbulb, ScrollText, FileText, Archive, Search, Users } from 'lucide-react';
+import { LayoutDashboard, Building2, FolderKanban, Monitor, PanelLeftClose, PanelLeft, Search, Users } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
@@ -8,16 +8,11 @@ import { Separator } from '@/components/ui/separator';
 import { useDashboardStore } from '@/stores/dashboard-store';
 
 const navItems = [
-  { to: '/', icon: LayoutDashboard, label: 'Dashboard', end: true },
-  { to: '/game', icon: Building2, label: 'HQ' },
+  { to: '/office', icon: Building2, label: 'Office', end: true },
+  { to: '/overview', icon: LayoutDashboard, label: 'Overview' },
   { to: '/org', icon: Users, label: 'Team' },
-  { to: '/projects', icon: FolderKanban, label: 'Projects' },
+  { to: '/directives', icon: FolderKanban, label: 'Directives' },
   { to: '/sessions', icon: Monitor, label: 'Sessions' },
-  { to: '/artifacts', icon: Archive, label: 'Artifacts' },
-  { to: '/insights', icon: Lightbulb, label: 'Insights' },
-  { to: '/history', icon: ScrollText, label: 'History' },
-  { to: '/plans', icon: FileText, label: 'Plans' },
-  { to: '/settings', icon: Settings, label: 'Settings' },
 ];
 
 export default function Sidebar() {

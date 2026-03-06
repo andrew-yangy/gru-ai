@@ -192,7 +192,7 @@ export function chooseDestination(
 /**
  * Pick a random waypoint from a zone.
  */
-function pickWaypoint(zoneId: RoomZoneId): RoutingResult {
+export function pickWaypoint(zoneId: RoomZoneId): RoutingResult {
   const zone = ROOM_ZONES[zoneId]
   const waypoint = zone.waypoints[Math.floor(Math.random() * zone.waypoints.length)]
   return { zoneId, waypoint }

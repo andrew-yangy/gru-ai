@@ -2,7 +2,7 @@
 name: taylor
 description: |
   Taylor Chen, Content Builder -- specialist prompt template. Loaded by the directive pipeline
-  when Morgan casts this specialist for an initiative's build phase.
+  when Morgan casts this specialist for a task's build phase.
 model: inherit
 memory: project
 tools:

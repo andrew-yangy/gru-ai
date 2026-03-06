@@ -2,10 +2,15 @@
   "id": "game-phase3-living-office",
   "title": "Game Phase 3 — Living Office",
   "goal_id": "game",
-  "status": "in_progress",
+  "status": "completed",
   "priority": "P0",
-  "agent": ["riley"],
-  "reviewers": ["sarah", "marcus"],
+  "agent": [
+    "riley"
+  ],
+  "reviewers": [
+    "sarah",
+    "marcus"
+  ],
   "description": "Transform the pixel-art office from a static display into a living, interactive game. Data-driven agents, player-controlled CEO, context-aware spatial behavior, interactive elements, and game-feel HUD.",
   "source_directive": "game-phase3-living-office",
   "scope": {
@@ -28,158 +33,424 @@
     ]
   },
   "browser_test": true,
-  "initiatives": [
+  "created": "2026-03-05T15:30:00Z",
+  "updated": "2026-03-05T19:37:00Z",
+  "tasks": [
     {
       "id": "z-sort-rendering-fix",
       "title": "Fix Z-Sort and Rendering Order",
       "priority": "P0",
       "complexity": "simple",
-      "phases": ["build", "review"],
-      "cast": { "auditor": "riley", "builder": "riley", "reviewers": ["sarah"] },
+      "phases": [
+        "build",
+        "review"
+      ],
       "scope": "Fix FurnitureInstance.zY in layoutSerializer.ts so up-facing chairs render behind seated characters. Audit all ZDrawable sorting in renderer.ts for edge cases.",
       "verify": "npm run type-check && npm run build",
-      "definition_of_done": [
-        { "criterion": "FurnitureInstance.zY correctly computed so characters in up-facing chairs render in front", "met": false },
-        { "criterion": "All 25 seats visually verified — no character-behind-furniture clipping", "met": false },
-        { "criterion": "No regressions in existing z-sort for desks, monitors, and other furniture", "met": false }
-      ],
       "status": "pending",
-      "notes": "NOT DONE. GID tile layers render flat before characters — no z-interleaving. Characters cover desks/chairs. Needs Tiled map restructuring: desk front-edge and chair-back tiles must be in a dedicated 'above-player' layer. Code-only approaches (layer promotion, z-sort) failed because the same tile needs to be in front of one character and behind another. Requires editing the TMX source and re-exporting layers."
+      "notes": "NOT DONE. GID tile layers render flat before characters — no z-interleaving. Characters cover desks/chairs. Needs Tiled map restructuring: desk front-edge and chair-back tiles must be in a dedicated 'above-player' layer. Code-only approaches (layer promotion, z-sort) failed because the same tile needs to be in front of one character and behind another. Requires editing the TMX source and re-exporting layers.",
+      "agent": [
+        "riley"
+      ],
+      "dod": [
+        {
+          "criterion": "FurnitureInstance.zY correctly computed so characters in up-facing chairs render in front",
+          "met": false
+        },
+        {
+          "criterion": "All 25 seats visually verified — no character-behind-furniture clipping",
+          "met": false
+        },
+        {
+          "criterion": "No regressions in existing z-sort for desks, monitors, and other furniture",
+          "met": false
+        }
+      ]
     },
     {
       "id": "data-binding-agent-state",
       "title": "Bind Game Characters to Real System State",
       "priority": "P0",
       "complexity": "moderate",
-      "phases": ["build", "review"],
-      "cast": { "auditor": "riley", "builder": "riley", "reviewers": ["sarah"] },
+      "phases": [
+        "build",
+        "review"
+      ],
       "scope": "Map real Zustand session states to CharacterState. Add debounce/smoothing layer for rapid state changes. Make context data available on Character.",
       "verify": "npm run type-check && npm run build",
-      "definition_of_done": [
-        { "criterion": "Agent sprites reflect real session state from Zustand store", "met": true },
-        { "criterion": "State transitions are debounced — rapid updates don't cause visual jitter", "met": true },
-        { "criterion": "Context data (task name, session info) available on Character object", "met": true }
-      ],
       "status": "completed",
-      "notes": "Was broken: all agents showed 'offline' because (1) session-scanner had 2MB scan limit missing Agent tool calls in long conversations, (2) GamePage filtered out isSubagent sessions. Fixed 2026-03-05: removed scan limit, removed isSubagent filter, added priority-based status merging."
+      "notes": "Was broken: all agents showed 'offline' because (1) session-scanner had 2MB scan limit missing Agent tool calls in long conversations, (2) GamePage filtered out isSubagent sessions. Fixed 2026-03-05: removed scan limit, removed isSubagent filter, added priority-based status merging.",
+      "agent": [
+        "riley"
+      ],
+      "dod": [
+        {
+          "criterion": "Agent sprites reflect real session state from Zustand store",
+          "met": true
+        },
+        {
+          "criterion": "State transitions are debounced — rapid updates don't cause visual jitter",
+          "met": true
+        },
+        {
+          "criterion": "Context data (task name, session info) available on Character object",
+          "met": true
+        }
+      ]
     },
     {
       "id": "character-identity-status",
       "title": "Character Identity, Names, and Status Indicators",
       "priority": "P0",
       "complexity": "moderate",
-      "phases": ["build", "review"],
-      "cast": { "auditor": "riley", "builder": "riley", "reviewers": ["sarah", "marcus"] },
+      "phases": [
+        "build",
+        "review"
+      ],
       "scope": "Add agent name labels and status indicator icons above character sprites. Match agent genders to personas. Simple canvas fillText for names, small sprite/shape for indicators.",
       "verify": "npm run type-check && npm run build",
-      "definition_of_done": [
-        { "criterion": "Agent names displayed above character sprites, legible at default zoom", "met": true },
-        { "criterion": "Status indicators visible: spinner (working), zzz (idle), exclamation (error), speech bubble (discussion)", "met": true },
-        { "criterion": "Indicators animate smoothly using game loop, not React effects", "met": true }
+      "status": "archived",
+      "notes": "Basic implementation shipped (monospace text pills + colored dots). Re-planned as separate project 'char-identity' with full brainstorm for best-in-market pixel-art quality.",
+      "agent": [
+        "riley"
       ],
-      "status": "completed"
+      "dod": [
+        {
+          "criterion": "Agent names displayed above character sprites, legible at default zoom",
+          "met": true
+        },
+        {
+          "criterion": "Status indicators visible: spinner (working), zzz (idle), exclamation (error), speech bubble (discussion)",
+          "met": true
+        },
+        {
+          "criterion": "Indicators animate smoothly using game loop, not React effects",
+          "met": true
+        }
+      ]
     },
     {
       "id": "ceo-player-character",
       "title": "CEO Player-Controlled Character",
       "priority": "P1",
       "complexity": "moderate",
-      "phases": ["build", "review"],
-      "cast": { "auditor": "riley", "builder": "riley", "reviewers": ["sarah", "marcus"] },
+      "phases": [
+        "build",
+        "review"
+      ],
       "scope": "Add CEO to agent-registry.json. Implement WASD keyboard input and click-to-move via A* pathfinding. Camera follows CEO. Uses existing Character FSM.",
       "verify": "npm run type-check && npm run build",
-      "definition_of_done": [
-        { "criterion": "CEO character appears in office with distinct sprite", "met": true },
-        { "criterion": "WASD keys move CEO tile-by-tile with walking animation", "met": true },
-        { "criterion": "Click-to-move sends CEO to clicked tile via A* pathfinding", "met": true },
-        { "criterion": "Camera smoothly follows CEO character", "met": true },
-        { "criterion": "CEO collides with walls and furniture correctly", "met": true }
+      "status": "archived",
+      "notes": "Basic implementation shipped but camera follow is dead code, no continuous WASD, focus loss kills input. Re-planned as separate directive 'ceo-player-character' with full brainstorm.",
+      "agent": [
+        "riley"
       ],
-      "status": "completed"
+      "dod": [
+        {
+          "criterion": "CEO character appears in office with distinct sprite",
+          "met": true
+        },
+        {
+          "criterion": "WASD keys move CEO tile-by-tile with walking animation",
+          "met": true
+        },
+        {
+          "criterion": "Click-to-move sends CEO to clicked tile via A* pathfinding",
+          "met": true
+        },
+        {
+          "criterion": "Camera smoothly follows CEO character",
+          "met": true
+        },
+        {
+          "criterion": "CEO collides with walls and furniture correctly",
+          "met": true
+        }
+      ]
     },
     {
       "id": "spatial-behavior",
       "title": "Context-Aware Spatial Behavior for Agents",
       "priority": "P1",
       "complexity": "moderate",
-      "phases": ["build", "review"],
-      "cast": { "auditor": "riley", "builder": "riley", "reviewers": ["sarah"] },
+      "phases": [
+        "build",
+        "review"
+      ],
       "scope": "Define room zones as tile-coordinate ranges. Implement 4 routing rules: coding→desk, discussion→meeting, infra→server, idle→break. Add linger timer and busy indicator.",
       "verify": "npm run type-check && npm run build",
-      "definition_of_done": [
-        { "criterion": "Room zones defined as tile-coordinate ranges (desks, meeting, server, break)", "met": true },
-        { "criterion": "Agents route to contextually appropriate room based on session type", "met": true },
-        { "criterion": "Agents linger 2-5s after short tasks before moving", "met": true },
-        { "criterion": "Busy indicator shown when agent has multiple concurrent tasks", "met": true }
+      "status": "completed",
+      "agent": [
+        "riley"
       ],
-      "status": "completed"
+      "dod": [
+        {
+          "criterion": "Room zones defined as tile-coordinate ranges (desks, meeting, server, break)",
+          "met": true
+        },
+        {
+          "criterion": "Agents route to contextually appropriate room based on session type",
+          "met": true
+        },
+        {
+          "criterion": "Agents linger 2-5s after short tasks before moving",
+          "met": true
+        },
+        {
+          "criterion": "Busy indicator shown when agent has multiple concurrent tasks",
+          "met": true
+        }
+      ]
     },
     {
       "id": "smooth-movement",
       "title": "Smooth Movement and Animation Transitions",
       "priority": "P1",
       "complexity": "moderate",
-      "phases": ["build", "review"],
-      "cast": { "auditor": "riley", "builder": "riley", "reviewers": ["sarah"] },
+      "phases": [
+        "build",
+        "review"
+      ],
       "scope": "Ensure smooth tile-to-tile interpolation. All movement timers in game loop deltaTime. Fix any teleporting behavior.",
       "verify": "npm run type-check && npm run build",
-      "definition_of_done": [
-        { "criterion": "Characters interpolate smoothly between tiles during movement", "met": true },
-        { "criterion": "Walking speed feels natural", "met": true },
-        { "criterion": "All movement timers use game loop deltaTime, zero useEffect timers", "met": true }
+      "status": "completed",
+      "agent": [
+        "riley"
       ],
-      "status": "completed"
+      "dod": [
+        {
+          "criterion": "Characters interpolate smoothly between tiles during movement",
+          "met": true
+        },
+        {
+          "criterion": "Walking speed feels natural",
+          "met": true
+        },
+        {
+          "criterion": "All movement timers use game loop deltaTime, zero useEffect timers",
+          "met": true
+        }
+      ]
     },
     {
       "id": "game-hud",
       "title": "Enhanced Game HUD Header",
       "priority": "P1",
       "complexity": "simple",
-      "phases": ["build", "review"],
-      "cast": { "auditor": "riley", "builder": "riley", "reviewers": ["marcus"] },
+      "phases": [
+        "build",
+        "review"
+      ],
       "scope": "Enhance GameHeader.tsx with date/time, notification badges, quick-access buttons. Dark themed HTML bar above canvas.",
       "verify": "npm run type-check && npm run build",
-      "definition_of_done": [
-        { "criterion": "GameHeader shows current date/time", "met": true },
-        { "criterion": "Notification badges show counts for active sessions and pending directives", "met": true },
-        { "criterion": "Quick-access buttons open relevant SidePanel views", "met": true },
-        { "criterion": "Dark theme consistent with game aesthetic", "met": true }
+      "status": "archived",
+      "notes": "Initial implementation was shallow: quick-access buttons were no-ops, badge counts showed 1000+ from historical sessions, default OverviewPanel always visible. Re-planned as separate directive 'game-hud-redesign' with brainstorm for game-native pixel-art HUD inspired by claw-empire.",
+      "agent": [
+        "riley"
       ],
-      "status": "completed"
+      "dod": [
+        {
+          "criterion": "GameHeader shows current date/time",
+          "met": true
+        },
+        {
+          "criterion": "Notification badges show counts for active sessions and pending directives",
+          "met": true
+        },
+        {
+          "criterion": "Quick-access buttons open relevant SidePanel views",
+          "met": true
+        },
+        {
+          "criterion": "Dark theme consistent with game aesthetic",
+          "met": true
+        }
+      ]
     },
     {
       "id": "interactive-elements",
       "title": "Clickable Agents, Desks, and Rooms",
       "priority": "P1",
       "complexity": "moderate",
-      "phases": ["build", "review"],
-      "cast": { "auditor": "riley", "builder": "riley", "reviewers": ["marcus"] },
+      "phases": [
+        "build",
+        "review"
+      ],
       "scope": "Extend click handler in CanvasOffice.tsx. Click agents for detail, click desks for reports, hover rooms for tooltip. Follow getCharacterAt pattern.",
       "verify": "npm run type-check && npm run build",
-      "definition_of_done": [
-        { "criterion": "Clicking agent sprite opens agent detail in SidePanel", "met": true },
-        { "criterion": "Clicking desk/furniture shows associated agent reports", "met": true },
-        { "criterion": "Hovering over room zone shows tooltip with occupants", "met": true },
-        { "criterion": "Click priority: agent > furniture > room (no conflicts)", "met": true }
+      "status": "completed",
+      "agent": [
+        "riley"
       ],
-      "status": "completed"
+      "dod": [
+        {
+          "criterion": "Clicking agent sprite opens agent detail in SidePanel",
+          "met": true
+        },
+        {
+          "criterion": "Clicking desk/furniture shows associated agent reports",
+          "met": true
+        },
+        {
+          "criterion": "Hovering over room zone shows tooltip with occupants",
+          "met": true
+        },
+        {
+          "criterion": "Click priority: agent > furniture > room (no conflicts)",
+          "met": true
+        }
+      ]
     },
     {
       "id": "research-game-patterns",
       "title": "Research Game UX Patterns",
       "priority": "P2",
       "complexity": "simple",
-      "phases": ["research"],
-      "cast": { "auditor": "riley", "builder": "riley", "reviewers": [] },
+      "phases": [
+        "research"
+      ],
       "scope": "Study claw-empire and pixel-agents for stealable patterns. Brief research note on future features (day/night, weather, achievements). Max 2 pages.",
       "verify": "test -f .context/goals/game/research-game-patterns.md",
-      "definition_of_done": [
-        { "criterion": "Research note created at .context/goals/game/research-game-patterns.md", "met": true },
-        { "criterion": "Covers pattern analysis and future feature feasibility", "met": true }
+      "status": "completed",
+      "agent": [
+        "riley"
       ],
-      "status": "completed"
+      "dod": [
+        {
+          "criterion": "Research note created at .context/goals/game/research-game-patterns.md",
+          "met": true
+        },
+        {
+          "criterion": "Covers pattern analysis and future feature feasibility",
+          "met": true
+        }
+      ]
     }
   ],
-  "created": "2026-03-05T15:30:00Z",
-  "updated": "2026-03-05T19:37:00Z"
+  "dod": [
+    {
+      "criterion": "FurnitureInstance.zY correctly computed so characters in up-facing chairs render in front",
+      "met": false
+    },
+    {
+      "criterion": "All 25 seats visually verified — no character-behind-furniture clipping",
+      "met": false
+    },
+    {
+      "criterion": "No regressions in existing z-sort for desks, monitors, and other furniture",
+      "met": false
+    },
+    {
+      "criterion": "Agent sprites reflect real session state from Zustand store",
+      "met": true
+    },
+    {
+      "criterion": "State transitions are debounced — rapid updates don't cause visual jitter",
+      "met": true
+    },
+    {
+      "criterion": "Context data (task name, session info) available on Character object",
+      "met": true
+    },
+    {
+      "criterion": "Agent names displayed above character sprites, legible at default zoom",
+      "met": true
+    },
+    {
+      "criterion": "Status indicators visible: spinner (working), zzz (idle), exclamation (error), speech bubble (discussion)",
+      "met": true
+    },
+    {
+      "criterion": "Indicators animate smoothly using game loop, not React effects",
+      "met": true
+    },
+    {
+      "criterion": "CEO character appears in office with distinct sprite",
+      "met": true
+    },
+    {
+      "criterion": "WASD keys move CEO tile-by-tile with walking animation",
+      "met": true
+    },
+    {
+      "criterion": "Click-to-move sends CEO to clicked tile via A* pathfinding",
+      "met": true
+    },
+    {
+      "criterion": "Camera smoothly follows CEO character",
+      "met": true
+    },
+    {
+      "criterion": "CEO collides with walls and furniture correctly",
+      "met": true
+    },
+    {
+      "criterion": "Room zones defined as tile-coordinate ranges (desks, meeting, server, break)",
+      "met": true
+    },
+    {
+      "criterion": "Agents route to contextually appropriate room based on session type",
+      "met": true
+    },
+    {
+      "criterion": "Agents linger 2-5s after short tasks before moving",
+      "met": true
+    },
+    {
+      "criterion": "Busy indicator shown when agent has multiple concurrent tasks",
+      "met": true
+    },
+    {
+      "criterion": "Characters interpolate smoothly between tiles during movement",
+      "met": true
+    },
+    {
+      "criterion": "Walking speed feels natural",
+      "met": true
+    },
+    {
+      "criterion": "All movement timers use game loop deltaTime, zero useEffect timers",
+      "met": true
+    },
+    {
+      "criterion": "GameHeader shows current date/time",
+      "met": true
+    },
+    {
+      "criterion": "Notification badges show counts for active sessions and pending directives",
+      "met": true
+    },
+    {
+      "criterion": "Quick-access buttons open relevant SidePanel views",
+      "met": true
+    },
+    {
+      "criterion": "Dark theme consistent with game aesthetic",
+      "met": true
+    },
+    {
+      "criterion": "Clicking agent sprite opens agent detail in SidePanel",
+      "met": true
+    },
+    {
+      "criterion": "Clicking desk/furniture shows associated agent reports",
+      "met": true
+    },
+    {
+      "criterion": "Hovering over room zone shows tooltip with occupants",
+      "met": true
+    },
+    {
+      "criterion": "Click priority: agent > furniture > room (no conflicts)",
+      "met": true
+    },
+    {
+      "criterion": "Research note created at .context/goals/game/research-game-patterns.md",
+      "met": true
+    },
+    {
+      "criterion": "Covers pattern analysis and future feature feasibility",
+      "met": true
+    }
+  ]
 }

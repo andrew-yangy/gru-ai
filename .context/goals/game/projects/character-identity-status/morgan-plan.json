@@ -1,0 +1,224 @@
+{
+  "goal": "Game — Office Simulation as Primary CEO Interface",
+  "goal_folder": "game",
+  "challenges": {
+    "risks": [
+      "Bitmap font atlas is the highest-risk item: designing a 5x7 pixel font glyph set that looks good at all zoom levels is tedious pixel work. If the glyphs are ugly, the entire identity system looks worse than the current monospace text. Mitigation: test at zoom 2-5 early, iterate with visual feedback loop.",
+      "Personality animations require 22-44 new hand-crafted sprite frames across 11 agents. Most labor-intensive initiative. Mitigation: C-suite get unique animations, others get role-themed generics.",
+      "Task context text doubles vertical space of identity overlays. Risk of overlapping speech bubbles or occluding characters. Mitigation: truncate ~20 chars, only show for working agents, hide at zoom < 2.",
+      "Sprite cache trap: bitmap text creates new SpriteData references each frame → WeakMap miss → 720 canvas/sec GC churn. MUST use two-tier cache: string→SpriteData map (stable references) feeding into existing WeakMap zoom cache.",
+      "Nameplate collision: agents clustered in meeting room will have overlapping nameplates. Need opacity falloff or stacking strategy for nearby labels."
+    ],
+    "over_engineering_flags": [
+      "Font atlas: keep dead simple — fixed 5x7 glyphs, 1px spacing, single size. No kerning, no variable width.",
+      "Status icons: limit to 2-4 frames per icon, 8x8 max. No elaborate multi-phase animations.",
+      "Personality animations: cap at 1 per character, 2-4 frames, occasional trigger only."
+    ],
+    "recommendation": "Proceed with all 5 requirements across 3 projects. All tasks simple complexity. Visual screenshot gate after each project before proceeding to next."
+  },
+  "projects": [
+    {
+      "id": "char-identity-nameplates",
+      "title": "Bitmap Font Atlas & Brand-Colored Nameplates",
+      "priority": "P0",
+      "scope_summary": "Build a 5x7 pixel bitmap font atlas rendered through the spriteCache pipeline, replacing the current Canvas text API name labels. Add brand-colored identity plates with each agent's accent color and role indicator. Foundation for all other identity work. Visual screenshot gate at end before Project 2 proceeds.",
+      "brainstorm_weight": "light",
+      "initiatives": [
+        {
+          "id": "glyph-data",
+          "title": "Define 5x7 Pixel Glyph Patterns",
+          "priority": "P0",
+          "complexity": "simple",
+          "phases": ["build", "review"],
+          "user_scenario": "The bitmap font has crisp, legible pixel-art glyphs for all alphanumeric characters that look native to the game's art style.",
+          "cast": { "auditor": "riley", "builder": "riley", "reviewers": ["sarah"] },
+          "scope": "Create sprites/bitmapFont.ts with 5x7 pixel glyph patterns for A-Z, a-z, 0-9, and punctuation (.:,-_!?()/' space). Define each glyph as a compact string template (e.g. '.XXX.' per row, 7 rows per glyph) then expand to SpriteData (string[][]) at module init. Fixed-width: all glyphs occupy 5 columns with 1px inter-character spacing. Test readability: at zoom 2 (10x14 device px) glyphs must be legible. At zoom < 2, bitmap text should be hidden (fallback threshold).",
+          "verify": "npm run type-check && npm run build",
+          "definition_of_done": [
+            "bitmapFont.ts exports glyph SpriteData for A-Z, a-z, 0-9, and punctuation set",
+            "Each glyph is exactly 5 wide x 7 tall pixels",
+            "Glyph data defined as compact string templates, expanded to SpriteData at init",
+            "All characters legible at zoom 3 — verified by human in browser screenshot",
+            "Browser screenshot at zoom 3 and zoom 5 confirms glyphs are pixel-crisp with no anti-aliasing"
+          ]
+        },
+        {
+          "id": "bitmap-text-renderer",
+          "title": "Bitmap Text Renderer with Two-Tier Cache",
+          "priority": "P0",
+          "complexity": "simple",
+          "phases": ["build", "review"],
+          "user_scenario": "Agent names render as crisp pixel text that scales perfectly at any zoom level with no visible flicker, jank, or performance issues during zoom changes.",
+          "cast": { "auditor": "riley", "builder": "riley", "reviewers": ["sarah"] },
+          "scope": "Build renderBitmapText(ctx, text, color, x, y, zoom) in bitmapFont.ts. Two-tier caching architecture (CRITICAL): (1) A Map<string, SpriteData> that caches composed text sprites keyed by (text + color) — this ensures stable SpriteData references for the same string. (2) The existing spriteCache WeakMap handles zoom-level caching from those stable references. Without tier 1, every frame creates fresh SpriteData arrays that miss the WeakMap, causing 720+ canvas allocations/sec and GC stutters. Compose text by assembling glyph SpriteData arrays horizontally with 1px spacing into a single SpriteData. Render via getCachedSprite() for zoom scaling. Hide text at zoom < 2 (below readability threshold).",
+          "verify": "npm run type-check && npm run build",
+          "definition_of_done": [
+            "renderBitmapText() renders arbitrary strings in any hex color at any zoom level",
+            "Two-tier cache: Map<string, SpriteData> for text composition + WeakMap for zoom scaling",
+            "Text renders without visible flicker or jank during zoom changes",
+            "Text hidden at zoom < 2",
+            "Browser screenshot confirms crisp rendering at zoom 2, 3, and 5"
+          ]
+        },
+        {
+          "id": "identity-overlay-wiring",
+          "title": "Extend IdentityOverlay & Wire Agent Data",
+          "priority": "P0",
+          "complexity": "simple",
+          "phases": ["build", "review"],
+          "user_scenario": "All identity data (name, color, role) flows correctly from agent-registry.json through to the renderer for every agent including the CEO player character.",
+          "cast": { "auditor": "riley", "builder": "riley", "reviewers": ["sarah"] },
+          "scope": "Extend IdentityOverlay interface in renderer.ts with colorMap (Map<number, string> — hex color per agent), roleMap (Map<number, string> — role abbreviation e.g. CTO, FE, QA). Add colorNameToHex lookup in constants.ts mapping all 11 agent color names to hex (gold→#FFD700, purple→#8B5CF6, green→#10B981, orange→#F97316, pink→#EC4899, teal→#14B8A6, cyan→#06B6D4, lime→#84CC16, indigo→#6366F1, blue→#3B82F6, red→#EF4444). Wire up in CanvasOffice.tsx where the identity overlay is built (around line 309) — populate colorMap and roleMap from OFFICE_AGENTS. CEO player character: display name as 'You' with gold brand color and 'CEO' role tag (matching existing behavior). If no status data exists for an agent on initial load, treat as offline.",
+          "verify": "npm run type-check && npm run build",
+          "definition_of_done": [
+            "IdentityOverlay extended with colorMap and roleMap",
+            "colorNameToHex mapping covers all 11 agents — all visually distinguishable (no two colors too similar)",
+            "CanvasOffice.tsx populates colorMap and roleMap from OFFICE_AGENTS",
+            "CEO player character resolves to name='You', color=gold, role='CEO'",
+            "Agents with no status data default to offline",
+            "All 11 agents + CEO resolve to correct brand color and role — verified against agent-registry.json"
+          ]
+        },
+        {
+          "id": "brand-nameplates",
+          "title": "Brand-Colored Identity Plates with Role Tags",
+          "priority": "P0",
+          "complexity": "simple",
+          "phases": ["build", "review"],
+          "user_scenario": "Each agent's nameplate is immediately recognizable by their brand color — Sarah's plate has a violet accent, Morgan's is emerald. Role abbreviation (CTO, FE) appears as a tag. The CEO can identify who's who at a glance without memorizing names.",
+          "cast": { "auditor": "riley", "builder": "riley", "reviewers": ["sarah", "marcus"] },
+          "scope": "Replace renderNameLabels() in renderer.ts with renderIdentityPlates(). Design: pixel-art background plate tinted with agent's brand color (semi-transparent), name in white bitmap text, role abbreviation in accent-colored bitmap text to the right or as a small tag. Cache plate backgrounds by agent ID (stable SpriteData references). Remove old renderNameLabels(), NAME_LABEL_FONT, NAME_LABEL_BG, NAME_LABEL_TEXT_COLOR, NAME_LABEL_PADDING_X/Y, NAME_LABEL_BORDER_RADIUS constants and all dead code. Preserve matrixEffect skip guard. Preserve sitting offset. Speech bubble interaction: maintain existing z-order (identity plates render before bubbles in renderFrame) — bubbles always render on top, no special handling needed. Nameplate collision: when two nameplates would overlap by >50%, reduce the lower-priority one to 40% opacity. Selected agent's nameplate always renders at full opacity.",
+          "verify": "npm run type-check && npm run build",
+          "definition_of_done": [
+            "renderIdentityPlates() replaces renderNameLabels() using bitmap font",
+            "Each agent nameplate shows brand color prominently with role tag",
+            "Old renderNameLabels() and NAME_LABEL_* constants fully removed",
+            "Plate backgrounds cached by agent ID — no per-frame allocation",
+            "Speech bubbles render cleanly above identity plates (existing z-order maintained)",
+            "Overlapping nameplates handled with opacity falloff",
+            "Sitting offset and matrixEffect skip preserved",
+            "VISUAL GATE: Browser screenshot of all agents with nameplates — approved before Project 2 starts"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "char-identity-status",
+      "title": "Animated Status Icons & Task Context",
+      "priority": "P0",
+      "scope_summary": "Replace plain colored status dots with expressive pixel-art status vignettes. Add task context text below nameplates. Note: status-icon-sprites (pure data) can start in parallel with Project 1. Visual screenshot gate at end before Project 3. Acceptance gate: CEO can scan the office after being away and identify every agent's name, status, and task within 2-3 seconds.",
+      "brainstorm_weight": "light",
+      "initiatives": [
+        {
+          "id": "status-icon-sprites",
+          "title": "Status Icon Sprite Data (8x8, Multi-Frame)",
+          "priority": "P0",
+          "complexity": "simple",
+          "phases": ["build", "review"],
+          "user_scenario": "Five distinct, recognizable pixel-art status icons exist as sprite data ready to be rendered. Each icon is recognizable at zoom 3 without needing a legend.",
+          "cast": { "auditor": "riley", "builder": "riley", "reviewers": ["sarah"] },
+          "scope": "Create sprites/statusIcons.ts with SpriteData definitions for 5 statuses at 8x8 resolution: working (gear with 4 rotation frames), idle (coffee cup with 2 steam frames), error (warning triangle with 4 flash frames — bright/dim alternating rapidly for attention-grab), waiting (hourglass with 2 tip frames), offline (grey X, 1 static frame). Error status gets 4 frames instead of 2 for a more aggressive flash that demands the CEO's attention — this is the most important status to notice. Each frame is an 8x8 string[][] SpriteData. Use the same compact template pattern as bitmapFont.ts. NOTE: Pure data definition — can be done in parallel with Project 1.",
+          "verify": "npm run type-check && npm run build",
+          "definition_of_done": [
+            "statusIcons.ts exports SpriteData arrays for all 5 statuses",
+            "Working: 4 frames, Idle: 2 frames, Error: 4 frames (aggressive flash), Waiting: 2 frames, Offline: 1 frame",
+            "All frames are exactly 8x8 pixels",
+            "Each icon recognizable at zoom 3 without a legend — verified by human in browser",
+            "Browser screenshot at zoom 3 and zoom 6 confirms visual quality"
+          ]
+        },
+        {
+          "id": "status-icon-renderer",
+          "title": "Replace Status Dots with Sprite-Based Icons",
+          "priority": "P0",
+          "complexity": "simple",
+          "phases": ["build", "review"],
+          "user_scenario": "The CEO sees a spinning gear above working agents, a coffee cup above idle ones, a flashing warning triangle on errors, and an hourglass for waiting — status is readable from animation alone, even without color.",
+          "cast": { "auditor": "riley", "builder": "riley", "reviewers": ["sarah", "marcus"] },
+          "scope": "Replace renderStatusIndicators() in renderer.ts with renderStatusIcons() that draws animated sprite icons above the nameplate. Cycle frames based on identity.time (NOT Date.now()). Use spriteCache/getCachedSprite for zoom-aware rendering. Zoom behavior: at zoom >= 2, render full 8x8 sprite icons. At zoom < 2, fall back to simple colored dots (green/yellow/red/blue/grey) for ambient awareness at zoomed-out views — the CEO should still see red dots when fully zoomed out. Cap icon rendered size at zoom 6+ to prevent icons from dominating the character at high zoom. Offline status: hide entirely (match current behavior). Remove old renderStatusIndicators(), STATUS_DOT_RADIUS, STATUS_DOT_BORDER_WIDTH, STATUS_DOT_BORDER_COLOR, STATUS_DOT_GAP_PX, STATUS_COLOR_* constants and all dead code. Preserve matrixEffect skip guard.",
+          "verify": "npm run type-check && npm run build",
+          "definition_of_done": [
+            "renderStatusIcons() replaces renderStatusIndicators() with sprite-based rendering",
+            "Animation cycles correctly based on identity.time, synced with game loop",
+            "Error status flash is visually prominent — demands attention more than other statuses",
+            "At zoom < 2: falls back to simple colored dots for ambient awareness",
+            "At zoom >= 6: icon size capped so it does not dominate character sprite",
+            "Old renderStatusIndicators() and STATUS_DOT_*/STATUS_COLOR_* constants fully removed",
+            "Offline status hidden (matching current behavior)",
+            "MatrixEffect skip guard preserved",
+            "Browser screenshot confirms all 5 statuses at zoom 1 (dots), zoom 3 (icons), and zoom 6 (capped)"
+          ]
+        },
+        {
+          "id": "task-context-text",
+          "title": "Task Context Text Below Nameplate",
+          "priority": "P1",
+          "complexity": "simple",
+          "phases": ["build", "review"],
+          "user_scenario": "Below Sarah's nameplate, the CEO sees 'reviewing auth fix' in small pixel text — instantly knowing what she's working on without clicking. When scanning the whole office after being away, every working agent's task is visible at a glance.",
+          "cast": { "auditor": "riley", "builder": "riley", "reviewers": ["sarah", "marcus"] },
+          "scope": "Add taskTextMap (Map<number, string>) to IdentityOverlay. Wire up from Character.sessionInfo task name in CanvasOffice.tsx. In renderIdentityPlates(), render a second line of bitmap text below the nameplate in dimmer color (50% alpha of agent brand color). Truncate to ~20 chars with ellipsis ('...' rendered in bitmap font). Only show for agents with status 'working' or 'waiting'. Hide at zoom < 2. Handle null/empty task text gracefully (no render, no crash). Speech bubble z-order: task text is part of identity plate layer, bubbles still render on top.",
+          "verify": "npm run type-check && npm run build",
+          "definition_of_done": [
+            "taskTextMap added to IdentityOverlay, wired from CanvasOffice.tsx",
+            "Task context renders below nameplate in dimmer bitmap text",
+            "Text truncated to ~20 chars with bitmap ellipsis",
+            "Only shown for working/waiting agents, hidden for idle/offline/error",
+            "Hidden at zoom < 2",
+            "Null/empty task text handled gracefully (no crash, no phantom text)",
+            "Speech bubbles render cleanly above task text",
+            "VISUAL GATE: CEO scans office and identifies every agent's name, status, and task within 3 seconds — approved before Project 3 starts"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "char-identity-personality",
+      "title": "Personality Idle Animations",
+      "priority": "P1",
+      "scope_summary": "Add character-specific idle animations reflecting personality. Uses sprite override within IDLE state (NOT a new CharacterState). C-suite get unique animations, others get role-themed generics. Note: personality-sprites (pure data) can start in parallel with Project 1.",
+      "brainstorm_weight": "light",
+      "initiatives": [
+        {
+          "id": "personality-sprites",
+          "title": "Personality Idle Sprite Frames",
+          "priority": "P1",
+          "complexity": "simple",
+          "phases": ["build", "review"],
+          "user_scenario": "Each agent has visually distinct personality idle frames — Sarah's glasses adjustment looks different from Morgan's clipboard check, not just palette-swapped.",
+          "cast": { "auditor": "riley", "builder": "riley", "reviewers": ["sarah", "marcus"] },
+          "scope": "Create personality idle sprite frames (16x24 SpriteData, matching existing character sprite dimensions) for all 11 agents. C-suite unique animations: Sarah adjusts glasses (3 frames), Morgan checks clipboard (3 frames), Priya taps phone (3 frames), Marcus sketches (3 frames). Non-C-suite role-themed generics: developers stretch/crack knuckles (2 frames — Riley, Jordan, Devon, Casey), QA leans back (2 frames — Sam), content writer taps chin (2 frames — Taylor). Add personality_idle to CharacterSprites interface. NOTE: Pure sprite data — no FSM changes. Can be done in parallel with earlier projects.",
+          "verify": "npm run type-check && npm run build",
+          "definition_of_done": [
+            "Personality idle sprite frames defined for all 11 agents",
+            "C-suite animations are visually unique (not palette-swapped)",
+            "Non-C-suite animations are role-themed generics",
+            "CharacterSprites interface extended with personality_idle",
+            "All frames match existing 16x24 character sprite dimensions",
+            "Browser screenshot confirms each C-suite idle is visually distinct at zoom 3"
+          ]
+        },
+        {
+          "id": "personality-fsm",
+          "title": "Personality Idle Trigger Logic",
+          "priority": "P1",
+          "complexity": "simple",
+          "phases": ["build", "review"],
+          "user_scenario": "While watching the office, the CEO notices agents occasionally doing personality-specific actions while standing idle — subtle life that makes each character feel real and distinct.",
+          "cast": { "auditor": "riley", "builder": "riley", "reviewers": ["sarah", "marcus"] },
+          "scope": "Implement personality idle as a SPRITE OVERRIDE within the existing IDLE state — do NOT add a new CharacterState enum value. Add personalityTimer (number) and personalityFrame (number) to the Character interface. In updateCharacter() IDLE branch: when standing idle and personalityTimer exceeds a random threshold (8-15 seconds), set personalityFrame to 0 and start cycling. In getCharacterSprite(): when ch.personalityFrame >= 0 and personality_idle sprites exist, return the personality frame instead of the standing idle frame. After the animation plays through all frames once, reset personalityFrame to -1 (inactive) and reset personalityTimer. Only triggers in IDLE state — never interrupts WALK or TYPE. Does not trigger for player-controlled CEO.",
+          "verify": "npm run type-check && npm run build",
+          "definition_of_done": [
+            "personalityTimer and personalityFrame added to Character interface",
+            "Personality animation triggers after random 8-15s idle threshold",
+            "Uses sprite override in getCharacterSprite() — no new CharacterState added",
+            "Animation plays once then returns to static idle (no stuck states)",
+            "Only triggers in IDLE state, never interrupts WALK or TYPE",
+            "Does not trigger for isPlayerControlled characters",
+            "VISUAL GATE: Browser recording of at least 3 agents playing distinct personality idles — approved as final sign-off"
+          ]
+        }
+      ]
+    }
+  ]
+}

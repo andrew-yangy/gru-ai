@@ -1,0 +1,10 @@
+{
+  "id": "test-no-build",
+  "title": "Test missing build artifact for review gate",
+  "status": "in_progress",
+  "weight": "medium",
+  "pipeline": {
+    "triage": { "status": "completed" },
+    "approve": { "status": "completed" }
+  }
+}

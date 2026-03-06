@@ -13,9 +13,9 @@ An autonomous AI company framework. Named C-suite agents with distinct personali
 1. **Outward-looking by default.** The C-suite researches competitors, markets, frameworks, and trends. Internal maintenance is secondary.
 2. **Autonomy as default.** Low-risk work ships without CEO approval. The team does + reports.
 3. **Structured outputs over dialogue.** JSON schemas beat freeform conversation. Typed interfaces between agents prevent error amplification.
-4. **Static C-suite, ephemeral engineers.** The C-suite has institutional memory and standing responsibilities. Engineers are spawned per-initiative and dissolved when done.
+4. **Static C-suite, ephemeral engineers.** The C-suite has institutional memory and standing responsibilities. Engineers are spawned per-task and dissolved when done.
 5. **Bottom-up proposals are the goal state.** The system succeeds when 50%+ of initiatives come from the team's external research, not CEO directives.
-6. **Risk-based decision authority.** Low = do + report. Medium = propose + approve. High = CEO decides.
+6. **Risk-based decision authority.** Low = do + report (CEO approves completion after). Medium = do + report (CEO can reopen). High = CEO approves plan AND completion.
 7. **Challenge mode, not yes-men.** Agents push back on CEO directives with reasoning. Parallel independent critiques, not group consensus.
 8. **Self-evolution through research.** Morgan monitors the agent framework ecosystem and proposes system improvements. The conductor evolves by stealing patterns from the outside world.
 

@@ -251,7 +251,7 @@ export default function CeoBrief() {
                 {activeFeatures.length > 5 && (
                   <button
                     className="text-[10px] text-muted-foreground hover:text-foreground transition-colors px-2 cursor-pointer"
-                    onClick={() => navigate('/projects')}
+                    onClick={() => navigate('/directives')}
                   >
                     +{activeFeatures.length - 5} more
                   </button>
@@ -277,7 +277,7 @@ export default function CeoBrief() {
                   <button
                     key={d.id}
                     className="flex items-center gap-2 w-full text-left hover:bg-secondary/50 rounded px-2 py-1 -mx-1 transition-colors cursor-pointer"
-                    onClick={() => navigate('/artifacts?tab=reports')}
+                    onClick={() => navigate('/directives')}
                   >
                     <CheckCircle2 className="h-3 w-3 text-status-green shrink-0" />
                     <span className="text-xs truncate flex-1">{d.title}</span>
@@ -342,7 +342,7 @@ export default function CeoBrief() {
                   )}
                   <button
                     className="flex items-center gap-1.5 text-[10px] text-primary hover:underline cursor-pointer"
-                    onClick={() => navigate('/artifacts?tab=reports')}
+                    onClick={() => navigate('/directives')}
                   >
                     <ArrowRight className="h-3 w-3" />
                     View all reports

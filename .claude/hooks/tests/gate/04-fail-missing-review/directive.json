@@ -1,0 +1,12 @@
+{
+  "id": "test-no-review",
+  "title": "Test missing review artifacts",
+  "status": "in_progress",
+  "weight": "medium",
+  "pipeline": {
+    "triage": { "status": "completed" },
+    "read": { "status": "completed" },
+    "context": { "status": "completed" },
+    "approve": { "status": "completed" }
+  }
+}

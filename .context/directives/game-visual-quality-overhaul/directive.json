@@ -1,0 +1,16 @@
+{
+  "id": "game-visual-quality-overhaul",
+  "title": "Game Visual Quality Overhaul — Match pixel-agents and claw-empire quality",
+  "status": "completed",
+  "weight": "strategic",
+  "goal_ids": [
+    "game"
+  ],
+  "created": "2026-03-04T14:30:00Z",
+  "updated": "2026-03-05",
+  "produced_projects": [
+    "game-visual-quality-overhaul"
+  ],
+  "notes": "character-sprites initiative completed via HSL palette-swap approach (2026-03-05). Remaining: room-system-and-zsort, floors-and-walls, furniture-overhaul, animation-loop, room-atmosphere.",
+  "completed": "2026-03-06"
+}

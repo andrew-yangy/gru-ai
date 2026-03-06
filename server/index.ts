@@ -158,6 +158,11 @@ const server = http.createServer((req, res) => {
     return;
   }
 
+  if (url.pathname === '/api/actions/directive-complete' && req.method === 'POST') {
+    handleDirectiveComplete(req, res);
+    return;
+  }
+
   if (url.pathname === '/api/config' && req.method === 'GET') {
     handleGetConfig(res);
     return;
@@ -271,7 +276,7 @@ aggregator.on('change', (type: WsMessageType) => {
       payload = { sessionActivities: state.sessionActivities };
       break;
     case 'directive_updated':
-      payload = { directiveState: state.directiveState };
+      payload = { directiveState: state.directiveState, directiveHistory: state.directiveHistory };
       break;
     case 'goals_updated':
       payload = { goalInventory: state.goalInventory };
@@ -534,6 +539,79 @@ function handleSendInput(req: http.IncomingMessage, res: http.ServerResponse): v
         res.writeHead(500, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ error: 'Internal error' }));
       });
+    } catch {
+      res.writeHead(400, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: 'Invalid JSON' }));
+    }
+  });
+  req.on('error', (err) => {
+    console.error(`[api] Request error:`, err);
+    res.writeHead(500, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ error: 'Internal error' }));
+  });
+}
+
+function handleDirectiveComplete(req: http.IncomingMessage, res: http.ServerResponse): void {
+  let body = '';
+  req.on('data', (chunk) => {
+    body += chunk;
+  });
+  req.on('end', () => {
+    try {
+      const parsed = JSON.parse(body) as { action: string; feedback?: string };
+      if (!parsed.action || !['approve', 'reject'].includes(parsed.action)) {
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'Missing or invalid action (approve|reject)' }));
+        return;
+      }
+
+      // Read current directive state to find the directive name
+      const state = directiveWatcher.readCurrentState();
+      if (!state) {
+        res.writeHead(404, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'No active directive' }));
+        return;
+      }
+
+      // Update the directive.json status
+      const directiveJsonPath = path.join(process.cwd(), '.context', 'directives', state.directiveName, 'directive.json');
+      try {
+        const raw = fs.readFileSync(directiveJsonPath, 'utf-8');
+        const directive = JSON.parse(raw);
+
+        if (parsed.action === 'approve') {
+          directive.status = 'completed';
+          directive.completed = new Date().toISOString().split('T')[0];
+          if (directive.pipeline?.completion) {
+            directive.pipeline.completion.status = 'completed';
+          }
+        } else {
+          // Reject: keep in_progress, add feedback
+          directive.status = 'in_progress';
+          if (directive.pipeline?.completion) {
+            directive.pipeline.completion.status = 'pending';
+          }
+          if (parsed.feedback) {
+            directive.pipeline = directive.pipeline ?? {};
+            directive.pipeline.completion = directive.pipeline.completion ?? {};
+            directive.pipeline.completion.feedback = parsed.feedback;
+          }
+        }
+
+        directive.updated_at = new Date().toISOString();
+        fs.writeFileSync(directiveJsonPath, JSON.stringify(directive, null, 2) + '\n');
+
+        // Watcher picks up directive.json change directly — no current.json needed
+
+        console.log(`[api] Directive ${state.directiveName} ${parsed.action === 'approve' ? 'approved' : 'rejected'}${parsed.feedback ? ` (feedback: ${parsed.feedback})` : ''}`);
+
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ ok: true, action: parsed.action, directive: state.directiveName }));
+      } catch (err) {
+        console.error(`[api] Failed to update directive:`, err);
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'Failed to update directive file' }));
+      }
     } catch {
       res.writeHead(400, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({ error: 'Invalid JSON' }));

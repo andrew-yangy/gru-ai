@@ -278,22 +278,15 @@ export class StateWatcher {
         }
       }
 
-      // --- Directives ---
+      // --- Directives (directory format: {id}/directive.json) ---
       const directivesDir = path.join(contextDir, 'directives');
       if (fs.existsSync(directivesDir)) {
-        const jsonFiles = this.listFiles(directivesDir, '.json');
-        for (const file of jsonFiles) {
-          if (file === 'checkpoints') continue;
-          const filePath = path.join(directivesDir, file);
-          // Skip directories
-          try {
-            if (fs.statSync(filePath).isDirectory()) continue;
-          } catch { continue; }
-
+        const directiveDirs = this.listDirs(directivesDir);
+        for (const dirId of directiveDirs) {
+          const filePath = path.join(directivesDir, dirId, 'directive.json');
           const dirJson = this.readJson(filePath) as Record<string, unknown> | null;
           if (!dirJson) continue;
 
-          const dirId = file.replace('.json', '');
           const dirStatus = this.mapDirectiveStatus(String(dirJson.status ?? 'pending'));
 
           allDirectives.push({
@@ -303,7 +296,7 @@ export class StateWatcher {
             status: dirStatus,
             createdAt: String(dirJson.created ?? generated),
             updatedAt: String(dirJson.updated ?? dirJson.created ?? generated),
-            initiatives: [],
+            projects: [],
             weight: dirJson.weight ? String(dirJson.weight) : undefined,
             goalIds: Array.isArray(dirJson.goal_ids) ? dirJson.goal_ids.map(String) : undefined,
             producedFeatures: Array.isArray(dirJson.produced_features) ? dirJson.produced_features.map(String) : undefined,
@@ -432,6 +425,7 @@ export class StateWatcher {
       case 'triaged': return 'pending';
       case 'in_progress': return 'in_progress';
       case 'executing': return 'in_progress'; // legacy
+      case 'awaiting_completion': return 'in_progress';
       case 'completed': return 'completed';
       case 'rejected': return 'abandoned';
       default: return 'pending';

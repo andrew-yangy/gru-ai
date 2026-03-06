@@ -5,9 +5,9 @@
 
 ## Checkpoint-Resume
 
-- **Combine initiatives that modify the same file.** The checkpoint-resume directive had 5 initiatives (audit, schema, writes, resume, cleanup) all targeting SKILL.md. Combining into one build avoided merge conflicts and saved 4 agent round-trips.
+- **Combine tasks that modify the same file.** The checkpoint-resume directive had 5 tasks (audit, schema, writes, resume, cleanup) all targeting SKILL.md. Combining into one build avoided merge conflicts and saved 4 agent round-trips.
 - **C-suite challenges catch scope creep early.** Morgan challenged the original scope as over-engineered — recommended half-day build instead of multi-week. Both Sarah and Morgan independently flagged dashboard integration as separate work. The scoped-down version shipped cleanly.
-- **In-progress initiatives restart from scratch on resume.** Attempting partial-phase resume (e.g., resume mid-build) adds enormous complexity for marginal benefit. Only completed initiatives are truly skipped. The wasted work (re-running one initiative's phases) is small relative to the complexity savings.
+- **In-progress tasks restart from scratch on resume.** Attempting partial-phase resume (e.g., resume mid-build) adds enormous complexity for marginal benefit. Only completed tasks are truly skipped. The wasted work (re-running one task's phases) is small relative to the complexity savings.
 - **Dead schema fields confuse implementers.** Sarah caught that `audit_findings` and `challenges` were in the checkpoint schema but nothing wrote to them. Ghost fields in schemas create false expectations. Only include fields that have writers.
 
 - **Checkpoint files must be updated after EVERY phase, not just planned transitions.** The conductor-brainstorm-goals directive completed 2.5 initiatives before context exhaustion. The checkpoint was still at step-4 (pre-execution state) because updates weren't persisted during the fast-moving build phases. On resume, the orchestrator had to reconstruct state from filesystem evidence (git log, grep for changes, file existence). Fix: treat checkpoint writes as non-negotiable after every phase — the Write tool call is cheap, context reconstruction is expensive.

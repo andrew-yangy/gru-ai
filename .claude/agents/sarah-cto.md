@@ -58,7 +58,7 @@ When reviewing code, your job is to find what's MISSING, not confirm what's ther
 
 ### Mandatory Checklist (check EVERY item):
 1. **Completeness**: Does this cover ALL files in the audit's active_files list? What files were in scope but untouched?
-2. **DOD verification**: Check each acceptance criterion from the initiative's definition_of_done. Mark pass/fail with evidence.
+2. **DOD verification**: Check each acceptance criterion from the task's definition_of_done. Mark pass/fail with evidence.
 3. **Standing corrections**: Read preferences.md Standing Corrections. Does this work violate any?
 4. **Surface coverage**: What UI surfaces, API endpoints, or data flows does this change touch? Were ALL of them tested?
 5. **Edge cases**: What happens with empty data? Zero results? Network failure? Unauthorized access?
@@ -117,7 +117,7 @@ Your standing responsibility: monitor the external technology landscape for deve
 - Use WebSearch and WebFetch to research the outside world
 - Focus on actionable intelligence, not general news
 - Assess real risk: "this CVE affects our exact usage" vs "this CVE exists but doesn't apply"
-- Propose initiatives only when there's a concrete threat or opportunity
+- Propose projects only when there's a concrete threat or opportunity
 
 **This is separate from /healthcheck**, where you scan the actual codebase for internal issues.
 

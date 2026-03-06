@@ -1,0 +1,100 @@
+{
+  "id": "watcher-and-dashboard",
+  "title": "Directive watcher + dashboard UI: nested dirs, project cards, completion gate",
+  "status": "completed",
+  "agent": ["riley"],
+  "reviewers": ["sarah", "marcus"],
+  "tasks": [
+    {
+      "id": "rename-types",
+      "title": "Rename DirectiveInitiative to DirectiveProject in all type files",
+      "status": "pending",
+      "agent": ["riley"],
+      "dod": [
+        { "criterion": "DirectiveInitiative renamed to DirectiveProject in server/types.ts and src/stores/types.ts", "met": false },
+        { "criterion": "DirectiveState uses totalProjects, currentProject, projects[]", "met": false },
+        { "criterion": "DirectiveState.status includes awaiting_completion", "met": false },
+        { "criterion": "DirectiveProject has totalTasks and completedTasks fields", "met": false },
+        { "criterion": "npm run type-check passes", "met": false }
+      ]
+    },
+    {
+      "id": "rewrite-watcher",
+      "title": "Rewrite directive-watcher.ts for nested directory structure",
+      "status": "pending",
+      "agent": ["riley"],
+      "dod": [
+        { "criterion": "Watcher reads .context/directives/{name}/directive.json (directory format only, no flat fallback)", "met": false },
+        { "criterion": "Watcher globs projects/*/project.json within each directive directory", "met": false },
+        { "criterion": "DirectiveProject[] built from project.json files with task counts", "met": false },
+        { "criterion": "Chokidar watches nested directories (depth increased)", "met": false },
+        { "criterion": "Pipeline steps derived from directive.json gates object when available", "met": false },
+        { "criterion": "npm run type-check passes", "met": false }
+      ]
+    },
+    {
+      "id": "update-directive-progress",
+      "title": "Update DirectiveProgress.tsx: projects terminology, task counts, completion gate",
+      "status": "pending",
+      "agent": ["riley"],
+      "dod": [
+        { "criterion": "All initiative text replaced with project", "met": false },
+        { "criterion": "Component reads from directiveState.projects", "met": false },
+        { "criterion": "Each project row shows task progress (completedTasks/totalTasks)", "met": false },
+        { "criterion": "Project cards expandable inline to show task list with status", "met": false },
+        { "criterion": "Completion gate renders Awaiting CEO sign-off banner when status is awaiting_completion", "met": false },
+        { "criterion": "npm run type-check passes", "met": false }
+      ]
+    },
+    {
+      "id": "update-game-panels",
+      "title": "Update all game panels: IntelPanel, FurniturePanels, ProjectsPanel, GamePage",
+      "status": "pending",
+      "agent": ["riley"],
+      "dod": [
+        { "criterion": "IntelPanel uses DirectiveProject, reads .projects", "met": false },
+        { "criterion": "FurniturePanels: 'No initiative in progress' → 'No project in progress'", "met": false },
+        { "criterion": "FurniturePanels uses currentProject/totalProjects", "met": false },
+        { "criterion": "ProjectsPanel uses totalProjects/currentProject", "met": false },
+        { "criterion": "GamePage reads currentProject/totalProjects", "met": false },
+        { "criterion": "panelUtils: InitiativeStatus renamed to ProjectStatus", "met": false },
+        { "criterion": "npm run type-check passes", "met": false }
+      ]
+    },
+    {
+      "id": "update-orientation-banner",
+      "title": "Update OrientationBanner.tsx for projects terminology",
+      "status": "pending",
+      "agent": ["riley"],
+      "dod": [
+        { "criterion": "OrientationBanner reads from directiveState.projects", "met": false },
+        { "criterion": "Active work derivation uses .projects for in-progress items", "met": false },
+        { "criterion": "npm run type-check passes", "met": false }
+      ]
+    },
+    {
+      "id": "update-work-summary-terminology",
+      "title": "Update WorkSummary: features → projects terminology alignment",
+      "status": "pending",
+      "agent": ["riley"],
+      "dod": [
+        { "criterion": "WorkSummary labels use 'projects' instead of 'features' where referring to project.json entities", "met": false },
+        { "criterion": "state-watcher.ts DirectiveRecord.initiatives renamed to projects", "met": false },
+        { "criterion": "npm run type-check passes", "met": false }
+      ]
+    },
+    {
+      "id": "completion-gate-interaction",
+      "title": "Add completion gate approve/reject interaction in dashboard",
+      "status": "pending",
+      "agent": ["riley"],
+      "dod": [
+        { "criterion": "When directive status is awaiting_completion, pipeline stepper shows completion step with needsAction=true", "met": false },
+        { "criterion": "Completion gate view renders digest summary inline (or preview)", "met": false },
+        { "criterion": "Approve and reject buttons visible in the completion gate banner", "met": false },
+        { "criterion": "Approve sets directive status to completed, reject keeps in_progress", "met": false },
+        { "criterion": "npm run type-check passes", "met": false }
+      ]
+    }
+  ]
+}

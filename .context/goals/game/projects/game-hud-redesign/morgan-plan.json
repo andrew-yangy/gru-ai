@@ -1,0 +1,148 @@
+{
+  "goal": "Game HUD Panel Redesign",
+  "goal_folder": "game",
+  "challenges": {
+    "risks": [
+      "The 5-tab system touches GameHeader, SidePanel, GamePage, and types.ts simultaneously — type inconsistencies break compilation.",
+      "Projects and Wiki panels need store data — need to verify workState coverage for goals, features, lessons.",
+      "Scope creep: each panel could expand into multi-day effort. Keep focused on minimum viable interaction."
+    ],
+    "over_engineering_flags": [
+      "Shared drill-down pattern could be over-engineered into generic component. Inline state per panel is simpler.",
+      "Team panel redesign is mostly refinement of existing activity-first layout, not a rewrite."
+    ],
+    "recommendation": "Proceed as-is"
+  },
+  "initiatives": [
+    {
+      "id": "hud-types-and-header",
+      "title": "Update HUD types and header buttons for 5-tab system",
+      "priority": "P0",
+      "complexity": "simple",
+      "phases": ["build", "review"],
+      "user_scenario": "CEO sees 5 buttons in the header — Team, Inbox, Projects, Intel, Wiki — with appropriate icons and badge on Inbox.",
+      "cast": { "auditor": "riley", "builder": "riley", "reviewers": ["marcus"] },
+      "scope": "Update HudPanel type in GameHeader.tsx to include all 5 tabs. Replace lucide icons. Update SidePanel.tsx types and mappings. Update TileType in types.ts. Update GamePage.tsx type maps.",
+      "definition_of_done": [
+        "HudPanel and HudTab types include all 5 tabs",
+        "GameHeader renders 5 HudButtons with correct icons",
+        "TileType includes hud-team, hud-inbox, hud-projects, hud-intel, hud-wiki",
+        "SidePanel and GamePage mappings updated",
+        "TypeScript compiles"
+      ]
+    },
+    {
+      "id": "sidepanel-5tab-routing",
+      "title": "Wire SidePanel content routing for 5 tabs",
+      "priority": "P0",
+      "complexity": "simple",
+      "phases": ["build", "review"],
+      "user_scenario": "Clicking any header button opens the corresponding panel content in the side panel with tab strip.",
+      "cast": { "auditor": "riley", "builder": "riley", "reviewers": ["marcus"] },
+      "scope": "Update PanelContent to route all 5 tabs. Import new panel components (stub if needed). Ensure tab strip renders all 5 tabs.",
+      "definition_of_done": [
+        "PanelContent routes all 5 tab values",
+        "Tab strip renders 5 tabs",
+        "App compiles and each button shows corresponding tab"
+      ]
+    },
+    {
+      "id": "team-panel-polish",
+      "title": "Polish Team panel activity-first layout",
+      "priority": "P1",
+      "complexity": "simple",
+      "phases": ["build", "review"],
+      "user_scenario": "CEO opens Team tab and sees working agents prominently with their current task, while idle agents collapse into a compact row.",
+      "cast": { "auditor": "riley", "builder": "riley", "reviewers": ["marcus"] },
+      "scope": "Polish existing TeamPanel: show full task name, add time-since-started for working agents. Core layout already correct.",
+      "definition_of_done": [
+        "Working agents show full task name",
+        "Working agent cards show time-since-started",
+        "Idle agents in compact grid",
+        "Renders correctly with 0 active agents"
+      ]
+    },
+    {
+      "id": "inbox-panel",
+      "title": "Build Inbox panel (rename from Decisions)",
+      "priority": "P1",
+      "complexity": "simple",
+      "phases": ["build", "review"],
+      "user_scenario": "CEO opens Inbox tab and sees actionable items with enough context to act.",
+      "cast": { "auditor": "riley", "builder": "riley", "reviewers": ["marcus"] },
+      "scope": "Create InboxPanel.tsx from DecisionsPanel. Rename, update empty state. Export from index.ts.",
+      "definition_of_done": [
+        "InboxPanel.tsx exists and exports from panels/index.ts",
+        "Shows approvals, errors, waiting-input with context",
+        "Routed correctly from SidePanel tab"
+      ]
+    },
+    {
+      "id": "projects-panel",
+      "title": "Build Projects drill-down panel",
+      "priority": "P1",
+      "complexity": "simple",
+      "phases": ["build", "review"],
+      "user_scenario": "CEO opens Projects tab, sees goals, drills into projects, sees tasks with DOD and progress. Back button at each level.",
+      "cast": { "auditor": "riley", "builder": "riley", "reviewers": ["marcus"] },
+      "scope": "Create ProjectsPanel.tsx with 3-level drill-down: goals -> projects -> tasks. Uses workState from store. Back button navigation. Parchment styling.",
+      "definition_of_done": [
+        "ProjectsPanel.tsx exists and exports from panels/index.ts",
+        "Goal list shows all goals with status and project counts",
+        "Clicking a goal shows its projects with progress",
+        "Back button works at each level",
+        "Handles empty state"
+      ]
+    },
+    {
+      "id": "intel-panel",
+      "title": "Build Intel panel (full report browser)",
+      "priority": "P1",
+      "complexity": "simple",
+      "phases": ["build", "review"],
+      "user_scenario": "CEO opens Intel tab and sees ALL reports chronologically. Click any to read full content. Back to return.",
+      "cast": { "auditor": "riley", "builder": "riley", "reviewers": ["marcus"] },
+      "scope": "Create IntelPanel.tsx. Report list (all, not limited to 5) + detail view via artifact-content API. Active directive section. Back button.",
+      "definition_of_done": [
+        "IntelPanel.tsx exists and exports from panels/index.ts",
+        "Shows ALL reports, not limited to 5",
+        "Click loads and displays full content",
+        "Back button returns to list",
+        "Active directive progress shown if exists"
+      ]
+    },
+    {
+      "id": "wiki-panel",
+      "title": "Build Wiki panel (lessons knowledge browser)",
+      "priority": "P1",
+      "complexity": "simple",
+      "phases": ["build", "review"],
+      "user_scenario": "CEO opens Wiki tab and sees lesson topics. Click any to read full content. Back to return.",
+      "cast": { "auditor": "riley", "builder": "riley", "reviewers": ["marcus"] },
+      "scope": "Create WikiPanel.tsx. Topic list from workState.conductor.lessons + detail view via artifact-content API. Back button.",
+      "definition_of_done": [
+        "WikiPanel.tsx exists and exports from panels/index.ts",
+        "Shows all lesson topics from store",
+        "Click loads and displays full content",
+        "Back button returns to list",
+        "Handles empty state"
+      ]
+    },
+    {
+      "id": "cleanup-old-panels",
+      "title": "Remove old DecisionsPanel and ReportsPanel references",
+      "priority": "P2",
+      "complexity": "simple",
+      "phases": ["build", "review"],
+      "user_scenario": "Codebase is clean — no dead code from old 3-tab system.",
+      "cast": { "auditor": "riley", "builder": "riley", "reviewers": ["marcus"] },
+      "scope": "Remove DecisionsPanel and ReportsPanel if unused. Update index.ts exports. Remove old tile types. Clean imports.",
+      "definition_of_done": [
+        "No imports of old panels remain",
+        "index.ts exports new panels",
+        "No old hud-decisions/hud-reports references",
+        "TypeScript compiles clean"
+      ]
+    }
+  ]
+}

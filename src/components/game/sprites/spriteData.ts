@@ -27,9 +27,6 @@ export const SERVER_RACK_SPRITE: SpriteData = PLACEHOLDER_1x2
 export const COFFEE_TABLE_SPRITE: SpriteData = PLACEHOLDER_2x1
 export const FILING_CABINET_SPRITE: SpriteData = PLACEHOLDER_1x1
 
-// REMOVED: ~350 lines of hand-drawn furniture pixel data
-// All furniture now renders from LimeZu Modern Office singles
-
 // ── Speech Bubble Sprites ───────────────────────────────────────
 
 /** Permission bubble: white square with "..." in amber, and a tail pointer (11x13) */
@@ -76,12 +73,27 @@ export const BUBBLE_WAITING_SPRITE: SpriteData = (() => {
   ]
 })()
 
-// ── Character Sprites ───────────────────────────────────────────
-// 16x24 characters with palette substitution
+/** Chat bubble: small 7x7 speech bubble with dots for agent interactions */
+export const BUBBLE_CHAT_SPRITE: SpriteData = (() => {
+  const B = '#555566' // border
+  const F = '#EEEEFF' // fill
+  const D = '#6688CC' // dots
+  return [
+    [_, B, B, B, B, B, _],
+    [B, F, F, F, F, F, B],
+    [B, F, D, F, D, F, B],
+    [B, F, F, F, F, F, B],
+    [_, B, B, B, B, B, _],
+    [_, _, B, B, _, _, _],
+    [_, _, _, B, _, _, _],
+  ]
+})()
+
+// ── Character Palettes ──────────────────────────────────────────
 
 /** Palette colors for agent characters.
  *  0-5: match char_0..5.png loaded from assets (Sarah=1, Morgan=2, Marcus=3, Priya=4).
- *  6+: new agents rendered from templates — Riley, Jordan, Casey, Taylor, Sam, Devon.
+ *  6+: additional agents — Riley, Jordan, Casey, Taylor, Sam, Devon.
  */
 export const CHARACTER_PALETTES = [
   // ── Palettes 0-5: match char_0..5.png ──
@@ -91,7 +103,7 @@ export const CHARACTER_PALETTES = [
   { skin: '#FFCC99', shirt: '#AA55CC', pants: '#443355', hair: '#AA4422', shoes: '#222222' }, // 3: Marcus (purple shirt)
   { skin: '#DEB887', shirt: '#CCAA33', pants: '#444433', hair: '#553322', shoes: '#333333' }, // 4: Priya (gold shirt)
   { skin: '#FFCC99', shirt: '#FF8844', pants: '#443322', hair: '#111111', shoes: '#222222' }, // 5: spare (orange shirt)
-  // ── Palettes 6+: template-rendered new agents ──
+  // ── Palettes 6+: additional agents ──
   { skin: '#FFCC99', shirt: '#E05599', pants: '#553344', hair: '#331111', shoes: '#222222' }, // 6: Riley (pink shirt, dark red hair)
   { skin: '#C4956A', shirt: '#3399AA', pants: '#2A4455', hair: '#1A1A1A', shoes: '#333333' }, // 7: Jordan (teal shirt)
   { skin: '#DEB887', shirt: '#55BBDD', pants: '#334455', hair: '#443322', shoes: '#222222' }, // 8: Casey (sky blue shirt)
@@ -99,658 +111,6 @@ export const CHARACTER_PALETTES = [
   { skin: '#C4956A', shirt: '#66CC55', pants: '#334433', hair: '#222222', shoes: '#222222' }, // 10: Sam (lime green shirt)
   { skin: '#FFCC99', shirt: '#7766DD', pants: '#333355', hair: '#553322', shoes: '#333333' }, // 11: Devon (indigo shirt)
 ] as const
-
-interface CharPalette {
-  skin: string
-  shirt: string
-  pants: string
-  hair: string
-  shoes: string
-}
-
-// Template keys for character pixel data
-const H = 'hair'
-const K = 'skin'
-const S = 'shirt'
-const P = 'pants'
-const O = 'shoes'
-const E = '#FFFFFF' // eyes
-
-type TemplateCell = typeof H | typeof K | typeof S | typeof P | typeof O | typeof E | typeof _
-
-/** Resolve a template to SpriteData using a palette */
-function resolveTemplate(template: TemplateCell[][], palette: CharPalette): SpriteData {
-  return template.map((row) =>
-    row.map((cell) => {
-      if (cell === _) return ''
-      if (cell === E) return E
-      if (cell === H) return palette.hair
-      if (cell === K) return palette.skin
-      if (cell === S) return palette.shirt
-      if (cell === P) return palette.pants
-      if (cell === O) return palette.shoes
-      return cell
-    }),
-  )
-}
-
-/** Flip a template horizontally (for generating left sprites from right) */
-function flipHorizontal(template: TemplateCell[][]): TemplateCell[][] {
-  return template.map((row) => [...row].reverse())
-}
-
-// ════════════════════════════════════════════════════════════════
-// DOWN-FACING SPRITES
-// ════════════════════════════════════════════════════════════════
-
-// Walk down: 4 frames (1, 2=standing, 3=mirror legs, 2 again)
-const CHAR_WALK_DOWN_1: TemplateCell[][] = [
-  [_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _],
-  [_, _, _, _, _, _, H, H, H, H, _, _, _, _, _, _],
-  [_, _, _, _, _, H, H, H, H, H, H, _, _, _, _, _],
-  [_, _, _, _, _, H, H, H, H, H, H, _, _, _, _, _],
-  [_, _, _, _, _, K, K, K, K, K, K, _, _, _, _, _],
-  [_, _, _, _, _, K, E, K, K, E, K, _, _, _, _, _],
-  [_, _, _, _, _, K, K, K, K, K, K, _, _, _, _, _],
-  [_, _, _, _, _, K, K, K, K, K, K, _, _, _, _, _],
-  [_, _, _, _, _, _, S, S, S, S, _, _, _, _, _, _],
-  [_, _, _, _, _, S, S, S, S, S, S, _, _, _, _, _],
-  [_, _, _, _, S, S, S, S, S, S, S, S, _, _, _, _],
-  [_, _, _, _, S, S, S, S, S, S, S, S, _, _, _, _],
-  [_, _, _, _, K, S, S, S, S, S, S, K, _, _, _, _],
-  [_, _, _, _, _, S, S, S, S, S, S, _, _, _, _, _],
-  [_, _, _, _, _, _, P, P, P, P, _, _, _, _, _, _],
-  [_, _, _, _, _, P, P, P, P, P, P, _, _, _, _, _],
-  [_, _, _, _, _, P, P, P, P, P, P, _, _, _, _, _],
-  [_, _, _, _, P, P, _, _, _, _, P, P, _, _, _, _],
-  [_, _, _, _, P, P, _, _, _, _, P, P, _, _, _, _],
-  [_, _, _, _, O, O, _, _, _, _, _, O, O, _, _, _],
-  [_, _, _, _, O, O, _, _, _, _, _, O, O, _, _, _],
-  [_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _],
-  [_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _],
-  [_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _],
-]
-
-const CHAR_WALK_DOWN_2: TemplateCell[][] = [
-  [_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _],
-  [_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _],
-  [_, _, _, _, _, _, H, H, H, H, _, _, _, _, _, _],
-  [_, _, _, _, _, H, H, H, H, H, H, _, _, _, _, _],
-  [_, _, _, _, _, H, H, H, H, H, H, _, _, _, _, _],
-  [_, _, _, _, _, K, K, K, K, K, K, _, _, _, _, _],
-  [_, _, _, _, _, K, E, K, K, E, K, _, _, _, _, _],
-  [_, _, _, _, _, K, K, K, K, K, K, _, _, _, _, _],
-  [_, _, _, _, _, K, K, K, K, K, K, _, _, _, _, _],
-  [_, _, _, _, _, _, S, S, S, S, _, _, _, _, _, _],
-  [_, _, _, _, _, S, S, S, S, S, S, _, _, _, _, _],
-  [_, _, _, _, S, S, S, S, S, S, S, S, _, _, _, _],
-  [_, _, _, _, S, S, S, S, S, S, S, S, _, _, _, _],
-  [_, _, _, _, K, S, S, S, S, S, S, K, _, _, _, _],
-  [_, _, _, _, _, S, S, S, S, S, S, _, _, _, _, _],
-  [_, _, _, _, _, _, P, P, P, P, _, _, _, _, _, _],
-  [_, _, _, _, _, P, P, P, P, P, P, _, _, _, _, _],
-  [_, _, _, _, _, P, P, _, _, P, P, _, _, _, _, _],
-  [_, _, _, _, _, P, P, _, _, P, P, _, _, _, _, _],
-  [_, _, _, _, _, P, P, _, _, P, P, _, _, _, _, _],
-  [_, _, _, _, _, O, O, _, _, O, O, _, _, _, _, _],
-  [_, _, _, _, _, O, O, _, _, O, O, _, _, _, _, _],
-  [_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _],
-  [_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _],
-]
-
-const CHAR_WALK_DOWN_3: TemplateCell[][] = [
-  [_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _],
-  [_, _, _, _, _, _, H, H, H, H, _, _, _, _, _, _],
-  [_, _, _, _, _, H, H, H, H, H, H, _, _, _, _, _],
-  [_, _, _, _, _, H, H, H, H, H, H, _, _, _, _, _],
-  [_, _, _, _, _, K, K, K, K, K, K, _, _, _, _, _],
-  [_, _, _, _, _, K, E, K, K, E, K, _, _, _, _, _],
-  [_, _, _, _, _, K, K, K, K, K, K, _, _, _, _, _],
-  [_, _, _, _, _, K, K, K, K, K, K, _, _, _, _, _],
-  [_, _, _, _, _, _, S, S, S, S, _, _, _, _, _, _],
-  [_, _, _, _, _, S, S, S, S, S, S, _, _, _, _, _],
-  [_, _, _, _, S, S, S, S, S, S, S, S, _, _, _, _],
-  [_, _, _, _, S, S, S, S, S, S, S, S, _, _, _, _],
-  [_, _, _, _, K, S, S, S, S, S, S, K, _, _, _, _],
-  [_, _, _, _, _, S, S, S, S, S, S, _, _, _, _, _],
-  [_, _, _, _, _, _, P, P, P, P, _, _, _, _, _, _],
-  [_, _, _, _, _, P, P, P, P, P, P, _, _, _, _, _],
-  [_, _, _, _, _, P, P, P, P, P, P, _, _, _, _, _],
-  [_, _, _, O, O, _, _, _, _, _, _, P, P, _, _, _],
-  [_, _, _, O, O, _, _, _, _, _, _, P, P, _, _, _],
-  [_, _, _, _, _, _, _, _, _, _, O, O, _, _, _, _],
-  [_, _, _, _, _, _, _, _, _, _, O, O, _, _, _, _],
-  [_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _],
-  [_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _],
-  [_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _],
-]
-
-// Down typing: front-facing sitting, arms on keyboard
-const CHAR_DOWN_TYPE_1: TemplateCell[][] = [
-  [_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _],
-  [_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _],
-  [_, _, _, _, _, _, H, H, H, H, _, _, _, _, _, _],
-  [_, _, _, _, _, H, H, H, H, H, H, _, _, _, _, _],
-  [_, _, _, _, _, H, H, H, H, H, H, _, _, _, _, _],
-  [_, _, _, _, _, K, K, K, K, K, K, _, _, _, _, _],
-  [_, _, _, _, _, K, E, K, K, E, K, _, _, _, _, _],
-  [_, _, _, _, _, K, K, K, K, K, K, _, _, _, _, _],
-  [_, _, _, _, _, K, K, K, K, K, K, _, _, _, _, _],
-  [_, _, _, _, _, _, S, S, S, S, _, _, _, _, _, _],
-  [_, _, _, _, _, S, S, S, S, S, S, _, _, _, _, _],
-  [_, _, _, _, S, S, S, S, S, S, S, S, _, _, _, _],
-  [_, _, _, K, K, S, S, S, S, S, S, K, K, _, _, _],
-  [_, _, _, _, K, S, S, S, S, S, S, K, _, _, _, _],
-  [_, _, _, _, _, S, S, S, S, S, S, _, _, _, _, _],
-  [_, _, _, _, _, _, P, P, P, P, _, _, _, _, _, _],
-  [_, _, _, _, _, P, P, P, P, P, P, _, _, _, _, _],
-  [_, _, _, _, _, P, P, P, P, P, P, _, _, _, _, _],
-  [_, _, _, _, _, P, P, _, _, P, P, _, _, _, _, _],
-  [_, _, _, _, _, O, O, _, _, O, O, _, _, _, _, _],
-  [_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _],
-  [_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _],
-  [_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _],
-  [_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _],
-]
-
-const CHAR_DOWN_TYPE_2: TemplateCell[][] = [
-  [_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _],
-  [_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _],
-  [_, _, _, _, _, _, H, H, H, H, _, _, _, _, _, _],
-  [_, _, _, _, _, H, H, H, H, H, H, _, _, _, _, _],
-  [_, _, _, _, _, H, H, H, H, H, H, _, _, _, _, _],
-  [_, _, _, _, _, K, K, K, K, K, K, _, _, _, _, _],
-  [_, _, _, _, _, K, E, K, K, E, K, _, _, _, _, _],
-  [_, _, _, _, _, K, K, K, K, K, K, _, _, _, _, _],
-  [_, _, _, _, _, K, K, K, K, K, K, _, _, _, _, _],
-  [_, _, _, _, _, _, S, S, S, S, _, _, _, _, _, _],
-  [_, _, _, _, _, S, S, S, S, S, S, _, _, _, _, _],
-  [_, _, _, _, S, S, S, S, S, S, S, S, _, _, _, _],
-  [_, _, _, _, K, S, S, S, S, S, S, K, K, _, _, _],
-  [_, _, _, _, K, S, S, S, S, S, S, _, K, _, _, _],
-  [_, _, _, _, _, S, S, S, S, S, S, _, _, _, _, _],
-  [_, _, _, _, _, _, P, P, P, P, _, _, _, _, _, _],
-  [_, _, _, _, _, P, P, P, P, P, P, _, _, _, _, _],
-  [_, _, _, _, _, P, P, P, P, P, P, _, _, _, _, _],
-  [_, _, _, _, _, P, P, _, _, P, P, _, _, _, _, _],
-  [_, _, _, _, _, O, O, _, _, O, O, _, _, _, _, _],
-  [_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _],
-  [_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _],
-  [_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _],
-  [_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _],
-]
-
-// Down reading: front-facing sitting, arms at sides, looking at screen
-const CHAR_DOWN_READ_1: TemplateCell[][] = [
-  [_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _],
-  [_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _],
-  [_, _, _, _, _, _, H, H, H, H, _, _, _, _, _, _],
-  [_, _, _, _, _, H, H, H, H, H, H, _, _, _, _, _],
-  [_, _, _, _, _, H, H, H, H, H, H, _, _, _, _, _],
-  [_, _, _, _, _, K, K, K, K, K, K, _, _, _, _, _],
-  [_, _, _, _, _, K, E, K, K, E, K, _, _, _, _, _],
-  [_, _, _, _, _, K, K, K, K, K, K, _, _, _, _, _],
-  [_, _, _, _, _, K, K, K, K, K, K, _, _, _, _, _],
-  [_, _, _, _, _, _, S, S, S, S, _, _, _, _, _, _],
-  [_, _, _, _, _, S, S, S, S, S, S, _, _, _, _, _],
-  [_, _, _, _, S, S, S, S, S, S, S, S, _, _, _, _],
-  [_, _, _, _, S, S, S, S, S, S, S, S, _, _, _, _],
-  [_, _, _, _, K, S, S, S, S, S, S, K, _, _, _, _],
-  [_, _, _, _, _, S, S, S, S, S, S, _, _, _, _, _],
-  [_, _, _, _, _, _, P, P, P, P, _, _, _, _, _, _],
-  [_, _, _, _, _, P, P, P, P, P, P, _, _, _, _, _],
-  [_, _, _, _, _, P, P, P, P, P, P, _, _, _, _, _],
-  [_, _, _, _, _, P, P, _, _, P, P, _, _, _, _, _],
-  [_, _, _, _, _, O, O, _, _, O, O, _, _, _, _, _],
-  [_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _],
-  [_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _],
-  [_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _],
-  [_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _],
-]
-
-const CHAR_DOWN_READ_2: TemplateCell[][] = [
-  [_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _],
-  [_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _],
-  [_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _],
-  [_, _, _, _, _, _, H, H, H, H, _, _, _, _, _, _],
-  [_, _, _, _, _, H, H, H, H, H, H, _, _, _, _, _],
-  [_, _, _, _, _, H, H, H, H, H, H, _, _, _, _, _],
-  [_, _, _, _, _, K, K, K, K, K, K, _, _, _, _, _],
-  [_, _, _, _, _, K, E, K, K, E, K, _, _, _, _, _],
-  [_, _, _, _, _, K, K, K, K, K, K, _, _, _, _, _],
-  [_, _, _, _, _, K, K, K, K, K, K, _, _, _, _, _],
-  [_, _, _, _, _, _, S, S, S, S, _, _, _, _, _, _],
-  [_, _, _, _, _, S, S, S, S, S, S, _, _, _, _, _],
-  [_, _, _, _, S, S, S, S, S, S, S, S, _, _, _, _],
-  [_, _, _, _, S, S, S, S, S, S, S, S, _, _, _, _],
-  [_, _, _, _, K, S, S, S, S, S, S, K, _, _, _, _],
-  [_, _, _, _, _, S, S, S, S, S, S, _, _, _, _, _],
-  [_, _, _, _, _, _, P, P, P, P, _, _, _, _, _, _],
-  [_, _, _, _, _, P, P, P, P, P, P, _, _, _, _, _],
-  [_, _, _, _, _, P, P, _, _, P, P, _, _, _, _, _],
-  [_, _, _, _, _, O, O, _, _, O, O, _, _, _, _, _],
-  [_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _],
-  [_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _],
-  [_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _],
-  [_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _],
-]
-
-// ════════════════════════════════════════════════════════════════
-// UP-FACING SPRITES (back of head, no face)
-// ════════════════════════════════════════════════════════════════
-
-// Walk up: back view, legs alternate
-const CHAR_WALK_UP_1: TemplateCell[][] = [
-  [_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _],
-  [_, _, _, _, _, _, H, H, H, H, _, _, _, _, _, _],
-  [_, _, _, _, _, H, H, H, H, H, H, _, _, _, _, _],
-  [_, _, _, _, _, H, H, H, H, H, H, _, _, _, _, _],
-  [_, _, _, _, _, H, H, H, H, H, H, _, _, _, _, _],
-  [_, _, _, _, _, K, K, K, K, K, K, _, _, _, _, _],
-  [_, _, _, _, _, K, K, K, K, K, K, _, _, _, _, _],
-  [_, _, _, _, _, K, K, K, K, K, K, _, _, _, _, _],
-  [_, _, _, _, _, _, S, S, S, S, _, _, _, _, _, _],
-  [_, _, _, _, _, S, S, S, S, S, S, _, _, _, _, _],
-  [_, _, _, _, S, S, S, S, S, S, S, S, _, _, _, _],
-  [_, _, _, _, S, S, S, S, S, S, S, S, _, _, _, _],
-  [_, _, _, _, K, S, S, S, S, S, S, K, _, _, _, _],
-  [_, _, _, _, _, S, S, S, S, S, S, _, _, _, _, _],
-  [_, _, _, _, _, _, P, P, P, P, _, _, _, _, _, _],
-  [_, _, _, _, _, P, P, P, P, P, P, _, _, _, _, _],
-  [_, _, _, _, _, P, P, P, P, P, P, _, _, _, _, _],
-  [_, _, _, _, P, P, _, _, _, _, P, P, _, _, _, _],
-  [_, _, _, _, P, P, _, _, _, _, P, P, _, _, _, _],
-  [_, _, _, O, O, _, _, _, _, _, _, O, O, _, _, _],
-  [_, _, _, O, O, _, _, _, _, _, _, O, O, _, _, _],
-  [_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _],
-  [_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _],
-  [_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _],
-]
-
-const CHAR_WALK_UP_2: TemplateCell[][] = [
-  [_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _],
-  [_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _],
-  [_, _, _, _, _, _, H, H, H, H, _, _, _, _, _, _],
-  [_, _, _, _, _, H, H, H, H, H, H, _, _, _, _, _],
-  [_, _, _, _, _, H, H, H, H, H, H, _, _, _, _, _],
-  [_, _, _, _, _, H, H, H, H, H, H, _, _, _, _, _],
-  [_, _, _, _, _, K, K, K, K, K, K, _, _, _, _, _],
-  [_, _, _, _, _, K, K, K, K, K, K, _, _, _, _, _],
-  [_, _, _, _, _, K, K, K, K, K, K, _, _, _, _, _],
-  [_, _, _, _, _, _, S, S, S, S, _, _, _, _, _, _],
-  [_, _, _, _, _, S, S, S, S, S, S, _, _, _, _, _],
-  [_, _, _, _, S, S, S, S, S, S, S, S, _, _, _, _],
-  [_, _, _, _, S, S, S, S, S, S, S, S, _, _, _, _],
-  [_, _, _, _, K, S, S, S, S, S, S, K, _, _, _, _],
-  [_, _, _, _, _, S, S, S, S, S, S, _, _, _, _, _],
-  [_, _, _, _, _, _, P, P, P, P, _, _, _, _, _, _],
-  [_, _, _, _, _, P, P, P, P, P, P, _, _, _, _, _],
-  [_, _, _, _, _, P, P, _, _, P, P, _, _, _, _, _],
-  [_, _, _, _, _, P, P, _, _, P, P, _, _, _, _, _],
-  [_, _, _, _, _, P, P, _, _, P, P, _, _, _, _, _],
-  [_, _, _, _, _, O, O, _, _, O, O, _, _, _, _, _],
-  [_, _, _, _, _, O, O, _, _, O, O, _, _, _, _, _],
-  [_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _],
-  [_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _],
-]
-
-const CHAR_WALK_UP_3: TemplateCell[][] = [
-  [_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _],
-  [_, _, _, _, _, _, H, H, H, H, _, _, _, _, _, _],
-  [_, _, _, _, _, H, H, H, H, H, H, _, _, _, _, _],
-  [_, _, _, _, _, H, H, H, H, H, H, _, _, _, _, _],
-  [_, _, _, _, _, H, H, H, H, H, H, _, _, _, _, _],
-  [_, _, _, _, _, K, K, K, K, K, K, _, _, _, _, _],
-  [_, _, _, _, _, K, K, K, K, K, K, _, _, _, _, _],
-  [_, _, _, _, _, K, K, K, K, K, K, _, _, _, _, _],
-  [_, _, _, _, _, _, S, S, S, S, _, _, _, _, _, _],
-  [_, _, _, _, _, S, S, S, S, S, S, _, _, _, _, _],
-  [_, _, _, _, S, S, S, S, S, S, S, S, _, _, _, _],
-  [_, _, _, _, S, S, S, S, S, S, S, S, _, _, _, _],
-  [_, _, _, _, K, S, S, S, S, S, S, K, _, _, _, _],
-  [_, _, _, _, _, S, S, S, S, S, S, _, _, _, _, _],
-  [_, _, _, _, _, _, P, P, P, P, _, _, _, _, _, _],
-  [_, _, _, _, _, P, P, P, P, P, P, _, _, _, _, _],
-  [_, _, _, _, _, P, P, P, P, P, P, _, _, _, _, _],
-  [_, _, _, O, O, _, _, _, _, _, _, P, P, _, _, _],
-  [_, _, _, O, O, _, _, _, _, _, _, P, P, _, _, _],
-  [_, _, _, _, _, _, _, _, _, _, O, O, _, _, _, _],
-  [_, _, _, _, _, _, _, _, _, _, O, O, _, _, _, _],
-  [_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _],
-  [_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _],
-  [_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _],
-]
-
-// Up typing: back view, arms out to keyboard
-const CHAR_UP_TYPE_1: TemplateCell[][] = [
-  [_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _],
-  [_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _],
-  [_, _, _, _, _, _, H, H, H, H, _, _, _, _, _, _],
-  [_, _, _, _, _, H, H, H, H, H, H, _, _, _, _, _],
-  [_, _, _, _, _, H, H, H, H, H, H, _, _, _, _, _],
-  [_, _, _, _, _, H, H, H, H, H, H, _, _, _, _, _],
-  [_, _, _, _, _, K, K, K, K, K, K, _, _, _, _, _],
-  [_, _, _, _, _, K, K, K, K, K, K, _, _, _, _, _],
-  [_, _, _, _, _, _, S, S, S, S, _, _, _, _, _, _],
-  [_, _, _, _, _, S, S, S, S, S, S, _, _, _, _, _],
-  [_, _, _, _, S, S, S, S, S, S, S, S, _, _, _, _],
-  [_, _, _, K, K, S, S, S, S, S, S, K, K, _, _, _],
-  [_, _, _, _, K, S, S, S, S, S, S, K, _, _, _, _],
-  [_, _, _, _, _, S, S, S, S, S, S, _, _, _, _, _],
-  [_, _, _, _, _, _, P, P, P, P, _, _, _, _, _, _],
-  [_, _, _, _, _, P, P, P, P, P, P, _, _, _, _, _],
-  [_, _, _, _, _, P, P, P, P, P, P, _, _, _, _, _],
-  [_, _, _, _, _, P, P, _, _, P, P, _, _, _, _, _],
-  [_, _, _, _, _, O, O, _, _, O, O, _, _, _, _, _],
-  [_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _],
-  [_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _],
-  [_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _],
-  [_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _],
-  [_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _],
-]
-
-const CHAR_UP_TYPE_2: TemplateCell[][] = [
-  [_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _],
-  [_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _],
-  [_, _, _, _, _, _, H, H, H, H, _, _, _, _, _, _],
-  [_, _, _, _, _, H, H, H, H, H, H, _, _, _, _, _],
-  [_, _, _, _, _, H, H, H, H, H, H, _, _, _, _, _],
-  [_, _, _, _, _, H, H, H, H, H, H, _, _, _, _, _],
-  [_, _, _, _, _, K, K, K, K, K, K, _, _, _, _, _],
-  [_, _, _, _, _, K, K, K, K, K, K, _, _, _, _, _],
-  [_, _, _, _, _, _, S, S, S, S, _, _, _, _, _, _],
-  [_, _, _, _, _, S, S, S, S, S, S, _, _, _, _, _],
-  [_, _, _, _, S, S, S, S, S, S, S, S, _, _, _, _],
-  [_, _, _, _, K, S, S, S, S, S, S, K, K, _, _, _],
-  [_, _, _, _, K, S, S, S, S, S, S, _, K, _, _, _],
-  [_, _, _, _, _, S, S, S, S, S, S, _, _, _, _, _],
-  [_, _, _, _, _, _, P, P, P, P, _, _, _, _, _, _],
-  [_, _, _, _, _, P, P, P, P, P, P, _, _, _, _, _],
-  [_, _, _, _, _, P, P, P, P, P, P, _, _, _, _, _],
-  [_, _, _, _, _, P, P, _, _, P, P, _, _, _, _, _],
-  [_, _, _, _, _, O, O, _, _, O, O, _, _, _, _, _],
-  [_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _],
-  [_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _],
-  [_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _],
-  [_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _],
-  [_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _],
-]
-
-// Up reading: back view, arms at sides
-const CHAR_UP_READ_1: TemplateCell[][] = [
-  [_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _],
-  [_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _],
-  [_, _, _, _, _, _, H, H, H, H, _, _, _, _, _, _],
-  [_, _, _, _, _, H, H, H, H, H, H, _, _, _, _, _],
-  [_, _, _, _, _, H, H, H, H, H, H, _, _, _, _, _],
-  [_, _, _, _, _, H, H, H, H, H, H, _, _, _, _, _],
-  [_, _, _, _, _, K, K, K, K, K, K, _, _, _, _, _],
-  [_, _, _, _, _, K, K, K, K, K, K, _, _, _, _, _],
-  [_, _, _, _, _, _, S, S, S, S, _, _, _, _, _, _],
-  [_, _, _, _, _, S, S, S, S, S, S, _, _, _, _, _],
-  [_, _, _, _, S, S, S, S, S, S, S, S, _, _, _, _],
-  [_, _, _, _, S, S, S, S, S, S, S, S, _, _, _, _],
-  [_, _, _, _, K, S, S, S, S, S, S, K, _, _, _, _],
-  [_, _, _, _, _, S, S, S, S, S, S, _, _, _, _, _],
-  [_, _, _, _, _, _, P, P, P, P, _, _, _, _, _, _],
-  [_, _, _, _, _, P, P, P, P, P, P, _, _, _, _, _],
-  [_, _, _, _, _, P, P, P, P, P, P, _, _, _, _, _],
-  [_, _, _, _, _, P, P, _, _, P, P, _, _, _, _, _],
-  [_, _, _, _, _, O, O, _, _, O, O, _, _, _, _, _],
-  [_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _],
-  [_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _],
-  [_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _],
-  [_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _],
-  [_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _],
-]
-
-const CHAR_UP_READ_2: TemplateCell[][] = [
-  [_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _],
-  [_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _],
-  [_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _],
-  [_, _, _, _, _, _, H, H, H, H, _, _, _, _, _, _],
-  [_, _, _, _, _, H, H, H, H, H, H, _, _, _, _, _],
-  [_, _, _, _, _, H, H, H, H, H, H, _, _, _, _, _],
-  [_, _, _, _, _, H, H, H, H, H, H, _, _, _, _, _],
-  [_, _, _, _, _, K, K, K, K, K, K, _, _, _, _, _],
-  [_, _, _, _, _, K, K, K, K, K, K, _, _, _, _, _],
-  [_, _, _, _, _, _, S, S, S, S, _, _, _, _, _, _],
-  [_, _, _, _, _, S, S, S, S, S, S, _, _, _, _, _],
-  [_, _, _, _, S, S, S, S, S, S, S, S, _, _, _, _],
-  [_, _, _, _, S, S, S, S, S, S, S, S, _, _, _, _],
-  [_, _, _, _, K, S, S, S, S, S, S, K, _, _, _, _],
-  [_, _, _, _, _, S, S, S, S, S, S, _, _, _, _, _],
-  [_, _, _, _, _, _, P, P, P, P, _, _, _, _, _, _],
-  [_, _, _, _, _, P, P, P, P, P, P, _, _, _, _, _],
-  [_, _, _, _, _, P, P, _, _, P, P, _, _, _, _, _],
-  [_, _, _, _, _, O, O, _, _, O, O, _, _, _, _, _],
-  [_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _],
-  [_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _],
-  [_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _],
-  [_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _],
-  [_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _],
-]
-
-// ════════════════════════════════════════════════════════════════
-// RIGHT-FACING SPRITES (side profile, one eye visible)
-// Left sprites are generated by flipHorizontal()
-// ════════════════════════════════════════════════════════════════
-
-// Right walk: side view, legs step
-const CHAR_WALK_RIGHT_1: TemplateCell[][] = [
-  [_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _],
-  [_, _, _, _, _, _, _, H, H, H, H, _, _, _, _, _],
-  [_, _, _, _, _, _, H, H, H, H, H, _, _, _, _, _],
-  [_, _, _, _, _, _, H, H, H, H, H, _, _, _, _, _],
-  [_, _, _, _, _, _, K, K, K, K, K, _, _, _, _, _],
-  [_, _, _, _, _, _, K, K, K, E, K, _, _, _, _, _],
-  [_, _, _, _, _, _, K, K, K, K, K, _, _, _, _, _],
-  [_, _, _, _, _, _, K, K, K, K, _, _, _, _, _, _],
-  [_, _, _, _, _, _, _, S, S, S, _, _, _, _, _, _],
-  [_, _, _, _, _, _, S, S, S, S, S, _, _, _, _, _],
-  [_, _, _, _, _, S, S, S, S, S, S, _, _, _, _, _],
-  [_, _, _, _, _, S, S, S, S, S, S, _, _, _, _, _],
-  [_, _, _, _, _, K, S, S, S, S, K, _, _, _, _, _],
-  [_, _, _, _, _, _, S, S, S, S, _, _, _, _, _, _],
-  [_, _, _, _, _, _, _, P, P, _, _, _, _, _, _, _],
-  [_, _, _, _, _, _, P, P, P, P, _, _, _, _, _, _],
-  [_, _, _, _, _, _, P, P, P, P, _, _, _, _, _, _],
-  [_, _, _, _, _, P, P, _, _, _, P, P, _, _, _, _],
-  [_, _, _, _, _, P, P, _, _, _, P, P, _, _, _, _],
-  [_, _, _, _, _, O, O, _, _, _, _, O, O, _, _, _],
-  [_, _, _, _, _, O, O, _, _, _, _, O, O, _, _, _],
-  [_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _],
-  [_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _],
-  [_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _],
-]
-
-const CHAR_WALK_RIGHT_2: TemplateCell[][] = [
-  [_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _],
-  [_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _],
-  [_, _, _, _, _, _, _, H, H, H, H, _, _, _, _, _],
-  [_, _, _, _, _, _, H, H, H, H, H, _, _, _, _, _],
-  [_, _, _, _, _, _, H, H, H, H, H, _, _, _, _, _],
-  [_, _, _, _, _, _, K, K, K, K, K, _, _, _, _, _],
-  [_, _, _, _, _, _, K, K, K, E, K, _, _, _, _, _],
-  [_, _, _, _, _, _, K, K, K, K, K, _, _, _, _, _],
-  [_, _, _, _, _, _, K, K, K, K, _, _, _, _, _, _],
-  [_, _, _, _, _, _, _, S, S, S, _, _, _, _, _, _],
-  [_, _, _, _, _, _, S, S, S, S, S, _, _, _, _, _],
-  [_, _, _, _, _, S, S, S, S, S, S, _, _, _, _, _],
-  [_, _, _, _, _, S, S, S, S, S, S, _, _, _, _, _],
-  [_, _, _, _, _, K, S, S, S, S, K, _, _, _, _, _],
-  [_, _, _, _, _, _, S, S, S, S, _, _, _, _, _, _],
-  [_, _, _, _, _, _, _, P, P, _, _, _, _, _, _, _],
-  [_, _, _, _, _, _, P, P, P, P, _, _, _, _, _, _],
-  [_, _, _, _, _, _, P, P, _, P, P, _, _, _, _, _],
-  [_, _, _, _, _, _, P, P, _, P, P, _, _, _, _, _],
-  [_, _, _, _, _, _, P, P, _, P, P, _, _, _, _, _],
-  [_, _, _, _, _, _, O, O, _, O, O, _, _, _, _, _],
-  [_, _, _, _, _, _, O, O, _, O, O, _, _, _, _, _],
-  [_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _],
-  [_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _],
-]
-
-const CHAR_WALK_RIGHT_3: TemplateCell[][] = [
-  [_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _],
-  [_, _, _, _, _, _, _, H, H, H, H, _, _, _, _, _],
-  [_, _, _, _, _, _, H, H, H, H, H, _, _, _, _, _],
-  [_, _, _, _, _, _, H, H, H, H, H, _, _, _, _, _],
-  [_, _, _, _, _, _, K, K, K, K, K, _, _, _, _, _],
-  [_, _, _, _, _, _, K, K, K, E, K, _, _, _, _, _],
-  [_, _, _, _, _, _, K, K, K, K, K, _, _, _, _, _],
-  [_, _, _, _, _, _, K, K, K, K, _, _, _, _, _, _],
-  [_, _, _, _, _, _, _, S, S, S, _, _, _, _, _, _],
-  [_, _, _, _, _, _, S, S, S, S, S, _, _, _, _, _],
-  [_, _, _, _, _, S, S, S, S, S, S, _, _, _, _, _],
-  [_, _, _, _, _, S, S, S, S, S, S, _, _, _, _, _],
-  [_, _, _, _, _, K, S, S, S, S, K, _, _, _, _, _],
-  [_, _, _, _, _, _, S, S, S, S, _, _, _, _, _, _],
-  [_, _, _, _, _, _, _, P, P, _, _, _, _, _, _, _],
-  [_, _, _, _, _, _, P, P, P, P, _, _, _, _, _, _],
-  [_, _, _, _, _, _, P, P, P, P, _, _, _, _, _, _],
-  [_, _, _, _, _, _, _, _, P, P, P, _, _, _, _, _],
-  [_, _, _, _, _, _, _, _, P, P, P, _, _, _, _, _],
-  [_, _, _, _, _, O, O, _, _, O, O, _, _, _, _, _],
-  [_, _, _, _, _, O, O, _, _, _, _, _, _, _, _, _],
-  [_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _],
-  [_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _],
-  [_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _],
-]
-
-// Right typing: side profile sitting, one arm on keyboard
-const CHAR_RIGHT_TYPE_1: TemplateCell[][] = [
-  [_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _],
-  [_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _],
-  [_, _, _, _, _, _, _, H, H, H, H, _, _, _, _, _],
-  [_, _, _, _, _, _, H, H, H, H, H, _, _, _, _, _],
-  [_, _, _, _, _, _, H, H, H, H, H, _, _, _, _, _],
-  [_, _, _, _, _, _, K, K, K, K, K, _, _, _, _, _],
-  [_, _, _, _, _, _, K, K, K, E, K, _, _, _, _, _],
-  [_, _, _, _, _, _, K, K, K, K, K, _, _, _, _, _],
-  [_, _, _, _, _, _, K, K, K, K, _, _, _, _, _, _],
-  [_, _, _, _, _, _, _, S, S, S, _, _, _, _, _, _],
-  [_, _, _, _, _, _, S, S, S, S, S, _, _, _, _, _],
-  [_, _, _, _, _, S, S, S, S, S, S, K, _, _, _, _],
-  [_, _, _, _, _, S, S, S, S, S, K, _, _, _, _, _],
-  [_, _, _, _, _, _, S, S, S, S, _, _, _, _, _, _],
-  [_, _, _, _, _, _, S, S, S, S, _, _, _, _, _, _],
-  [_, _, _, _, _, _, _, P, P, _, _, _, _, _, _, _],
-  [_, _, _, _, _, _, P, P, P, P, _, _, _, _, _, _],
-  [_, _, _, _, _, _, P, P, P, P, _, _, _, _, _, _],
-  [_, _, _, _, _, _, P, P, _, P, P, _, _, _, _, _],
-  [_, _, _, _, _, _, O, O, _, O, O, _, _, _, _, _],
-  [_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _],
-  [_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _],
-  [_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _],
-  [_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _],
-]
-
-const CHAR_RIGHT_TYPE_2: TemplateCell[][] = [
-  [_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _],
-  [_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _],
-  [_, _, _, _, _, _, _, H, H, H, H, _, _, _, _, _],
-  [_, _, _, _, _, _, H, H, H, H, H, _, _, _, _, _],
-  [_, _, _, _, _, _, H, H, H, H, H, _, _, _, _, _],
-  [_, _, _, _, _, _, K, K, K, K, K, _, _, _, _, _],
-  [_, _, _, _, _, _, K, K, K, E, K, _, _, _, _, _],
-  [_, _, _, _, _, _, K, K, K, K, K, _, _, _, _, _],
-  [_, _, _, _, _, _, K, K, K, K, _, _, _, _, _, _],
-  [_, _, _, _, _, _, _, S, S, S, _, _, _, _, _, _],
-  [_, _, _, _, _, _, S, S, S, S, S, _, _, _, _, _],
-  [_, _, _, _, _, S, S, S, S, S, S, _, K, _, _, _],
-  [_, _, _, _, _, S, S, S, S, S, _, _, K, _, _, _],
-  [_, _, _, _, _, _, S, S, S, S, _, _, _, _, _, _],
-  [_, _, _, _, _, _, S, S, S, S, _, _, _, _, _, _],
-  [_, _, _, _, _, _, _, P, P, _, _, _, _, _, _, _],
-  [_, _, _, _, _, _, P, P, P, P, _, _, _, _, _, _],
-  [_, _, _, _, _, _, P, P, P, P, _, _, _, _, _, _],
-  [_, _, _, _, _, _, P, P, _, P, P, _, _, _, _, _],
-  [_, _, _, _, _, _, O, O, _, O, O, _, _, _, _, _],
-  [_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _],
-  [_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _],
-  [_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _],
-  [_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _],
-]
-
-// Right reading: side sitting, arms at side
-const CHAR_RIGHT_READ_1: TemplateCell[][] = [
-  [_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _],
-  [_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _],
-  [_, _, _, _, _, _, _, H, H, H, H, _, _, _, _, _],
-  [_, _, _, _, _, _, H, H, H, H, H, _, _, _, _, _],
-  [_, _, _, _, _, _, H, H, H, H, H, _, _, _, _, _],
-  [_, _, _, _, _, _, K, K, K, K, K, _, _, _, _, _],
-  [_, _, _, _, _, _, K, K, K, E, K, _, _, _, _, _],
-  [_, _, _, _, _, _, K, K, K, K, K, _, _, _, _, _],
-  [_, _, _, _, _, _, K, K, K, K, _, _, _, _, _, _],
-  [_, _, _, _, _, _, _, S, S, S, _, _, _, _, _, _],
-  [_, _, _, _, _, _, S, S, S, S, S, _, _, _, _, _],
-  [_, _, _, _, _, S, S, S, S, S, S, _, _, _, _, _],
-  [_, _, _, _, _, S, S, S, S, S, S, _, _, _, _, _],
-  [_, _, _, _, _, K, S, S, S, S, K, _, _, _, _, _],
-  [_, _, _, _, _, _, S, S, S, S, _, _, _, _, _, _],
-  [_, _, _, _, _, _, _, P, P, _, _, _, _, _, _, _],
-  [_, _, _, _, _, _, P, P, P, P, _, _, _, _, _, _],
-  [_, _, _, _, _, _, P, P, P, P, _, _, _, _, _, _],
-  [_, _, _, _, _, _, P, P, _, P, P, _, _, _, _, _],
-  [_, _, _, _, _, _, O, O, _, O, O, _, _, _, _, _],
-  [_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _],
-  [_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _],
-  [_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _],
-  [_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _],
-]
-
-const CHAR_RIGHT_READ_2: TemplateCell[][] = [
-  [_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _],
-  [_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _],
-  [_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _],
-  [_, _, _, _, _, _, _, H, H, H, H, _, _, _, _, _],
-  [_, _, _, _, _, _, H, H, H, H, H, _, _, _, _, _],
-  [_, _, _, _, _, _, H, H, H, H, H, _, _, _, _, _],
-  [_, _, _, _, _, _, K, K, K, K, K, _, _, _, _, _],
-  [_, _, _, _, _, _, K, K, K, E, K, _, _, _, _, _],
-  [_, _, _, _, _, _, K, K, K, K, K, _, _, _, _, _],
-  [_, _, _, _, _, _, K, K, K, K, _, _, _, _, _, _],
-  [_, _, _, _, _, _, _, S, S, S, _, _, _, _, _, _],
-  [_, _, _, _, _, _, S, S, S, S, S, _, _, _, _, _],
-  [_, _, _, _, _, S, S, S, S, S, S, _, _, _, _, _],
-  [_, _, _, _, _, S, S, S, S, S, S, _, _, _, _, _],
-  [_, _, _, _, _, K, S, S, S, S, K, _, _, _, _, _],
-  [_, _, _, _, _, _, S, S, S, S, _, _, _, _, _, _],
-  [_, _, _, _, _, _, _, P, P, _, _, _, _, _, _, _],
-  [_, _, _, _, _, _, P, P, P, P, _, _, _, _, _, _],
-  [_, _, _, _, _, _, P, P, _, P, P, _, _, _, _, _],
-  [_, _, _, _, _, _, O, O, _, O, O, _, _, _, _, _],
-  [_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _],
-  [_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _],
-  [_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _],
-  [_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _],
-]
-
-// ════════════════════════════════════════════════════════════════
-// Template export (for export-characters script)
-// ════════════════════════════════════════════════════════════════
-
-/** All character templates grouped by direction, for use by the export script.
- *  Frame order per direction: walk1, walk2, walk3, type1, type2, read1, read2 */
-export const CHARACTER_TEMPLATES = {
-  down: [
-    CHAR_WALK_DOWN_1, CHAR_WALK_DOWN_2, CHAR_WALK_DOWN_3,
-    CHAR_DOWN_TYPE_1, CHAR_DOWN_TYPE_2,
-    CHAR_DOWN_READ_1, CHAR_DOWN_READ_2,
-  ],
-  up: [
-    CHAR_WALK_UP_1, CHAR_WALK_UP_2, CHAR_WALK_UP_3,
-    CHAR_UP_TYPE_1, CHAR_UP_TYPE_2,
-    CHAR_UP_READ_1, CHAR_UP_READ_2,
-  ],
-  right: [
-    CHAR_WALK_RIGHT_1, CHAR_WALK_RIGHT_2, CHAR_WALK_RIGHT_3,
-    CHAR_RIGHT_TYPE_1, CHAR_RIGHT_TYPE_2,
-    CHAR_RIGHT_READ_1, CHAR_RIGHT_READ_2,
-  ],
-} as const
 
 // ════════════════════════════════════════════════════════════════
 // Loaded character sprites (from PNG assets)
@@ -765,6 +125,11 @@ export interface LoadedCharacterData {
 }
 
 let loadedCharacters: LoadedCharacterData[] | null = null
+
+/** Returns true once PNG character assets have been loaded */
+export function areCharacterSpritesLoaded(): boolean {
+  return loadedCharacters !== null
+}
 
 /** Set pre-colored character sprites loaded from PNG assets. Call this when characterSpritesLoaded message arrives. */
 export function setCharacterTemplates(data: LoadedCharacterData[]): void {
@@ -796,6 +161,8 @@ export interface CharacterSprites {
   walk: Record<Direction, [SpriteData, SpriteData, SpriteData, SpriteData]>
   typing: Record<Direction, [SpriteData, SpriteData]>
   reading: Record<Direction, [SpriteData, SpriteData]>
+  /** Optional personality-specific idle animation frames (front-facing only). */
+  personality_idle?: SpriteData[]
 }
 
 const spriteCache = new Map<string, CharacterSprites>()
@@ -830,70 +197,42 @@ function hueShiftSprites(sprites: CharacterSprites, hueShift: number): Character
   }
 }
 
-export function getCharacterSprites(paletteIndex: number, hueShift = 0): CharacterSprites {
+/** Returns character sprites from loaded PNG assets, or null if assets haven't loaded yet. */
+export function getCharacterSprites(paletteIndex: number, hueShift = 0): CharacterSprites | null {
+  if (!loadedCharacters) return null
+
   const cacheKey = `${paletteIndex}:${hueShift}`
   const cached = spriteCache.get(cacheKey)
   if (cached) return cached
 
-  let sprites: CharacterSprites
+  const char = loadedCharacters[paletteIndex < loadedCharacters.length ? paletteIndex : paletteIndex % loadedCharacters.length]
+  const d = char.down
+  const u = char.up
+  const rt = char.right
+  const flip = flipSpriteHorizontal
+  // Use dedicated left frames if available, otherwise flip right
+  const lt = char.left
+  const leftFrame = (idx: number) => lt ? lt[idx] : flip(rt[idx])
 
-  if (loadedCharacters) {
-    // Use pre-colored character sprites from PNG assets
-    const char = loadedCharacters[paletteIndex < loadedCharacters.length ? paletteIndex : paletteIndex % loadedCharacters.length]
-    const d = char.down
-    const u = char.up
-    const rt = char.right
-    const flip = flipSpriteHorizontal
-    // Use dedicated left frames if available, otherwise flip right
-    const lt = char.left
-    const leftFrame = (idx: number) => lt ? lt[idx] : flip(rt[idx])
-
-    sprites = {
-      walk: {
-        [Dir.DOWN]: [d[0], d[1], d[2], d[1]],
-        [Dir.UP]: [u[0], u[1], u[2], u[1]],
-        [Dir.RIGHT]: [rt[0], rt[1], rt[2], rt[1]],
-        [Dir.LEFT]: [leftFrame(0), leftFrame(1), leftFrame(2), leftFrame(1)],
-      },
-      typing: {
-        [Dir.DOWN]: [d[3], d[4]],
-        [Dir.UP]: [u[3], u[4]],
-        [Dir.RIGHT]: [rt[3], rt[4]],
-        [Dir.LEFT]: [leftFrame(3), leftFrame(4)],
-      },
-      reading: {
-        [Dir.DOWN]: [d[5], d[6]],
-        [Dir.UP]: [u[5], u[6]],
-        [Dir.RIGHT]: [rt[5], rt[6]],
-        [Dir.LEFT]: [leftFrame(5), leftFrame(6)],
-      },
-    }
-  } else {
-    // Fallback: use hardcoded templates with palette swapping
-    const pal = CHARACTER_PALETTES[paletteIndex % CHARACTER_PALETTES.length]
-    const r = (t: TemplateCell[][]) => resolveTemplate(t, pal)
-    const rf = (t: TemplateCell[][]) => resolveTemplate(flipHorizontal(t), pal)
-
-    sprites = {
-      walk: {
-        [Dir.DOWN]: [r(CHAR_WALK_DOWN_1), r(CHAR_WALK_DOWN_2), r(CHAR_WALK_DOWN_3), r(CHAR_WALK_DOWN_2)],
-        [Dir.UP]: [r(CHAR_WALK_UP_1), r(CHAR_WALK_UP_2), r(CHAR_WALK_UP_3), r(CHAR_WALK_UP_2)],
-        [Dir.RIGHT]: [r(CHAR_WALK_RIGHT_1), r(CHAR_WALK_RIGHT_2), r(CHAR_WALK_RIGHT_3), r(CHAR_WALK_RIGHT_2)],
-        [Dir.LEFT]: [rf(CHAR_WALK_RIGHT_1), rf(CHAR_WALK_RIGHT_2), rf(CHAR_WALK_RIGHT_3), rf(CHAR_WALK_RIGHT_2)],
-      },
-      typing: {
-        [Dir.DOWN]: [r(CHAR_DOWN_TYPE_1), r(CHAR_DOWN_TYPE_2)],
-        [Dir.UP]: [r(CHAR_UP_TYPE_1), r(CHAR_UP_TYPE_2)],
-        [Dir.RIGHT]: [r(CHAR_RIGHT_TYPE_1), r(CHAR_RIGHT_TYPE_2)],
-        [Dir.LEFT]: [rf(CHAR_RIGHT_TYPE_1), rf(CHAR_RIGHT_TYPE_2)],
-      },
-      reading: {
-        [Dir.DOWN]: [r(CHAR_DOWN_READ_1), r(CHAR_DOWN_READ_2)],
-        [Dir.UP]: [r(CHAR_UP_READ_1), r(CHAR_UP_READ_2)],
-        [Dir.RIGHT]: [r(CHAR_RIGHT_READ_1), r(CHAR_RIGHT_READ_2)],
-        [Dir.LEFT]: [rf(CHAR_RIGHT_READ_1), rf(CHAR_RIGHT_READ_2)],
-      },
-    }
+  let sprites: CharacterSprites = {
+    walk: {
+      [Dir.DOWN]: [d[0], d[1], d[2], d[1]],
+      [Dir.UP]: [u[0], u[1], u[2], u[1]],
+      [Dir.RIGHT]: [rt[0], rt[1], rt[2], rt[1]],
+      [Dir.LEFT]: [leftFrame(0), leftFrame(1), leftFrame(2), leftFrame(1)],
+    },
+    typing: {
+      [Dir.DOWN]: [d[3], d[4]],
+      [Dir.UP]: [u[3], u[4]],
+      [Dir.RIGHT]: [rt[3], rt[4]],
+      [Dir.LEFT]: [leftFrame(3), leftFrame(4)],
+    },
+    reading: {
+      [Dir.DOWN]: [d[5], d[6]],
+      [Dir.UP]: [u[5], u[6]],
+      [Dir.RIGHT]: [rt[5], rt[6]],
+      [Dir.LEFT]: [leftFrame(5), leftFrame(6)],
+    },
   }
 
   // Apply hue shift if non-zero

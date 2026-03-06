@@ -1,0 +1,45 @@
+{
+  "id": "directive-data-consolidation",
+  "title": "Consolidate Directive Data Model + Rich Pipeline Stepper",
+  "status": "completed",
+  "agent": ["jordan", "riley"],
+  "reviewers": ["sarah"],
+  "tasks": [
+    {
+      "id": "merge-schema",
+      "title": "Merge checkpoint into directive.json as single source",
+      "status": "completed",
+      "agent": ["jordan"],
+      "dod": [
+        { "criterion": "directive.json schema has pipeline{} with per-step status/agent/output/artifacts", "met": true },
+        { "criterion": "All 7 pipeline docs updated to write to directive.json instead of checkpoint", "met": true },
+        { "criterion": "checkpoint.md schema doc redirects to directive-json.md", "met": true },
+        { "criterion": "Resume logic (01-checkpoint.md) reads from directive.json", "met": true }
+      ]
+    },
+    {
+      "id": "update-watcher",
+      "title": "Watcher reads directive.json as single source",
+      "status": "completed",
+      "agent": ["jordan"],
+      "dod": [
+        { "criterion": "DirectiveWatcher reads pipeline{} from .context/directives/{name}.json", "met": true },
+        { "criterion": "Removed checkpointWatcher, readCheckpoint, checkpointDir", "met": true },
+        { "criterion": "Watches .context/directives/ for directive.json changes", "met": true },
+        { "criterion": "TypeScript compiles without errors", "met": true }
+      ]
+    },
+    {
+      "id": "rich-pipeline-ui",
+      "title": "Rich pipeline UI with current step header + step details",
+      "status": "completed",
+      "agent": ["riley"],
+      "dod": [
+        { "criterion": "CurrentStepHeader shows active step prominently at top with agent, reviewers, elapsed, description", "met": true },
+        { "criterion": "All non-pending steps show artifacts inline (agent, output summary)", "met": true },
+        { "criterion": "Dashboard, Projects, Game all show title instead of slug", "met": true },
+        { "criterion": "TypeScript compiles and builds without errors", "met": true }
+      ]
+    }
+  ]
+}

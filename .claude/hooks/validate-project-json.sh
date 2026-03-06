@@ -1,14 +1,15 @@
 #!/usr/bin/env bash
 # validate-project-json.sh — Pre-execution enforcement
 #
-# Called before Step 5 (execution) begins. Blocks execution if project.json
+# Called before the execute step begins. Blocks execution if project.json
 # doesn't exist or is missing required fields.
 #
-# Usage: echo "$MORGAN_PLAN_JSON" | ./validate-project-json.sh
+# Usage: echo "$JSON" | ./validate-project-json.sh
 #
-# Reads Morgan's plan from stdin to determine the goal_folder and directive name,
-# then checks that .context/goals/{goal_folder}/projects/{directive-name}/project.json
-# exists and has required fields.
+# Reads JSON from stdin with either:
+#   { "directive_dir": "path/to/directive", "project_id": "project-slug" }
+#   { "goal_folder": "goal-id", "directive_name": "directive-id" }
+# and checks that the corresponding project.json exists and has required fields.
 #
 # Exit 0, no output = valid
 # Exit 0, JSON output = validation result (valid: true/false, violations: [...])
@@ -22,22 +23,28 @@ command -v jq >/dev/null 2>&1 || { echo "Error: jq is required" >&2; exit 1; }
 # Read Morgan plan or directive info from stdin
 INPUT=$(cat)
 
-# Extract goal_folder and directive name
+# Determine project.json path — supports both directive-based and goal-based paths
+DIRECTIVE_DIR=$(echo "$INPUT" | jq -r '.directive_dir // empty')
+PROJECT_ID=$(echo "$INPUT" | jq -r '.project_id // empty')
 GOAL_FOLDER=$(echo "$INPUT" | jq -r '.goal_folder // empty')
 DIRECTIVE_NAME=$(echo "$INPUT" | jq -r '.directive_name // .id // empty')
 
-if [[ -z "$GOAL_FOLDER" || -z "$DIRECTIVE_NAME" ]]; then
-  echo '{"valid": false, "violations": ["Cannot determine goal_folder or directive_name from input. Pass JSON with goal_folder and directive_name/id fields."]}'
+if [[ -n "$DIRECTIVE_DIR" && -n "$PROJECT_ID" ]]; then
+  # New path: .context/directives/{id}/projects/{project-id}/project.json
+  PROJECT_PATH="${DIRECTIVE_DIR}/projects/${PROJECT_ID}/project.json"
+elif [[ -n "$GOAL_FOLDER" && -n "$DIRECTIVE_NAME" ]]; then
+  # Legacy path: .context/goals/{goal}/projects/{directive}/project.json
+  PROJECT_PATH=".context/goals/${GOAL_FOLDER}/projects/${DIRECTIVE_NAME}/project.json"
+else
+  echo '{"valid": false, "violations": ["Pass JSON with directive_dir+project_id or goal_folder+directive_name fields."]}'
   exit 0
 fi
-
-PROJECT_PATH=".context/goals/${GOAL_FOLDER}/projects/${DIRECTIVE_NAME}/project.json"
 
 violations=()
 
 # Check existence
 if [[ ! -f "$PROJECT_PATH" ]]; then
-  violations+=("project.json does not exist at ${PROJECT_PATH}. Step 3 (Morgan planning) must create it before execution begins.")
+  violations+=("project.json does not exist at ${PROJECT_PATH}. The approve step must create it before execution begins.")
   echo "{\"valid\": false, \"violations\": $(printf '%s\n' "${violations[@]}" | jq -R . | jq -s .)}"
   exit 0
 fi

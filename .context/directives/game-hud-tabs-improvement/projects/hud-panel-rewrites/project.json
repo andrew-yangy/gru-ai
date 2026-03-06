@@ -1,0 +1,116 @@
+{
+  "id": "hud-panel-rewrites",
+  "title": "HUD Panel Content Rewrites",
+  "goal_id": "game",
+  "status": "completed",
+  "completed": "2026-03-06T23:30:00.000Z",
+  "description": "Rewrite all 4 non-Team panel contents: InboxPanel->ActionPanel, ProjectsPanel->OpsPanel, IntelPanel->DirectivePanel, WikiPanel->LogPanel. Add BookshelfPanel as furniture panel. Each panel redesigned around CEO workflow questions.",
+  "scope": {
+    "in": "ActionPanel (urgency tiers, decision cards), OpsPanel (KPI strip, goal health cards), DirectivePanel (pipeline hero, project cards, artifact trail), LogPanel (event feed with date separators), BookshelfPanel (lessons viewer in furniture), SidePanel.tsx routing, panelUtils.ts shared components",
+    "out": "Tab shell changes (done in hud-tab-shell-and-badges), new backend endpoints, game engine/canvas changes, TeamPanel redesign"
+  },
+  "dod": [
+    { "criterion": "ActionPanel shows 3 urgency tiers (Urgent/Needs Attention/Info) with waiting sessions and directive completion gates", "met": true },
+    { "criterion": "OpsPanel shows 2x2 KPI strip and goal health cards with project status drill-down", "met": true },
+    { "criterion": "DirectivePanel shows pipeline stepper hero view, project cards with task progress, and directive history", "met": true },
+    { "criterion": "LogPanel shows chronological event feed with date separators and All/Important filter", "met": true },
+    { "criterion": "BookshelfPanel renders lesson files when bookshelf furniture is clicked", "met": true },
+    { "criterion": "All panels use PARCHMENT theme and pixel-art styling from panelUtils.ts", "met": true }
+  ],
+  "agent": ["riley"],
+  "reviewers": ["marcus"],
+  "complexity": "complex",
+  "depends_on": ["hud-tab-shell-and-badges"],
+  "tasks": [
+    {
+      "id": "log-panel-event-engine",
+      "title": "LogPanel with Event Feed",
+      "priority": "P0",
+      "complexity": "moderate",
+      "phases": ["build", "code-review", "review"],
+      "status": "completed",
+      "agent": ["riley"],
+      "user_scenario": "Player opens Log tab and sees a chronological feed of company events with date separators and importance filtering",
+      "scope": "Create LogPanel.tsx replacing WikiPanel.",
+      "dod": [
+        { "criterion": "LogPanel.tsx exists and renders event feed from store data", "met": true },
+        { "criterion": "Events sorted chronologically with date separator headers", "met": true },
+        { "criterion": "All/Important filter toggle works — Important shows only errors, completions, approvals", "met": true },
+        { "criterion": "Each event has icon, timestamp, and description in pixel-art style", "met": true },
+        { "criterion": "Empty state shows 'No events yet' message", "met": true }
+      ]
+    },
+    {
+      "id": "action-panel-rewrite",
+      "title": "ActionPanel with Urgency Tiers",
+      "priority": "P0",
+      "complexity": "moderate",
+      "phases": ["build", "code-review", "review"],
+      "status": "completed",
+      "agent": ["riley"],
+      "user_scenario": "Player opens Action tab and sees items sorted by urgency",
+      "scope": "Rewrite InboxPanel.tsx as ActionPanel.tsx with three urgency tiers.",
+      "dod": [
+        { "criterion": "ActionPanel.tsx exists with 3 collapsible urgency tier sections", "met": true },
+        { "criterion": "Urgent tier shows error sessions and failed reviews with red styling", "met": true },
+        { "criterion": "Needs Attention tier shows waiting-approval sessions and awaiting_completion directives", "met": true },
+        { "criterion": "Each item shows agent name, context summary, and time since created", "met": true },
+        { "criterion": "Empty state shows 'All clear — nothing needs your attention' message", "met": true }
+      ]
+    },
+    {
+      "id": "ops-panel-rewrite",
+      "title": "OpsPanel with KPI Strip & Goal Health",
+      "priority": "P0",
+      "complexity": "moderate",
+      "phases": ["build", "code-review", "review"],
+      "status": "completed",
+      "agent": ["riley"],
+      "user_scenario": "Player opens Ops tab and sees company KPIs and goal health",
+      "scope": "Rewrite ProjectsPanel.tsx as OpsPanel.tsx with KPI strip and goal health cards.",
+      "dod": [
+        { "criterion": "OpsPanel.tsx exists with KPI strip showing 4 metrics", "met": true },
+        { "criterion": "Goal health cards render with status color (green/yellow/red based on project health)", "met": true },
+        { "criterion": "Each goal card expands to show projects with task progress bars", "met": true },
+        { "criterion": "KPI values computed from store data (goals, features/projects, tasks)", "met": true },
+        { "criterion": "Backlog count shown with link/expand to backlog items per goal", "met": true }
+      ]
+    },
+    {
+      "id": "directive-panel-rewrite",
+      "title": "DirectivePanel with Pipeline Hero View",
+      "priority": "P0",
+      "complexity": "moderate",
+      "phases": ["build", "code-review", "review"],
+      "status": "completed",
+      "agent": ["riley"],
+      "user_scenario": "Player opens Directive tab and sees pipeline progress with project cards",
+      "scope": "Rewrite IntelPanel.tsx as DirectivePanel.tsx with pipeline stepper hero.",
+      "dod": [
+        { "criterion": "DirectivePanel.tsx exists with pipeline stepper hero for active directive", "met": true },
+        { "criterion": "Pipeline steps show status (completed/active/pending) with visual indicators", "met": true },
+        { "criterion": "Project cards below stepper show task completion progress", "met": true },
+        { "criterion": "Elapsed time displays since directive started_at", "met": true },
+        { "criterion": "Empty state shows 'No active directive' when directiveState is null", "met": true }
+      ]
+    },
+    {
+      "id": "bookshelf-and-wiring",
+      "title": "BookshelfPanel & Final Wiring",
+      "priority": "P1",
+      "complexity": "simple",
+      "phases": ["build", "review"],
+      "status": "completed",
+      "agent": ["riley"],
+      "user_scenario": "Player clicks bookshelf furniture and sees lesson files; old panels cleaned up",
+      "scope": "BookshelfPanel as furniture panel, delete old panels, update routing.",
+      "dod": [
+        { "criterion": "BookshelfPanel.tsx exists showing lesson files when bookshelf furniture clicked", "met": true },
+        { "criterion": "SidePanel.tsx routes to ActionPanel, OpsPanel, DirectivePanel, LogPanel for tab content", "met": true },
+        { "criterion": "Old panel files (InboxPanel, ProjectsPanel, IntelPanel, WikiPanel) deleted", "met": true },
+        { "criterion": "App compiles with zero TypeScript errors and all panels render", "met": true }
+      ]
+    }
+  ],
+  "sequencing_rationale": "LogPanel first as it's the most independent. ActionPanel and OpsPanel next. DirectivePanel depends on pipeline pattern. BookshelfPanel last for cleanup."
+}

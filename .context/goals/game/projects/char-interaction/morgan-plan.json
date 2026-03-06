@@ -1,0 +1,130 @@
+{
+  "goal": "Agent Visual Interactions — Characters Communicate Through Behavior",
+  "goal_folder": "game",
+  "challenges": {
+    "risks": [
+      "Items 1-3 were built in-session without the pipeline. Code review may surface issues (e.g., formatActivity edge cases, interaction map not cleaning up stale pairs, facing direction restore race in the animation loop). If review finds structural problems, fixes could cascade into items 4-5 which depend on the same systems (interactionMap, facing overrides, chat bubbles).",
+      "Meeting room brainstorm feature (item 4) requires detecting '3+ simultaneous subagents' — but the current subagent tracking in OfficeState uses parentAgentId on Character, not a count. Need to scan all characters to count active subagents per parent each frame, which adds O(n) work to the update loop. If the threshold logic is wrong, agents will flicker between desk and meeting room.",
+      "Reviewer-walks-to-builder (item 5) requires mapping directive state or session metadata to identify who is reviewing whom. The current session data model has parentSessionId and agentName but no explicit 'review phase' flag. Detection heuristics (e.g., subagent with reviewer's agent name during a session tagged as review) may be fragile and produce false positives."
+    ],
+    "over_engineering_flags": [
+      "Item 5 scope could sprawl: 'stand nearby' requires finding a walkable tile adjacent to the builder's seat, which is already complex pathfinding. Keep it simple — walk to a random waypoint near the builder's seat tile, not pixel-perfect positioning.",
+      "Items 4 and 5 don't need new CharacterState values (per constraint). Behavioral overrides via the existing routeAgent + interactionMap pattern are sufficient."
+    ],
+    "recommendation": "Proceed as-is. Items 1-3 are review-only (low cost). Items 4-5 are scoped tightly enough to be simple. The main risk is item 5's review-phase detection heuristic — keep it data-driven from session metadata rather than inferring from directive state."
+  },
+  "initiatives": [
+    {
+      "id": "review-nameplate-polish",
+      "title": "Review: Nameplate Polish (role tag removal, smaller plates, brand color text)",
+      "priority": "P0",
+      "complexity": "simple",
+      "phases": ["code-review", "review"],
+      "user_scenario": "Agent nameplates are compact with name text in the agent's brand color, no role tags cluttering the display.",
+      "cast": {
+        "auditor": "sarah",
+        "builder": "riley",
+        "reviewers": ["sarah"]
+      },
+      "scope": "Code review of the in-session nameplate changes: role tag removal from renderIdentityPlates, reduced plate size, name text rendering in brand color instead of white on dark plate. Verify constants are clean, no dead code left behind, bitmap text cache still works correctly with color changes.",
+      "definition_of_done": [
+        "renderIdentityPlates no longer renders role tags",
+        "Name text renders in agent brand color (from colorMap)",
+        "Plate dimensions are smaller than previous version",
+        "No dead constants or unreachable code paths",
+        "Type-check passes"
+      ]
+    },
+    {
+      "id": "review-task-context-formatting",
+      "title": "Review: Task Context Text Formatting (formatActivity)",
+      "priority": "P0",
+      "complexity": "simple",
+      "phases": ["code-review", "review"],
+      "user_scenario": "Below each working agent's nameplate, a readable verb+filename summary appears (e.g., 'reading SKILL.md') instead of raw tool+path strings.",
+      "cast": {
+        "auditor": "sarah",
+        "builder": "riley",
+        "reviewers": ["sarah"]
+      },
+      "scope": "Code review of formatActivity() in CanvasOffice.tsx and its integration with taskTextMap. Verify: TOOL_VERBS coverage for all known tools, path stripping logic, edge cases (empty detail, tool not in map, very long filenames), opacity rendering at 35%.",
+      "definition_of_done": [
+        "formatActivity correctly maps all known tool names to readable verbs",
+        "Path stripping extracts filename from full paths",
+        "Edge cases handled: empty/undefined detail, unknown tools, long filenames",
+        "Task text renders at 35% opacity below nameplate for working/waiting agents",
+        "Type-check passes"
+      ]
+    },
+    {
+      "id": "review-chat-bubble-facing",
+      "title": "Review: Chat Bubble + Facing Direction for Agent Interactions",
+      "priority": "P0",
+      "complexity": "simple",
+      "phases": ["code-review", "review"],
+      "user_scenario": "When two agents have a parent-subagent relationship, both display chat bubbles overhead and face each other, visually showing they are communicating.",
+      "cast": {
+        "auditor": "sarah",
+        "builder": "riley",
+        "reviewers": ["sarah"]
+      },
+      "scope": "Code review of the agentInteractions prop flow: GamePage derives pairs from sessions → CanvasOffice builds interactionMap → renderChatBubbles draws bubbles → facing direction override in animation loop. Verify: interaction pairs are deduplicated, facing direction saves/restores correctly (no leaked state between frames), chat bubble renders use BUBBLE_CHAT_SPRITE correctly, walking agents are excluded from facing override, stale interactions clean up when sessions end.",
+      "definition_of_done": [
+        "agentInteractions derived correctly from parent/subagent session pairs",
+        "interactionMap built without duplicates",
+        "Facing direction override only applies to non-walking agents",
+        "Original facing direction restored after render (no leaked state)",
+        "Chat bubbles render centered above both interacting agents",
+        "Stale pairs clean up when subagent sessions end",
+        "Type-check passes"
+      ]
+    },
+    {
+      "id": "brainstorm-meeting-room",
+      "title": "Move Agent Group to Meeting Room for Brainstorm Sessions",
+      "priority": "P1",
+      "complexity": "simple",
+      "phases": ["build", "code-review", "review"],
+      "user_scenario": "When the directive pipeline spawns a brainstorm with 3+ subagents, the parent agent and all subagents walk to the conference room seats, visually showing a meeting in progress.",
+      "cast": {
+        "auditor": "sarah",
+        "builder": "riley",
+        "reviewers": ["sarah", "marcus"]
+      },
+      "scope": "In OfficeState.update() or a new method called from update(), detect when a parent agent has 3+ active (non-despawning) subagents. When detected, route the parent and all its subagents to meeting room waypoints using walkToTile. Track the 'in meeting' state per parent agent ID (a Set<number> on OfficeState). When subagent count drops below 3, clear the meeting state and let agents return to their normal routing (desk or break room). Use existing ROOM_ZONES['meeting'] waypoints. No new CharacterState — agents walk to meeting room tiles and stand/idle there naturally.",
+      "definition_of_done": [
+        "Parent agent with 3+ active subagents triggers meeting room routing",
+        "Parent and all subagents walk to meeting room waypoints",
+        "Meeting state tracked per parent agent ID",
+        "When subagent count drops below 3, meeting state clears and agents return to normal positions",
+        "Uses existing ROOM_ZONES['meeting'] waypoints",
+        "No new CharacterState enum values added",
+        "Agents in meeting room still show chat bubbles and face each other",
+        "Type-check and build pass"
+      ]
+    },
+    {
+      "id": "reviewer-walks-to-builder",
+      "title": "Reviewer Agent Walks to Builder's Desk During Review",
+      "priority": "P1",
+      "complexity": "simple",
+      "phases": ["build", "code-review", "review"],
+      "user_scenario": "During a code review, the CEO sees the reviewer character walk over and stand next to the builder's desk, making it visually obvious who is reviewing whose work.",
+      "cast": {
+        "auditor": "sarah",
+        "builder": "riley",
+        "reviewers": ["sarah", "marcus"]
+      },
+      "scope": "Detect review interactions: when a subagent session's agentName matches a known reviewer agent and the parent session belongs to a known builder agent, treat this as a review interaction. In OfficeState, add a method walkToAgentDesk(reviewerId, builderId) that finds a walkable tile adjacent to the builder's seat (check 4 cardinal neighbors of the builder's seat tile, pick the first walkable one) and routes the reviewer there via walkToTile. Trigger this when the interaction is first detected in the agentInteractions sync. When the review subagent session ends, the reviewer returns to normal routing. No new CharacterState — reviewer walks there and stands idle. The existing chat bubble + facing system handles the visual interaction indicators.",
+      "definition_of_done": [
+        "Review interaction detected from subagent session metadata",
+        "Reviewer character walks to a walkable tile adjacent to builder's seat",
+        "If no adjacent walkable tile found, falls back to nearest walkable tile within 3 tiles",
+        "Reviewer returns to normal routing when review session ends",
+        "No new CharacterState enum values added",
+        "Existing chat bubble and facing direction system still works for the pair",
+        "Type-check and build pass"
+      ]
+    }
+  ]
+}

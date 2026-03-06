@@ -14,7 +14,7 @@
       "borderColor": "border-foreground/30",
       "dotColor": "bg-foreground",
       "isCsuite": true,
-      "game": { "palette": 0, "seatId": "seat-2", "position": { "row": 4, "col": 9 }, "color": "gold", "isPlayer": true }
+      "game": { "palette": 0, "seatId": "seat-1", "position": { "row": 3, "col": 5 }, "color": "gold", "isPlayer": true }
     },
     {
       "id": "sarah",
@@ -30,7 +30,7 @@
       "borderColor": "border-violet-500/40",
       "dotColor": "bg-violet-500",
       "isCsuite": true,
-      "game": { "palette": 1, "seatId": "seat-1", "position": { "row": 3, "col": 5 }, "color": "purple" }
+      "game": { "palette": 1, "seatId": "seat-3", "position": { "row": 14, "col": 5 }, "color": "purple" }
     },
     {
       "id": "marcus",
@@ -62,7 +62,7 @@
       "borderColor": "border-emerald-500/40",
       "dotColor": "bg-emerald-500",
       "isCsuite": true,
-      "game": { "palette": 2, "seatId": "seat-3", "position": { "row": 14, "col": 5 }, "color": "green" }
+      "game": { "palette": 2, "seatId": "seat-12", "position": { "row": 20, "col": 8 }, "color": "green" }
     },
     {
       "id": "priya",
@@ -161,6 +161,22 @@
       "game": { "palette": 10, "seatId": "seat-10", "position": { "row": 17, "col": 14 }, "color": "lime" }
     },
     {
+      "id": "quinn",
+      "name": "Quinn Torres",
+      "title": "UX",
+      "role": "UI/UX Designer",
+      "description": "UI design, design review, wireframes, visual consistency, usability",
+      "agentFile": "quinn-design.md",
+      "reportsTo": "marcus",
+      "domains": ["UI Design", "UX", "Wireframes", "Visual Review"],
+      "color": "text-rose-400",
+      "bgColor": "bg-rose-500/15",
+      "borderColor": "border-rose-500/40",
+      "dotColor": "bg-rose-500",
+      "isCsuite": false,
+      "game": { "palette": 12, "seatId": "seat-13", "position": { "row": 20, "col": 11 }, "color": "rose" }
+    },
+    {
       "id": "devon",
       "name": "Devon Lee",
       "title": "FS",
@@ -193,7 +209,7 @@
       "name": "Product",
       "description": "Frontend, UX, quality assurance",
       "leadAgentId": "marcus",
-      "memberAgentIds": ["marcus", "riley", "sam"],
+      "memberAgentIds": ["marcus", "riley", "quinn", "sam"],
       "color": "text-blue-400",
       "bgColor": "bg-blue-500/10",
       "borderColor": "border-blue-500/30"

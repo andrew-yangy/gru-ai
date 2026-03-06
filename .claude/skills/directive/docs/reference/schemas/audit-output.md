@@ -8,9 +8,9 @@ For the Investigator's output schema (pure data, no recommendations), see [inves
 
 ```json
 {
-  "initiatives": [
+  "projects": [
     {
-      "id": "slug matching Morgan's initiative id",
+      "id": "slug matching Morgan's project id",
       "baseline": "Carried forward from investigation data",
       "active_files": ["Carried forward from investigation data"],
       "dead_code": ["Carried forward from investigation data"],
@@ -40,5 +40,5 @@ The separation prevents investigation findings from anchoring the design — the
 
 - **baseline, active_files, dead_code**: Carried forward from the Investigator's output for downstream reference.
 - **findings**: Investigation findings plus any additional observations the Architect makes about design implications.
-- **recommended_approach**: Specific implementation recommendation referencing real files and patterns discovered by the Investigator.
+- **recommended_approach**: Specific implementation recommendation referencing real files and patterns discovered by the Investigator. This field is passed verbatim to the builder as implementation context and to the code-reviewer for deviation checking. Be concrete — name files, functions, and patterns.
 - **follow_ups**: Actions discovered during design, each with a risk classification (low/medium/high). The Investigator does not produce follow-ups — only the Architect does.

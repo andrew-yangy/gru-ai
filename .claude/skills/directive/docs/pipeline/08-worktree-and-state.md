@@ -1,6 +1,6 @@
 <!-- Pipeline doc: 08-worktree-and-state.md | Source: SKILL.md restructure -->
 
-## Step 4b: Branch / Worktree Isolation
+## Setup: Branch / Worktree Isolation
 
 After CEO approval, create a branch to isolate directive changes.
 
@@ -18,56 +18,33 @@ git worktree add ../sw-directive-$ARGUMENTS -b directive/$ARGUMENTS
 
 If the worktree already exists, reuse it. All agent spawn prompts must include `"Working directory: {worktree_path}"` so agents operate in the isolated copy.
 
-At the end (Step 7), tell the CEO the branch name so they can review with `git diff main..directive/$ARGUMENTS`.
+At the end (wrapup step), tell the CEO the branch name so they can review with `git diff main..directive/$ARGUMENTS`.
 
-**Skip isolation entirely if:** the user explicitly says "no branch", or all initiative phases are research-only (no code changes).
+**Skip isolation entirely if:** the user explicitly says "no branch", or all task phases are research-only (no code changes).
 
-**Checkpoint:** Write checkpoint with `current_step: "step-4b"`, `planning.worktree_path` set to the worktree path (or null if branch-only or skipped).
+**Update directive.json:** Set `current_step: "setup"`, `planning.worktree_path` to the worktree path (or null if branch-only or skipped). Update `pipeline.setup.status` to `"completed"` with output.
 
-## Step 4c: Initialize Directive State
+## Setup (cont.): Verify Directive State
 
-Create the directive state file for dashboard tracking:
+Ensure `directive.json` has the correct state before execution:
 
-```bash
-mkdir -p ~/.claude/directives
-```
+1. `pipeline.setup.status` = `"completed"`
+2. `pipeline.execute.status` = `"active"`
+3. `current_step` = `"execute"`
+4. `projects[]` array lists all projects from Morgan's plan with `status: "pending"`
+5. `updated_at` is current
 
-Write initial state to `~/.claude/directives/current.json`:
+The dashboard watches `directive.json` via chokidar for real-time pipeline progress. There is NO separate `current.json` — directive.json IS the single source of truth for both checkpoint/resume and dashboard display.
 
-> See [docs/reference/schemas/current-json.md](../reference/schemas/current-json.md) for the full current.json schema.
+## State Write Protocol
 
-```json
-{
-  "directiveName": "$ARGUMENTS",
-  "status": "in_progress",
-  "totalInitiatives": N,
-  "currentInitiative": 0,
-  "currentPhase": "starting",
-  "initiatives": [
-    {"id": "slug", "title": "Human-readable", "status": "pending", "phase": null}
-  ],
-  "startedAt": "ISO timestamp",
-  "lastUpdated": "ISO timestamp"
-}
-```
+directive.json is THE single source of truth. It stores both checkpoint/resume state and pipeline progress for the dashboard.
 
-**Update this file before each initiative and phase change** throughout Step 5. The conductor dashboard watches this file via chokidar for real-time progress display.
-
-At Step 7 (completion), update status to `"completed"` or `"failed"`.
-
-**Also ensure directive.json exists** at this point. If Step 1 didn't create it (e.g., lightweight process that skipped Step 1), create `.context/directives/$ARGUMENTS.json` now with the schema from Step 1. Update its `status` to `"in_progress"` and set `weight` from the triage classification.
-
-**Checkpoint:** Write checkpoint with `current_step: "step-4c"`.
-
-## Checkpoint Protocol
-
-Checkpoints allow a directive to pause mid-execution and resume after context exhaustion. A single JSON file is overwritten atomically at each transition point.
-
-**Checkpoint file:** `.context/directives/checkpoints/{directive-name}.json`
+**File:** `.context/directives/{directive-name}/directive.json`
 **Artifact files:** Write to the project directory: `.context/goals/{goal}/projects/{project}/{phase}.md`
 
-> See [docs/reference/schemas/checkpoint.md](../reference/schemas/checkpoint.md) for the full checkpoint JSON schema.
+> See [docs/reference/schemas/directive-json.md](../reference/schemas/directive-json.md) for the full schema.
 
-**Write mechanism:** Use the Write tool to overwrite the entire checkpoint file. Always update `updated_at` to the current ISO timestamp. Create parent directories with `mkdir -p` on first write.
+**Write mechanism:** Use the Write tool to overwrite directive.json. Always update `updated_at`. Update `pipeline.{step}` status/output after each step. Update `current_step` at each transition.
 
-**Artifact writes:** After each phase completes in Step 5, write the phase output (design doc, build report, review JSON) to the project directory (`.context/goals/{goal}/projects/{project}/{phase}.md`). These survive context exhaustion and allow resumed runs to provide context to downstream phases.
+**Artifact writes:** After each phase completes in the execute step, write the phase output (design doc, build report, review JSON) to the project directory. These survive context exhaustion and allow resumed runs to provide context to downstream phases.

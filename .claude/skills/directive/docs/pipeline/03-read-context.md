@@ -16,4 +16,4 @@ Read ALL of these before spawning Morgan:
   - `.claude/agents/marcus-cpo.md`
   - `.claude/agents/priya-cmo.md`
 
-Also note the goal.json `okrs` field if populated — this goes to the auditor in Step 3b, not Morgan.
+Also note the goal.json `okrs` field if populated — this goes to the auditor in the audit step, not Morgan.

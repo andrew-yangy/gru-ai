@@ -15,7 +15,7 @@ interface DashboardStore extends DashboardState {
   updateEvents: (events: HookEvent[]) => void;
   setConnected: (connected: boolean) => void;
   updateSessionActivities: (activities: Record<string, SessionActivity>) => void;
-  updateDirectiveState: (state: DirectiveState | null) => void;
+  updateDirectiveState: (state: DirectiveState | null, history?: DirectiveState[]) => void;
   updateGoalInventory: (inventory: GoalInventory | null) => void;
   setWorkState: (state: FullWorkState) => void;
   updateNotificationConfig: (config: NotificationConfig) => void;
@@ -32,6 +32,7 @@ export const useDashboardStore = create<DashboardStore>((set) => ({
   events: [],
   sessionActivities: {},
   directiveState: null,
+  directiveHistory: [],
   goalInventory: null,
   workState: null,
   lastUpdated: '',
@@ -48,6 +49,7 @@ export const useDashboardStore = create<DashboardStore>((set) => ({
       tasksBySession: state.tasksBySession ?? {},
       events: state.events ?? [],
       directiveState: state.directiveState ?? null,
+      directiveHistory: state.directiveHistory ?? [],
       goalInventory: state.goalInventory ?? null,
       lastUpdated: state.lastUpdated || new Date().toISOString(),
     }),
@@ -84,8 +86,11 @@ export const useDashboardStore = create<DashboardStore>((set) => ({
       sessionActivities: { ...state.sessionActivities, ...activities },
     })),
 
-  updateDirectiveState: (directiveState) =>
-    set({ directiveState }),
+  updateDirectiveState: (directiveState, history) =>
+    set((state) => ({
+      directiveState,
+      directiveHistory: history ?? state.directiveHistory,
+    })),
 
   updateGoalInventory: (goalInventory) =>
     set({ goalInventory }),

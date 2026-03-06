@@ -78,22 +78,43 @@ export interface HookEvent {
   metadata?: Record<string, unknown>;
 }
 
-export interface DirectiveInitiative {
+export interface DirectiveProject {
   id: string;
   title: string;
   status: 'pending' | 'in_progress' | 'completed' | 'skipped' | 'failed';
   phase: 'audit' | 'design' | 'build' | 'review' | null;
+  totalTasks?: number;
+  completedTasks?: number;
+}
+
+export type PipelineStepStatus = 'pending' | 'active' | 'completed' | 'skipped' | 'failed';
+
+export interface PipelineStep {
+  id: string;
+  label: string;
+  status: PipelineStepStatus;
+  artifacts?: Record<string, string>;
+  needsAction?: boolean;
+  startedAt?: string;
 }
 
 export interface DirectiveState {
   directiveName: string;
-  status: 'in_progress' | 'completed' | 'failed';
-  totalInitiatives: number;
-  currentInitiative: number;
+  /** Human-readable title (from directive .json or .md heading) */
+  title?: string;
+  status: 'in_progress' | 'awaiting_completion' | 'completed' | 'failed';
+  totalProjects: number;
+  currentProject: number;
   currentPhase: string;
-  initiatives: DirectiveInitiative[];
+  projects: DirectiveProject[];
   startedAt: string;
   lastUpdated: string;
+  /** Pipeline step progress derived from checkpoint data */
+  pipelineSteps?: PipelineStep[];
+  /** Current pipeline step ID */
+  currentStepId?: string;
+  /** Directive weight class */
+  weight?: string;
 }
 
 export interface GoalInventory {
@@ -131,6 +152,7 @@ export interface DashboardState {
   events: HookEvent[];
   sessionActivities: Record<string, SessionActivity>;
   directiveState: DirectiveState | null;
+  directiveHistory: DirectiveState[];
   goalInventory: GoalInventory | null;
   lastUpdated: string;
 }

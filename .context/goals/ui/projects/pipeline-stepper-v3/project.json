@@ -1,0 +1,47 @@
+{
+  "id": "pipeline-stepper-v3",
+  "title": "Pipeline Stepper v3 — Vertical Timeline + Title + Integration",
+  "status": "in_progress",
+  "agent": ["riley"],
+  "reviewers": ["sarah"],
+  "tasks": [
+    {
+      "id": "directive-title-field",
+      "title": "Add title field to DirectiveState and populate from directive source",
+      "status": "pending",
+      "agent": ["riley"],
+      "dod": [
+        { "criterion": "DirectiveState interface has optional title?: string field in both server/types.ts and src/stores/types.ts", "met": false },
+        { "criterion": "DirectiveWatcher populates title from directive .json title field or .md h1 heading", "met": false },
+        { "criterion": "Falls back to directiveName (slug) when no title source found", "met": false },
+        { "criterion": "TypeScript compiles without errors", "met": false }
+      ]
+    },
+    {
+      "id": "vertical-timeline-layout",
+      "title": "Rewrite PipelineStepper as vertical timeline layout",
+      "status": "pending",
+      "agent": ["riley"],
+      "dod": [
+        { "criterion": "FullStepper renders vertical timeline: nodes on left, labels + artifacts right", "met": false },
+        { "criterion": "Vertical connector lines between nodes", "met": false },
+        { "criterion": "CompactStepper renders vertical at 280px width without overflow", "met": false },
+        { "criterion": "All existing functionality preserved: pulse, flash, elapsed, needsAction, failed, tooltips, artifacts", "met": false },
+        { "criterion": "TypeScript compiles without errors", "met": false }
+      ]
+    },
+    {
+      "id": "stepper-integration-fixes",
+      "title": "Show stepper on Projects + Game, display title not slug",
+      "status": "pending",
+      "agent": ["riley"],
+      "dod": [
+        { "criterion": "DirectiveProgress.tsx displays title (falling back to directiveName)", "met": false },
+        { "criterion": "ReportsPanel.tsx displays title instead of slug", "met": false },
+        { "criterion": "ActivePipelineStepper renders for both active and completed directives", "met": false },
+        { "criterion": "DirectivePipeline.tsx shows stepper with title", "met": false },
+        { "criterion": "TypeScript compiles without errors", "met": false }
+      ]
+    }
+  ]
+}

@@ -112,7 +112,7 @@ export type BacklogRecord = z.infer<typeof BacklogRecord>;
 
 export const DirectiveRecord = BaseWorkItem.extend({
   type: z.literal('directive'),
-  initiatives: z.array(z.string()),
+  projects: z.array(z.string()),
   checkpoint: z.string().optional(),
   reportPath: z.string().optional(),
   // Structured fields from directive.json

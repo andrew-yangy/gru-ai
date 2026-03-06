@@ -1,0 +1,17 @@
+{
+  "id": "test-completion",
+  "title": "Test completion gate",
+  "status": "awaiting_completion",
+  "weight": "strategic",
+  "pipeline": {
+    "triage": { "status": "completed" },
+    "read": { "status": "completed" },
+    "context": { "status": "completed" },
+    "brainstorm": { "status": "completed" },
+    "plan": { "status": "completed" },
+    "audit": { "status": "completed" },
+    "approve": { "status": "completed" },
+    "execute": { "status": "completed" },
+    "wrapup": { "status": "completed" }
+  }
+}

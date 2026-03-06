@@ -1,0 +1,154 @@
+{
+  "id": "directive-data-consolidation",
+  "title": "Consolidate Directive Data Model + Rich Pipeline Stepper",
+  "status": "completed",
+  "created": "2026-03-06",
+  "completed": "2026-03-06",
+  "weight": "medium",
+  "goal_ids": ["workflow-orchestration", "ui"],
+  "produced_features": [
+    "Consolidated directive.json as single source of truth (killed checkpoint)",
+    "Rich pipeline stepper with CurrentStepHeader + inline artifacts",
+    "Title display across dashboard, projects, game"
+  ],
+  "produced_projects": ["workflow-orchestration/directive-data-consolidation"],
+  "report": null,
+  "backlog_sources": [],
+  "started_at": "2026-03-06T12:00:00Z",
+  "updated_at": "2026-03-06T15:30:00Z",
+  "current_step": "step-6",
+  "triage": {
+    "weight": "medium",
+    "rationale": "Data model + watcher + UI across ~8 files, clear CEO requirements, no guardrail risk"
+  },
+  "planning": {
+    "morgan_plan": {
+      "goal": "Workflow Orchestration + UI",
+      "initiatives": [
+        { "id": "merge-schema", "title": "Merge checkpoint into directive.json" },
+        { "id": "update-watcher", "title": "Watcher reads directive.json as single source" },
+        { "id": "rich-pipeline-ui", "title": "Rich pipeline UI with current step header + expandable reports" }
+      ]
+    },
+    "ceo_approval": { "status": "auto-approved", "modifications": [] }
+  },
+  "pipeline": {
+    "triage": {
+      "status": "completed",
+      "agent": "CEO",
+      "output": { "weight": "medium", "rationale": "Data model + watcher + UI across ~8 files, clear CEO requirements" }
+    },
+    "read": {
+      "status": "completed",
+      "agent": "CEO",
+      "output": { "summary": "Ad-hoc directive from CEO — consolidate 3 files into 1, rich stepper UI" }
+    },
+    "context": {
+      "status": "completed",
+      "agent": "CEO",
+      "output": { "summary": "Read vision.md, state-management lessons, checkpoint schema, all 7 pipeline docs, directive-json schema" }
+    },
+    "plan": {
+      "status": "completed",
+      "agent": "Morgan",
+      "output": { "goal": "Workflow Orchestration + UI", "initiatives": "3: merge schema, update watcher, rich UI" },
+      "artifacts": [".context/goals/workflow-orchestration/projects/directive-data-consolidation/project.json"]
+    },
+    "audit": {
+      "status": "completed",
+      "agent": "Sarah",
+      "output": { "summary": "6 pipeline docs write to checkpoint, watcher stitches 3 files (current.json + checkpoint + project.json), stepper shows sparse key-value artifacts" }
+    },
+    "approve": {
+      "status": "completed",
+      "agent": "CEO",
+      "output": { "decision": "Auto-approved (medium)" }
+    },
+    "setup": {
+      "status": "completed",
+      "agent": "CEO",
+      "output": { "mode": "Inline (no worktree)" }
+    },
+    "execute": {
+      "status": "completed",
+      "agent": "Jordan, Riley",
+      "reviewers": ["Sarah"],
+      "output": { "progress": "3/3 complete", "summary": "All initiatives built and reviewed — schema consolidated, watcher rewritten, rich stepper UI with CurrentStepHeader" }
+    },
+    "wrapup": {
+      "status": "completed",
+      "agent": "CEO",
+      "output": { "summary": "All 12 DOD criteria verified by Sarah. Lessons updated." }
+    },
+    "report": {
+      "status": "completed",
+      "agent": "CEO",
+      "output": { "summary": "Directive complete — 3 initiatives delivered" }
+    }
+  },
+  "initiatives": [
+    {
+      "id": "merge-schema",
+      "status": "completed",
+      "phases": ["build", "review"],
+      "phases_completed": ["build", "review"],
+      "current_phase": null,
+      "artifact_paths": {
+        "build": ".claude/skills/directive/docs/reference/schemas/directive-json.md"
+      },
+      "dod_verification": {
+        "criteria": [
+          { "criterion": "directive.json schema has pipeline{} with per-step status/agent/output/artifacts", "met": true, "evidence": "pipeline{} with 10 steps in directive-data-consolidation.json" },
+          { "criterion": "All 7 pipeline docs updated to write to directive.json instead of checkpoint", "met": true, "evidence": "Zero checkpoint write references remain in pipeline docs" },
+          { "criterion": "checkpoint.md schema doc redirects to directive-json.md", "met": true, "evidence": "checkpoint.md opens with DEPRECATED header, links to directive-json.md" },
+          { "criterion": "Resume logic (01-checkpoint.md) reads from directive.json", "met": true, "evidence": "Reads .context/directives/$ARGUMENTS.json, zero checkpoint file references" }
+        ],
+        "all_met": true
+      }
+    },
+    {
+      "id": "update-watcher",
+      "status": "completed",
+      "phases": ["build", "review"],
+      "phases_completed": ["build", "review"],
+      "current_phase": null,
+      "artifact_paths": {
+        "build": "server/watchers/directive-watcher.ts"
+      },
+      "dod_verification": {
+        "criteria": [
+          { "criterion": "DirectiveWatcher reads pipeline{} from .context/directives/{name}.json", "met": true, "evidence": "readDirectiveJson + buildPipelineFromDirective in directive-watcher.ts" },
+          { "criterion": "Removed checkpointWatcher, readCheckpoint, checkpointDir", "met": true, "evidence": "Zero checkpoint references in server/ directory" },
+          { "criterion": "Watches .context/directives/ for directive.json changes", "met": true, "evidence": "startDirectivesWatcher() watches .context/directives/ for .json changes" },
+          { "criterion": "TypeScript compiles without errors", "met": true, "evidence": "npx tsc --noEmit passed with zero errors" }
+        ],
+        "all_met": true
+      }
+    },
+    {
+      "id": "rich-pipeline-ui",
+      "status": "completed",
+      "phases": ["build", "review"],
+      "phases_completed": ["build", "review"],
+      "current_phase": null,
+      "artifact_paths": {
+        "build": "src/components/shared/PipelineStepper.tsx"
+      },
+      "dod_verification": {
+        "criteria": [
+          { "criterion": "CurrentStepHeader shows active step prominently at top with agent, reviewers, elapsed, description", "met": true, "evidence": "CurrentStepHeader component at PipelineStepper.tsx:231-281" },
+          { "criterion": "All non-pending steps show artifacts inline (agent, output summary)", "met": true, "evidence": "showArtifacts = hasArtifacts && step.status !== 'pending' at line 301" },
+          { "criterion": "Dashboard, Projects, Game all show title instead of slug", "met": true, "evidence": "DirectiveProgress.tsx uses title||directiveName, ReportsPanel.tsx same pattern" },
+          { "criterion": "TypeScript compiles and builds without errors", "met": true, "evidence": "npx tsc --noEmit passed with zero errors" }
+        ],
+        "all_met": true
+      }
+    }
+  ],
+  "wrapup": {
+    "okrs_persisted": false,
+    "follow_ups_processed": true,
+    "digest_path": null,
+    "lessons_updated": true
+  }
+}

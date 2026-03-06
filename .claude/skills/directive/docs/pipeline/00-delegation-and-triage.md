@@ -18,7 +18,7 @@ This is safe — active CLI agents for the current directive haven't been spawne
 
 ### Classify the Directive
 
-Read the directive, then classify its weight. This determines how much process overhead is needed. Not everything needs the full 7-step pipeline.
+Read the directive, then classify its weight. This determines how much process overhead is needed. Not everything needs the full pipeline.
 
 Read the directive file: `.context/directives/$ARGUMENTS.md`
 Read `.context/vision.md` guardrails and `.context/preferences.md`.
@@ -36,7 +36,7 @@ Read `.context/vision.md` guardrails and `.context/preferences.md`.
 - 2-3 related tasks that need coordination
 - Touches multiple files but within one system
 - Low-to-medium risk (no revenue/auth/schema impact)
-- Morgan plans the initiatives, pipeline executes, CEO gets the summary
+- Morgan plans the projects, pipeline executes tasks, CEO gets the summary
 
 **Heavyweight** — Full pipeline with challenges, audit, and CEO approval gate:
 - Crosses system boundaries (frontend + backend + infra)
@@ -44,7 +44,7 @@ Read `.context/vision.md` guardrails and `.context/preferences.md`.
 - Architectural decisions needed
 - Violates or tests a guardrail in vision.md
 - CEO has explicitly flagged this area as sensitive
-- 4+ initiatives or multi-day scope
+- 4+ tasks or multi-day scope
 
 **Security classification examples** (to resolve ambiguity):
 - Hardening existing code (fixing injection, removing hardcoded creds, adding input validation to existing routes) = **Medium**
@@ -71,44 +71,44 @@ Process: {what steps will be used}
 
 ### Lightweight Process
 
-1. Read context files (lessons/ topic files, preferences.md — skip the full Step 2 context load)
+1. Read context files (lessons/ topic files, preferences.md — skip the full context load)
 2. Scan the codebase yourself (or spawn Sam for investigation if needed)
 3. Spawn engineer agent(s) to do the work
 4. Verify (type-check)
 5. Generate a short digest to `.context/reports/`
 6. Return CEO summary (Done / Changes / Needs CEO Eyes / Next)
 
-No Morgan. No C-suite challenges. No CEO approval. No worktree (unless the CEO has uncommitted changes). No OKR updates. Just get it done.
+No Morgan. No C-suite challenges. No plan-approval gate. No worktree (unless the CEO has uncommitted changes). No OKR updates. Just get it done. CEO approves completion after the fact (completion step).
 
 ### Medium Process
 
-1. Read full context (Step 2)
-2. Spawn Morgan to plan initiatives (Step 3) — Morgan's inline challenge is always included, but skip separate C-suite challengers (Step 2b)
-3. Spawn auditor for technical baseline (Step 3b)
-4. **No CEO approval gate** — auto-approve the plan based on directive scope and guardrails
-5. Create branch (Step 4b) — worktree only if working directory is dirty
-6. Execute initiatives (Step 5)
-7. Review verification (Step 5b)
-8. Update OKRs, generate digest, update lessons (Step 6)
+1. Read full context (read + context steps)
+2. Spawn Morgan to plan projects (plan) -- Morgan's inline challenge is always included, but skip separate C-suite challengers (challenge step)
+3. Spawn auditor for technical baseline (audit)
+4. **No plan-approval gate** -- auto-approve the plan based on directive scope and guardrails
+5. Create branch (setup) — worktree only if working directory is dirty
+6. Execute tasks (execute)
+7. Review verification (review-gate)
+8. Update OKRs, generate digest, update lessons (wrapup)
 9. Output CEO summary
 
-No pause for CEO sign-off. The CEO reviews the digest after the fact. If something in the plan looks risky (touches a guardrail), **upgrade to heavyweight**.
+No pause for plan sign-off. The CEO reviews the digest after the fact and approves completion (completion step). If something in the plan looks risky (touches a guardrail), **upgrade to heavyweight**.
 
 ### Strategic Process
 
 Same as heavyweight but with an additional deliberation round during brainstorm. The team figures out the approach, debates it, and the CEO answers 2-3 clarifying questions.
 
-1. Read full context (Step 2)
+1. Read full context (read + context steps)
 2. **Brainstorm phase (with deliberation)** — spawn the brainstorm team in parallel using `run_in_background: true`. The brainstorm team includes:
    - **2-3 relevant C-suite agents** (Sarah for architecture, Marcus for product, Priya for growth — pick based on directive domain)
-   - **The named auditor** from the initiative cast (defaulting to Sarah if none assigned) — grounds proposals in codebase reality
+   - **The named auditor** from the project cast (defaulting to Sarah if none assigned) -- grounds proposals in codebase reality
 
    Each agent gets:
    - Their personality from `.claude/agents/{name}.md`
    - The directive text
    - `.context/vision.md` and `.context/preferences.md`
    - The Phase 1 prompt from the brainstorm prompt template
-   - `model: "sonnet"` (cheap, fast — this is approach exploration, not code)
+   - `model: "sonnet"` (cheap, fast -- this is approach exploration, not code)
 
    ```
    Agent tool call (per brainstorm agent):
@@ -138,7 +138,7 @@ Same as heavyweight but with an additional deliberation round during brainstorm.
 
 4. **Synthesize** — collect all proposals AND rebuttals. Identify which critiques landed, which proposals survived challenge. Write synthesis to `.context/goals/{goal}/projects/{project}/{directive_name}/brainstorm.md`
 5. **CEO clarification** — write 2-3 clarifying questions based on unresolved disagreements from the deliberation. STOP and return to CEO: "This directive is strategic. The team brainstormed N approaches and debated. Here are questions before we proceed: [questions]"
-6. **After CEO answers** — feed brainstorm synthesis + CEO answers into Morgan's prompt as additional context. Continue as heavyweight from Step 3 onward.
+6. **After CEO answers** — feed brainstorm synthesis + CEO answers into Morgan's prompt as additional context. Continue as heavyweight from the plan step onward.
 
 > See [docs/reference/templates/brainstorm-prompt.md](../reference/templates/brainstorm-prompt.md) for the full brainstorm agent prompt template (Phase 1 + Phase 2).
 
@@ -146,11 +146,11 @@ Same as heavyweight but with an additional deliberation round during brainstorm.
 
 ### Heavyweight Process
 
-Full pipeline: Steps 0 → 1 → 2 → 2b → **Brainstorm** → 3 → 3b → 4 (with CEO approval) → 4b → 4c → 5 → 6 → 7.
+Full pipeline: triage → read → context → challenge → **Brainstorm** → plan → audit → approve → project-brainstorm → setup → execute → review-gate → wrapup → completion.
 
 **Brainstorm phase (mandatory for heavyweight):** Before Morgan plans, spawn the brainstorm team in parallel using `run_in_background: true`. The brainstorm team includes:
 - **2-3 relevant C-suite agents** (Sarah for architecture, Marcus for product, Priya for growth — pick based on directive domain)
-- **The named auditor** from the initiative cast (defaulting to Sarah if none assigned) — grounds proposals in codebase reality
+- **The named auditor** from the project cast (defaulting to Sarah if none assigned) -- grounds proposals in codebase reality
 
 Each agent gets the **Phase 1 prompt only** from the brainstorm prompt template. No deliberation round for heavyweight — proposals only, then synthesis.
 
@@ -173,4 +173,4 @@ Agent tool call (per brainstorm agent):
 
 > See [docs/reference/schemas/brainstorm-output.md](../reference/schemas/brainstorm-output.md) for the brainstorm agent output JSON schema.
 
-For the CEO approval gate (Step 4): write the plan to `.context/goals/{goal}/projects/{project}/{directive_name}/plan-for-approval.md` and STOP. Output a summary asking the CEO to approve. Include brainstorm synthesis and any clarifying questions alongside Morgan's plan. After CEO approval, continue execution from Step 4b.
+For the CEO approval gate (approve step): write the plan to `.context/goals/{goal}/projects/{project}/{directive_name}/plan-for-approval.md` and STOP. Output a summary asking the CEO to approve. Include brainstorm synthesis and any clarifying questions alongside Morgan's plan. After CEO approval, continue execution from the setup step.

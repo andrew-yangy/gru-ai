@@ -1,0 +1,101 @@
+{
+  "id": "pipeline-visualization",
+  "title": "Pipeline Visualization UI for Directives",
+  "goal_id": "ui",
+  "status": "completed",
+  "priority": "P0",
+  "agent": ["riley"],
+  "reviewers": ["sarah"],
+  "description": "Visual pipeline stepper showing all directive steps, current position, artifact details, and initiative sub-progress. Available in both dashboard and game drawer UI. Server reads checkpoint files to derive pipeline step data.",
+  "source_directive": "pipeline-visualization",
+  "scope": {
+    "in": [
+      "PipelineStep types on server and frontend",
+      "Server checkpoint reading and merging into DirectiveState",
+      "Horizontal pipeline stepper component (shared)",
+      "Dashboard DirectiveProgress integration",
+      "Expandable artifact details on completed steps",
+      "Game drawer UI with pipeline stepper"
+    ],
+    "out": [
+      "Modifying pipeline skill docs to write more data",
+      "New watchers or state mechanisms",
+      "Lightweight directive visualization (they skip checkpoints)"
+    ]
+  },
+  "dod": [
+    { "criterion": "PipelineStep interface exists in both server and frontend types", "met": true },
+    { "criterion": "Server reads checkpoint files and merges pipeline steps into DirectiveState", "met": true },
+    { "criterion": "Dashboard shows horizontal pipeline stepper above initiative list", "met": true },
+    { "criterion": "Clicking completed steps expands artifact details", "met": true },
+    { "criterion": "Game UI has a drawer with pipeline stepper accessible from HUD", "met": true },
+    { "criterion": "Graceful fallback when pipelineSteps is missing", "met": true },
+    { "criterion": "TypeScript compiles without errors", "met": true }
+  ],
+  "browser_test": true,
+  "tasks": [
+    {
+      "id": "extend-directive-state-types",
+      "title": "Extend DirectiveState types with pipeline steps and artifacts",
+      "status": "completed",
+      "agent": ["riley"],
+      "dod": [
+        { "criterion": "PipelineStep interface exists in both server/types.ts and src/stores/types.ts", "met": true },
+        { "criterion": "DirectiveState has pipelineSteps and currentStepId fields", "met": true },
+        { "criterion": "Existing DirectiveState fields remain unchanged", "met": true },
+        { "criterion": "TypeScript compiles without errors", "met": true }
+      ]
+    },
+    {
+      "id": "checkpoint-to-pipeline-state",
+      "title": "Server reads checkpoint files, maps to PipelineStep[]",
+      "status": "completed",
+      "agent": ["jordan"],
+      "dod": [
+        { "criterion": "DirectiveWatcher reads checkpoint files from .context/directives/checkpoints/", "met": true },
+        { "criterion": "Pipeline steps derived from checkpoint current_step with weight-aware step list", "met": true },
+        { "criterion": "Artifact summaries extracted from checkpoint data", "met": true },
+        { "criterion": "Checkpoint watcher triggers re-read on file changes", "met": true }
+      ]
+    },
+    {
+      "id": "dashboard-pipeline-stepper",
+      "title": "Build pipeline stepper component for dashboard",
+      "status": "completed",
+      "agent": ["riley"],
+      "dod": [
+        { "criterion": "PipelineStepper.tsx renders pipeline steps as horizontal dots with labels", "met": true },
+        { "criterion": "Completed=filled, active=pulsing, pending=hollow dots", "met": true },
+        { "criterion": "DirectiveProgress.tsx renders PipelineStepper above initiative list", "met": true },
+        { "criterion": "Graceful fallback when pipelineSteps is missing", "met": true }
+      ]
+    },
+    {
+      "id": "dashboard-artifact-details",
+      "title": "Add expandable artifact details to pipeline stepper",
+      "status": "completed",
+      "agent": ["riley"],
+      "dod": [
+        { "criterion": "Clicking a completed step expands its artifact details inline", "met": true },
+        { "criterion": "Artifact details show as key-value pairs", "met": true },
+        { "criterion": "Steps without artifacts are not clickable", "met": true },
+        { "criterion": "Collapse/expand is smooth", "met": true }
+      ]
+    },
+    {
+      "id": "drawer-pipeline-panel",
+      "title": "Pipeline stepper in drawer UI accessible from game",
+      "status": "completed",
+      "agent": ["riley"],
+      "dod": [
+        { "criterion": "Game HUD has a button that opens a drawer/sheet overlay", "met": true },
+        { "criterion": "Drawer shows PipelineStepper with full labels and artifact expansion", "met": true },
+        { "criterion": "Initiative list with phase badges shown below stepper", "met": true },
+        { "criterion": "Drawer does not interfere with game controls when closed", "met": true }
+      ]
+    }
+  ],
+  "created": "2026-03-06T00:00:00Z",
+  "updated": "2026-03-06T00:00:00Z",
+  "completed": "2026-03-06T00:00:00Z"
+}

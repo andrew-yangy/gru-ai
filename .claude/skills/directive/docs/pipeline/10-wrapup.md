@@ -2,21 +2,20 @@
 
 ## Step 6: Update Goal OKRs (if applicable)
 
-If `.context/goals/{goal_folder}/goal.json` has `okrs`, assess any existing KR statuses based on initiative outcomes. Do NOT create new KRs from directive work — goal-level OKRs are managed separately at the quarterly level.
+If `.context/goals/{goal_folder}/goal.json` has `okrs`, assess any existing KR statuses based on task outcomes. Do NOT create new KRs from directive work — goal-level OKRs are managed separately at the quarterly level.
 
 If goal.json has no `okrs` or it is empty, skip this step.
 
 ## Step 6b: Process Follow-Up Actions
 
-Collect all `follow_ups` from the audit findings (Step 3b) across all initiatives. Process them by risk level:
+Collect all `follow_ups` from the audit findings (audit step) across all tasks. Process them by risk level:
 
 ### Low Risk — Auto-Execute
 
 Spawn an engineer agent to execute all low-risk follow-ups in a single batch. The agent receives:
 - The list of low-risk follow-up actions with affected files
 - `.context/preferences.md` and `.context/lessons/*.md` topic files
-- Verify command: `npm run type-check`
-- Instruction: "Execute these cleanup actions. They've been classified as low-risk (safe to do without CEO approval). Run the verify command when done. Report what you changed."
+- Instruction: "Execute these cleanup actions. They've been classified as low-risk (safe to do without CEO approval). Report what you changed."
 
 **Low-risk examples:** Delete dead code files, remove unused imports, delete unused variables, create backlog tickets, update OKR status files, fix typos.
 
@@ -27,8 +26,7 @@ Medium-risk follow-ups auto-execute without CEO approval, matching the low-risk 
 Spawn an engineer agent to execute all medium-risk follow-ups in a single batch. The agent receives:
 - The list of medium-risk follow-up actions with affected files
 - `.context/preferences.md` and `.context/lessons/*.md` topic files
-- Verify command: `npm run type-check`
-- Instruction: "Execute these follow-up actions. They've been classified as medium-risk (auto-executed, CEO can revert). For EACH action: (1) note the current git state before the change, (2) execute the action, (3) run the verify command, (4) capture a revert command. Report what you changed and provide revert commands."
+- Instruction: "Execute these follow-up actions. They've been classified as medium-risk (auto-executed, CEO can revert). For EACH action: (1) note the current git state before the change, (2) execute the action, (3) capture a revert command. Report what you changed and provide revert commands."
 
 **Revert command generation:** After each medium-risk action, the engineer captures the information needed to undo it:
 - For file modifications: `git checkout {commit-hash} -- {file-path}` (using the commit hash or HEAD before the change)
@@ -66,7 +64,7 @@ Set `source_directive` to the current directive name so the backlog item is trac
 ### Skip follow-ups if:
 - The directive is research-only (no code changes expected)
 - No follow-ups were identified in the audit
-- All initiatives were skipped or failed (follow-ups may be invalid)
+- All tasks were skipped or failed (follow-ups may be invalid)
 
 ## Step 6c: Detect Potentially Stale Docs
 
@@ -93,9 +91,9 @@ Capture the output — it goes into the "Potentially Stale Docs" section of the 
 Write a digest to `.context/reports/$ARGUMENTS-{date}.md`.
 
 **After writing the digest**, update directive.json with the report link:
-- Read `.context/directives/$ARGUMENTS.json` (or `.context/directives/$ARGUMENTS.json` if already archived)
+- Read `.context/directives/$ARGUMENTS/directive.json`
 - Set `report` to the report filename without extension (e.g., `"improve-security-2026-03-01"`)
-- Also update `produced_features` if any features were registered in the "After Each Initiative" step but the directive.json wasn't updated yet
+- Also update `produced_features` if any features were registered in the "After Each Task" step but the directive.json wasn't updated yet
 
 > See [docs/reference/templates/digest.md](../reference/templates/digest.md) for the full digest report template.
 
@@ -129,21 +127,31 @@ Replace the contents between `## Learned Patterns` and the next `##` heading. Ke
 
 The dashboard reads source files directly via glob + chokidar. No indexer step needed. Changes to goal.json, project.json, directive.json, and backlog.json are picked up automatically.
 
-**Checkpoint:** Update `wrapup.digest_path` to the report path. Set `current_step: "step-7"`.
+**Update directive.json:** Set `wrapup.digest_path` to the report path. Set `current_step: "wrapup"`. Update `pipeline.wrapup.status` to `"completed"` with output summary.
 
-**Cleanup:** Delete the checkpoint file (`rm .context/directives/checkpoints/{directive-name}.json`). The directive is complete — the digest and artifacts serve as the permanent record.
+## Step 6g: Mark Directive Awaiting Completion
 
-## Step 6g: Complete Directive
+Update the directive JSON to signal the CEO completion gate. The directive is NOT marked `completed` here -- that happens in the completion step after CEO approval.
 
-Update the directive JSON to mark completion:
+### Pre-completion Checks
 
-- Read `.context/directives/$ARGUMENTS.json`
-- Set `status` to `"completed"`
-- Set `completed` to today's date (`YYYY-MM-DD`)
+1. **Browser test check (IC2 fix):** If the directive has `browser_test: true` in any project.json, verify that UI review has been logged. If UI review is pending, do NOT proceed -- log: `[BLOCKED] UI review pending for {project}. Cannot mark awaiting_completion.`
+2. **Failed tasks check (IC3 fix):** If any tasks have `failed` or `partial` status, include an explanation in the digest. The CEO must be aware of incomplete work before approving completion.
+
+### Directive JSON
+- Read `.context/directives/$ARGUMENTS/directive.json`
+- Set `status` to `"awaiting_completion"`
 - Set `report_summary` to the digest filename
 - Write the updated JSON back
 
-Directives stay in `directives/` — status is tracked in JSON, not by directory location.
+### Project JSON(s)
+- For each project in the directive's `produced_projects` array, read its `project.json`
+- Do NOT set project status to `"completed"` yet -- that happens in the completion step after CEO approval
+- If some tasks are incomplete, note this in the digest with explanations
+
+Directives stay in `directives/` -- status is tracked in JSON, not by directory location.
+
+**Next step:** Proceed to Report to CEO (below), then [completion gate](11-completion-gate.md) for CEO sign-off.
 
 ## Step 7: Report to CEO
 
@@ -161,43 +169,44 @@ Show the CEO:
 | Situation | Action |
 |-----------|--------|
 | Challenger's output doesn't parse as JSON | Log the error, continue. Challenge is advisory, not blocking. |
-| All challengers endorse | Note in Step 4, proceed normally. |
-| A challenger challenges the directive | Highlight prominently in Step 4. CEO decides whether to proceed. |
+| All challengers endorse | Note in approval presentation, proceed normally. |
+| A challenger challenges the directive | Highlight prominently in approval presentation. CEO decides whether to proceed. |
 | Morgan's plan doesn't parse as JSON | Stop, show the raw output, ask CEO to intervene |
 | Worktree creation fails | Warn CEO, work in the main repo instead. All changes are uncommitted, CEO can review with `git diff`. |
-| Audit finds nothing for ALL initiatives | Skip to Step 6c, generate digest noting "no issues found", recommend CEO review the directive scope. |
+| Audit finds nothing for ALL tasks | Skip to stale doc detection, generate digest noting "no issues found", recommend CEO review the directive scope. |
 | CEO rejects the plan | Stop. CEO can re-run with adjusted directive or manually edit the plan |
-| Agent fails mid-initiative | Skip remaining tasks in that initiative, continue to next. Log in digest. |
+| Agent fails mid-task | Skip remaining phases in that task, continue to next. Log in digest. |
 | Reviewer finds issues | Non-fatal. Include in digest. CEO decides whether to address. |
-| Initiative is blocked | Skip, note in digest, continue to next initiative |
-| All initiatives fail | Generate digest showing failures, recommend CEO review |
-| Audit finds nothing to fix | Remove initiative from plan, note in digest |
-| Context exhaustion mid-directive | Checkpoint file preserves state. Re-run `/directive {name}` to resume. |
+| Task is blocked | Skip, note in digest, continue to next task |
+| All tasks fail | Generate digest showing failures, recommend CEO review |
+| Audit finds nothing to fix | Remove task from plan, note in digest |
+| Context exhaustion mid-directive | directive.json preserves state (it IS the checkpoint). Re-run `/directive {name}` to resume. |
 | Brainstorm agents disagree on approach | Present all approaches with trade-offs in clarifying questions. Let CEO pick direction. Don't synthesize conflicting approaches into a compromise. |
 
 ## Rules
 
 ### NEVER
-- Skip triage (Step 0b) — must classify before choosing the process weight
+- Skip triage — must classify before choosing the process weight
 - Run heavyweight process for lightweight work (wastes tokens and CEO attention)
 - Run lightweight process for heavyweight work (skips critical safety gates)
 - Execute heavyweight directives without CEO approval of the combined plan (Morgan + audit)
 - Skip the planning phase (Morgan evaluation)
-- Skip the technical audit (Step 3b) — always verify scope before CEO approval
-- Skip the challenge step (Step 2b) — Morgan's inline challenge is always required; separate challengers only for heavyweight/controversial
+- Skip the technical audit (audit step) — always verify scope before CEO approval
+- Skip the challenge step — Morgan's inline challenge is always required; separate challengers only for heavyweight/controversial
 - Have Morgan scan the codebase (she plans strategy, not code)
-- Run initiatives in parallel without checking active_files overlap (see Parallelism Analysis in 09-execute-initiatives.md) — initiatives sharing files MUST be sequential; only non-overlapping initiatives in the same priority tier can be parallelized
+- Run tasks in parallel without checking active_files overlap (see Parallelism Analysis in 09-execute-projects.md) -- tasks sharing files MUST be sequential; only non-overlapping tasks in the same priority tier can be parallelized
 - Treat reviewer findings as blockers (they're advisory)
 - Accept a review that only covers code quality without user-perspective evaluation
 - Spawn agents without their personality files (for named agents)
-- Commit, push, checkout, or reset git state (CEO manages git). Note: `git checkout -b` (Step 4b), `git worktree add` (Step 4b), and `git diff --stat` (Step 7) are allowed — they're read-only or isolated operations.
-- Add clarification phase to simple initiatives with just ["build", "review"] phases — tight scope makes it unnecessary token overhead
+- Commit, push, checkout, or reset git state (CEO manages git). Note: `git checkout -b` (setup step), `git worktree add` (setup step), and `git diff --stat` (wrapup report) are allowed — they're read-only or isolated operations.
+- Add clarification phase to simple tasks with just ["build", "review"] phases -- tight scope makes it unnecessary token overhead
 - Have the same agent review changes to its own behavior, prompts, or personality (conflict of interest)
 - Run strategic process for directives with a clear prescribed approach (that's heavyweight, not strategic)
-- Mark a directive as complete when UI review is pending — UI checks must pass first
+- Mark a directive as awaiting_completion when UI review is pending -- UI checks must pass first
+- Set directive status to `completed` directly -- always go through `awaiting_completion` first (wrapup step), then CEO approves in completion step
 
 ### ALWAYS
-- Triage the directive (Step 0b) before choosing which process to run
+- Triage the directive before choosing which process to run
 - Upgrade to heavyweight if ANY guardrail in vision.md could be affected
 - Include Morgan's inline challenge analysis in every plan — separate challengers for heavyweight/controversial only
 - Read preferences.md + vision.md guardrails before spawning any agent
@@ -206,31 +215,30 @@ Show the CEO:
 - Include personality text in named agent prompts
 - Include preferences.md + guardrails in all agent prompts
 - Include audit findings in engineer prompts (active files, recommended approach)
-- Include verify command in engineer prompts
 - Include "propose what's missing" instruction in engineer prompts
-- Log UI verification checks in the digest when initiatives touch UI code — CEO verifies from dashboard or game
+- Log UI verification checks in the digest when tasks touch UI code -- CEO verifies from dashboard or game
 - Include user-perspective evaluation in every reviewer prompt (not just code quality)
 - Require `user_walkthrough` in engineer build reports and `user_perspective` in reviewer output
-- Process follow-ups by risk level after initiatives complete (Step 6b)
-- Run stale doc detection before generating the digest (Step 6c)
-- Include stale doc detection results in the digest (Step 6d)
-- Include self-assessment metrics in the digest (Step 6d)
-- Include agent-proposed improvements in the digest (Step 6d)
-- Include UX verification results in the digest (Step 6d)
-- Update lessons if the directive produced new learnings (Step 6e)
-- Log initiative status after each completes
+- Process follow-ups by risk level after tasks complete
+- Run stale doc detection before generating the digest
+- Include stale doc detection results in the digest
+- Include self-assessment metrics in the digest
+- Include agent-proposed improvements in the digest
+- Include UX verification results in the digest
+- Update lessons if the directive produced new learnings
+- Log task status after each completes
 - ~~Generate a digest even if everything fails~~ _Hook-enforced: stop hook blocks if no digest artifact for medium+ weight_
 - Dashboard reads source files directly — no re-indexing needed
 - Show the CEO what happened at the end
-- Write checkpoint after every phase transition (Step 3, 4, 4b, 4c, 5 phases, 6)
-- Write artifact files after every phase output in Step 5
-- Delete checkpoint file after digest is written (Step 6f cleanup)
-- Update directive.json status to "completed" after digest is written (Step 6g)
-- Include clarification phase before build when initiative has design/research/product-spec phases (Morgan's phase list should already include it)
-- Include initiative's definition_of_done in every reviewer prompt
+- Update directive.json after every phase transition (plan, approve, setup, execute phases, wrapup) — it IS the checkpoint
+- Write artifact files after every phase output in execute step
+- Update directive.json status to "awaiting_completion" after digest is written (wrapup) -- CEO approves in completion step
+- Pipeline data stays in directive.json permanently — it's the execution record
+- Include clarification phase before build when task has design/research/product-spec phases (Morgan's phase list should already include it)
+- Include task's definition_of_done in every reviewer prompt
 - Include Standing Corrections check in every reviewer prompt
 - Match reviewers to the domain being changed (process→Morgan, product→Marcus, architecture→Sarah)
 - Never assign an agent to review changes to its own behavior or prompts
-- Use file-pattern matching (*.tsx, *.jsx, *.css, etc.) to detect UI-touching initiatives — don't rely on subjective judgment
-- Cast multiple reviewers when initiative crosses domains (UI + backend, process + product)
+- Use file-pattern matching (*.tsx, *.jsx, *.css, etc.) to detect UI-touching tasks -- don't rely on subjective judgment
+- Cast multiple reviewers when task crosses domains (UI + backend, process + product)
 - Classify as strategic when the directive states a problem without prescribing an approach AND the work has lasting architectural/process consequences

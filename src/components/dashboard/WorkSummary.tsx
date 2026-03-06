@@ -68,28 +68,28 @@ export default function WorkSummary() {
         <Card>
           <CardContent className="p-4">
             <div className="grid grid-cols-2 gap-4">
-              <button className="flex items-center gap-2 text-left hover:bg-secondary/50 rounded p-1 -m-1 transition-colors cursor-pointer" onClick={() => navigate('/projects')}>
+              <button className="flex items-center gap-2 text-left hover:bg-secondary/50 rounded p-1 -m-1 transition-colors cursor-pointer" onClick={() => navigate('/directives')}>
                 <Target className="h-4 w-4 text-primary" />
                 <div>
                   <p className="text-lg font-bold">{summary.activeGoals}</p>
                   <p className="text-[10px] text-muted-foreground">Active Goals</p>
                 </div>
               </button>
-              <button className="flex items-center gap-2 text-left hover:bg-secondary/50 rounded p-1 -m-1 transition-colors cursor-pointer" onClick={() => navigate('/projects')}>
+              <button className="flex items-center gap-2 text-left hover:bg-secondary/50 rounded p-1 -m-1 transition-colors cursor-pointer" onClick={() => navigate('/directives')}>
                 <CircleDot className="h-4 w-4 text-status-yellow" />
                 <div>
                   <p className="text-lg font-bold">{summary.inProgress + summary.pending}</p>
                   <p className="text-[10px] text-muted-foreground">Open Features</p>
                 </div>
               </button>
-              <button className="flex items-center gap-2 text-left hover:bg-secondary/50 rounded p-1 -m-1 transition-colors cursor-pointer" onClick={() => navigate('/projects')}>
+              <button className="flex items-center gap-2 text-left hover:bg-secondary/50 rounded p-1 -m-1 transition-colors cursor-pointer" onClick={() => navigate('/directives')}>
                 <Layers className="h-4 w-4 text-status-green" />
                 <div>
                   <p className="text-lg font-bold">{summary.done}</p>
                   <p className="text-[10px] text-muted-foreground">Completed</p>
                 </div>
               </button>
-              <button className="flex items-center gap-2 text-left hover:bg-secondary/50 rounded p-1 -m-1 transition-colors cursor-pointer" onClick={() => navigate('/projects')}>
+              <button className="flex items-center gap-2 text-left hover:bg-secondary/50 rounded p-1 -m-1 transition-colors cursor-pointer" onClick={() => navigate('/directives')}>
                 <ListChecks className="h-4 w-4 text-muted-foreground" />
                 <div>
                   <p className="text-lg font-bold">{summary.actionableBacklog}<span className="text-sm font-normal text-muted-foreground">/{summary.backlog}</span></p>

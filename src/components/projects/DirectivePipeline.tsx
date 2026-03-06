@@ -12,6 +12,8 @@ import {
 } from 'lucide-react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import type { DirectiveRecord } from '@/stores/types';
+import { useDashboardStore } from '@/stores/dashboard-store';
+import PipelineStepper from '@/components/shared/PipelineStepper';
 
 // ---------------------------------------------------------------------------
 // Weight badge
@@ -110,6 +112,23 @@ function DirectiveCard({
 }
 
 // ---------------------------------------------------------------------------
+// Active Pipeline Stepper (shows live pipeline steps for active directives)
+// ---------------------------------------------------------------------------
+
+function ActivePipelineStepper({ directiveId }: { directiveId: string }) {
+  const directiveState = useDashboardStore((s) => s.directiveState);
+  // directiveName and directive id are both the slug (e.g. "char-interaction")
+  if (!directiveState || directiveState.directiveName !== directiveId) return null;
+  if (!directiveState.pipelineSteps || directiveState.pipelineSteps.length === 0) return null;
+
+  return (
+    <div className="px-3 pb-2">
+      <PipelineStepper steps={directiveState.pipelineSteps} />
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Directive Pipeline Section
 // ---------------------------------------------------------------------------
 
@@ -146,11 +165,14 @@ export default function DirectivePipeline({
           </Badge>
         </div>
 
-        {/* Pending directives */}
+        {/* Pending directives with live pipeline stepper */}
         {pending.length > 0 && (
           <div className="space-y-0.5 mb-2">
             {pending.map(d => (
-              <DirectiveCard key={d.id} directive={d} onReportClick={onReportClick} />
+              <div key={d.id}>
+                <DirectiveCard directive={d} onReportClick={onReportClick} />
+                <ActivePipelineStepper directiveId={d.id} />
+              </div>
             ))}
           </div>
         )}

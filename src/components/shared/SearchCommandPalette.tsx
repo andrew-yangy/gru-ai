@@ -186,19 +186,16 @@ export default function SearchCommandPalette() {
     setResults([]);
 
     // Deep-link: navigate to the right page AND highlight the specific item
-    if (item.type === 'report' || item.type === 'discussion' || item.type === 'research') {
-      navigate(`/artifacts?tab=${item.type === 'report' ? 'reports' : item.type === 'discussion' ? 'discussions' : 'research'}&highlight=${item.id}`);
-    } else if (item.type === 'backlog-item') {
-      navigate(`/projects?expand=${item.goalId}&tab=backlog&highlight=${item.id}`);
+    if (item.type === 'backlog-item') {
+      navigate(`/directives?expand=${item.goalId}&tab=backlog&highlight=${item.id}`);
     } else if (item.type === 'feature') {
-      navigate(`/projects?expand=${item.goalId}&highlight=${item.id}`);
+      navigate(`/directives?expand=${item.goalId}&highlight=${item.id}`);
     } else if (item.type === 'goal') {
-      navigate(`/projects?expand=${item.id}`);
+      navigate(`/directives?expand=${item.id}`);
     } else if (item.type === 'directive') {
-      // Directives are shown in artifacts as conductor items
-      navigate(`/artifacts?tab=reports&highlight=${item.id}`);
+      navigate(`/directives?highlight=${item.id}`);
     } else {
-      navigate('/projects');
+      navigate('/directives');
     }
   }
 
@@ -255,17 +252,13 @@ export default function SearchCommandPalette() {
               </CommandGroup>
             )}
             <CommandGroup heading="Quick Navigation">
-              <CommandItem onSelect={() => { setOpen(false); navigate('/projects'); }} className="gap-3">
+              <CommandItem onSelect={() => { setOpen(false); navigate('/directives'); }} className="gap-3">
                 <ArrowRight className="h-4 w-4 text-muted-foreground shrink-0" />
-                <span className="text-sm">Projects</span>
+                <span className="text-sm">Directives</span>
               </CommandItem>
-              <CommandItem onSelect={() => { setOpen(false); navigate('/artifacts'); }} className="gap-3">
+              <CommandItem onSelect={() => { setOpen(false); navigate('/overview'); }} className="gap-3">
                 <ArrowRight className="h-4 w-4 text-muted-foreground shrink-0" />
-                <span className="text-sm">Artifacts</span>
-              </CommandItem>
-              <CommandItem onSelect={() => { setOpen(false); navigate('/'); }} className="gap-3">
-                <ArrowRight className="h-4 w-4 text-muted-foreground shrink-0" />
-                <span className="text-sm">Dashboard</span>
+                <span className="text-sm">Overview</span>
               </CommandItem>
             </CommandGroup>
           </>

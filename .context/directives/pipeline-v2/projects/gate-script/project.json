@@ -1,0 +1,71 @@
+{
+  "id": "gate-script",
+  "title": "validate-gate.sh: artifact-chain enforcement at step boundaries",
+  "status": "completed",
+  "agent": ["jordan"],
+  "reviewers": ["sarah"],
+  "tasks": [
+    {
+      "id": "define-gate-config",
+      "title": "Define gate configuration data structure",
+      "status": "pending",
+      "agent": ["jordan"],
+      "dod": [
+        { "criterion": "Gate config covers all pipeline steps from brainstorm artifact table", "met": false },
+        { "criterion": "Each step specifies: artifact path pattern, required JSON fields, weight-skip rules", "met": false },
+        { "criterion": "Weight classes each have correct skip sets matching brainstorm", "met": false },
+        { "criterion": ".skip marker file convention documented", "met": false }
+      ]
+    },
+    {
+      "id": "implement-validate-gate",
+      "title": "Implement validate-gate.sh core logic",
+      "status": "pending",
+      "agent": ["jordan"],
+      "dod": [
+        { "criterion": "Script accepts (directive-dir, target-step) and reads directive.json for weight", "met": false },
+        { "criterion": "For each prerequisite step, checks artifact file existence", "met": false },
+        { "criterion": "JSON artifacts validated for required fields via jq", "met": false },
+        { "criterion": "Per-task gates: execute gate checks build-{task-id}.md, review gate checks review-{task-id}.md", "met": false },
+        { "criterion": "Weight-conditional steps accept .skip marker files", "met": false },
+        { "criterion": "Output is JSON: {valid, violations[], step, directive}", "met": false }
+      ]
+    },
+    {
+      "id": "gate-writes-directive-json",
+      "title": "Gate script writes to directive.json on pass",
+      "status": "pending",
+      "agent": ["jordan"],
+      "dod": [
+        { "criterion": "On valid result, writes gates.{step} = {passed_at, validated_artifacts} into directive.json", "met": false },
+        { "criterion": "directive.json updated atomically (write to tmp then mv)", "met": false },
+        { "criterion": "Existing directive.json fields preserved", "met": false },
+        { "criterion": "On invalid result, directive.json NOT modified", "met": false }
+      ]
+    },
+    {
+      "id": "update-validate-cast",
+      "title": "Update validate-cast.sh for projects terminology",
+      "status": "pending",
+      "agent": ["jordan"],
+      "dod": [
+        { "criterion": "validate-cast.sh jq queries use .projects[] instead of .initiatives[]", "met": false },
+        { "criterion": "Removed .projects[].initiatives[] nested path (old multi-project format)", "met": false },
+        { "criterion": "All 19 initiative references replaced with project/task as appropriate", "met": false },
+        { "criterion": "Script passes with new-format morgan-plan.json", "met": false }
+      ]
+    },
+    {
+      "id": "gate-script-tests",
+      "title": "Test validate-gate.sh with fixture directories",
+      "status": "pending",
+      "agent": ["jordan"],
+      "dod": [
+        { "criterion": "At least 6 test fixture directories covering different weight classes and failure modes", "met": false },
+        { "criterion": "Test runner script exercises all fixtures and reports pass/fail", "met": false },
+        { "criterion": "Tests cover: valid lightweight with .skip, valid heavyweight, missing brainstorm (fail), missing review (fail), valid completion gate", "met": false },
+        { "criterion": "Test runner exits 0 when all pass, exits 1 with details on failure", "met": false }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,88 @@
+{
+  "id": "schema-and-directory-restructure",
+  "title": "Schema + directory restructure: directive dirs, project nesting, terminology",
+  "status": "completed",
+  "agent": ["devon"],
+  "reviewers": ["sarah"],
+  "tasks": [
+    {
+      "id": "directive-directory-structure",
+      "title": "Migrate directives from flat files to directory structure",
+      "status": "completed",
+      "agent": ["devon"],
+      "dod": [
+        { "criterion": "Active/in-progress directives migrated to .context/directives/{id}/directive.json + directive.md", "met": true },
+        { "criterion": "Completed directives with both .json and .md migrated to directory format", "met": true },
+        { "criterion": "directive-watcher.ts reads ONLY {name}/directive.json (no flat file fallback)", "met": true },
+        { "criterion": "directive-watcher.ts chokidar depth updated to watch inside directive directories", "met": true },
+        { "criterion": "Old checkpoints/ subdirectory removed", "met": true },
+        { "criterion": "npm run type-check passes", "met": true }
+      ]
+    },
+    {
+      "id": "directive-json-schema-update",
+      "title": "Update directive.json schema: kill initiatives[], add projects, awaiting_completion",
+      "status": "completed",
+      "agent": ["devon"],
+      "dod": [
+        { "criterion": "directive-json.md schema has projects[] (references with id + status) instead of initiatives[]", "met": true },
+        { "criterion": "Status enum includes awaiting_completion", "met": true },
+        { "criterion": "initiatives[], phases, phases_completed, current_phase removed from schema", "met": true },
+        { "criterion": "Pipeline steps include brainstorm, project-brainstorm, and completion", "met": true },
+        { "criterion": "No remaining references to 'initiatives' in directive-json.md", "met": true },
+        { "criterion": "Schema example is valid JSON", "met": true }
+      ]
+    },
+    {
+      "id": "current-json-schema-update",
+      "title": "Update current.json schema: replace initiatives with projects",
+      "status": "completed",
+      "agent": ["devon"],
+      "dod": [
+        { "criterion": "current-json.md uses totalProjects, currentProject, projects[] — zero mentions of initiative", "met": true },
+        { "criterion": "Status enum includes awaiting_completion", "met": true },
+        { "criterion": "Schema example is valid JSON", "met": true }
+      ]
+    },
+    {
+      "id": "morgan-plan-schema-update",
+      "title": "Update morgan-plan.md schema: initiatives become projects, no tasks in Morgan output",
+      "status": "completed",
+      "agent": ["devon"],
+      "dod": [
+        { "criterion": "morgan-plan.md uses projects[] as top-level array, not initiatives[]", "met": true },
+        { "criterion": "Project objects include: id, title, priority, scope_summary, complexity, agent, reviewers, brief", "met": true },
+        { "criterion": "Project objects do NOT include definition_of_done or tasks (Step 3c produces those)", "met": true },
+        { "criterion": "No remaining references to initiatives in morgan-plan.md", "met": true }
+      ]
+    },
+    {
+      "id": "typescript-types-update",
+      "title": "Update TypeScript types: DirectiveInitiative → DirectiveProject everywhere",
+      "status": "completed",
+      "agent": ["devon"],
+      "dod": [
+        { "criterion": "DirectiveInitiative renamed to DirectiveProject in server/types.ts and src/stores/types.ts", "met": true },
+        { "criterion": "DirectiveState uses totalProjects, currentProject, projects[] in both files", "met": true },
+        { "criterion": "DirectiveState.status includes awaiting_completion", "met": true },
+        { "criterion": "DirectiveProject has totalTasks and completedTasks fields", "met": true },
+        { "criterion": "DirectiveRecord.initiatives renamed to projects in work-item-types.ts and state-watcher.ts", "met": true },
+        { "criterion": "directive-watcher.ts validates parsed.projects instead of parsed.initiatives", "met": true },
+        { "criterion": "npm run type-check passes with zero errors", "met": true },
+        { "criterion": "Zero references to DirectiveInitiative, totalInitiatives, or currentInitiative in any .ts/.tsx file", "met": true }
+      ]
+    },
+    {
+      "id": "watcher-pipeline-steps-update",
+      "title": "Update pipeline step definitions in watcher for new pipeline",
+      "status": "completed",
+      "agent": ["devon"],
+      "dod": [
+        { "criterion": "FULL_PIPELINE_STEPS includes brainstorm, project-brainstorm, and completion steps", "met": true },
+        { "criterion": "SKIPPED_STEPS updated for each weight class", "met": true },
+        { "criterion": "Completion step gets needsAction=true when directive status is awaiting_completion", "met": true },
+        { "criterion": "npm run type-check passes", "met": true }
+      ]
+    }
+  ]
+}

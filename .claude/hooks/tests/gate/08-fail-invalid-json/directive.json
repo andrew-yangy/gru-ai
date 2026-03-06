@@ -1,0 +1,10 @@
+{
+  "id": "test-invalid-json",
+  "title": "Test invalid JSON in morgan-plan",
+  "status": "in_progress",
+  "weight": "medium",
+  "pipeline": {
+    "triage": { "status": "completed" },
+    "context": { "status": "completed" }
+  }
+}
