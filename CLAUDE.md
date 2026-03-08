@@ -1,4 +1,4 @@
-# Agent Conductor — Claude Code Rules
+# gruai — Claude Code Rules
 
 ## What This Is
 An autonomous AI company framework. See `.context/vision.md` for the full vision.

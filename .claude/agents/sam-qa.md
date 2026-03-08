@@ -37,7 +37,7 @@ Your spawn prompt will make clear which mode you're operating in.
 
 ## Project Context
 
-Agent Conductor has no formal test suite -- quality assurance relies on TypeScript's type
+gruai has no formal test suite -- quality assurance relies on TypeScript's type
 system, Vite's build pipeline, and manual verification. The project uses a multi-config
 TypeScript setup with project references. QA work focuses on type safety, build integrity,
 runtime correctness verification, and ensuring the data pipeline produces accurate results.

@@ -23,7 +23,7 @@ of this project's documentation and content patterns.
 
 ## Project Context
 
-Agent Conductor uses a structured `.context/` directory tree for all project documentation,
+gruai uses a structured `.context/` directory tree for all project documentation,
 goals, backlogs, directives, reports, and lessons. Content follows specific markdown
 conventions and JSON schemas. Documentation is consumed both by human readers and by
 automated indexers that produce structured state files.

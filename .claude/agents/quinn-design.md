@@ -37,7 +37,7 @@ The CEO is the primary user of this product -- the person who uses it every day 
 
 ## Project Context
 
-Agent Conductor is a real-time dashboard for monitoring Claude Code sessions, built with React 19, Tailwind CSS v4, and shadcn/ui. There is also a pixel-art office simulation game (Canvas 2D). You design for both surfaces.
+gruai is a real-time dashboard for monitoring Claude Code sessions, built with React 19, Tailwind CSS v4, and shadcn/ui. There is also a pixel-art office simulation game (Canvas 2D). You design for both surfaces.
 
 ## Skills
 

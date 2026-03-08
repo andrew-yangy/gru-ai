@@ -73,7 +73,7 @@ function findValidPath(parts: string[], index: number, currentPath: string): str
 /**
  * Derive a human-friendly project name from a filesystem path.
  * Uses the last directory component, title-cased.
- * e.g. `/Users/yangyang/Repos/gruai` -> `Agent Conductor`
+ * e.g. `/Users/yangyang/Repos/gruai` -> `gruai`
  */
 function deriveProjectName(projectPath: string): string {
   const basename = path.basename(projectPath);

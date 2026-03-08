@@ -1,7 +1,7 @@
 # Benchmark Fixture — Task Manager App
 
 A minimal but realistic Express API + React frontend used as a benchmark target for the
-Agent Conductor pipeline. The codebase is intentionally imperfect to provide real work for
+gruai pipeline. The codebase is intentionally imperfect to provide real work for
 directives to fix.
 
 ## Project Structure

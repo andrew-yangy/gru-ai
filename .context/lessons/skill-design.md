@@ -14,7 +14,7 @@
 
 ## Repo Separation
 
-- **Symlinks are the right separation mechanism.** Move framework code (skills, agents, conductor context) to the conductor repo, replace originals with symlinks. Consumer-owned state (inbox/, done/, logs) stays local. Relative paths `../../../agent-conductor/...` work because both repos share a parent directory.
+- **Symlinks are the right separation mechanism.** Move framework code (skills, agents, conductor context) to the conductor repo, replace originals with symlinks. Consumer-owned state (inbox/, done/, logs) stays local. Relative paths `../../../gruai/...` work because both repos share a parent directory.
 - **Dashboard serves from dist/, not vite dev.** The server uses `serveStatic()` from `dist/` directory. Vite HMR only works if you're hitting the vite dev port directly. After any frontend changes, run `npx vite build` to update the served bundle.
 - **Chokidar can silently fail with many watchers.** Multiple zombie conductor processes (from old `tsx watch` instances) exhaust macOS FSEvents. The watcher shows `ready: true` but never fires. Fix: restart the server, or better: kill stale processes.
 - **Server state loads once at startup.** If state files don't exist when `readAndUpdate()` runs at startup, the API returns null forever (chokidar won't fire because the watcher never detected the initial files). Server restart after generating state files fixes it.

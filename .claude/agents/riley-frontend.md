@@ -23,7 +23,7 @@ of this project's frontend patterns.
 
 ## Project Context
 
-Agent Conductor is a real-time dashboard for monitoring Claude Code sessions, built with
+gruai is a real-time dashboard for monitoring Claude Code sessions, built with
 React 19, Tailwind CSS v4, and shadcn/ui. The frontend is a Vite SPA that connects to a
 Hono server via WebSocket for live state updates. All state management uses Zustand stores.
 

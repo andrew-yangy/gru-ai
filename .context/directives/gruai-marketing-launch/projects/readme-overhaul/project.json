@@ -1,0 +1,61 @@
+{
+  "id": "readme-overhaul",
+  "title": "Professional README that sells the vision",
+  "status": "completed",
+  "priority": "P0",
+  "agent": ["taylor"],
+  "reviewers": ["priya", "marcus"],
+  "auditor": "priya",
+  "description": "Rewrite README.md as a marketing-grade document that converts visitors in 30 seconds.",
+  "source_directive": "gruai-marketing-launch",
+  "scope": {
+    "in": "README.md rewrite, verify demo.gif, comparison table, quickstart, architecture diagram",
+    "out": "No new asset creation (use existing demo.gif), no landing page (separate project)"
+  },
+  "dod": [
+    { "criterion": "README.md leads with centered demo.gif and value prop above the fold", "met": true },
+    { "criterion": "Comparison table: gruai vs Devin vs CrewAI vs AutoGen across 5+ dimensions", "met": true },
+    { "criterion": "3-command quickstart that produces a working setup", "met": true },
+    { "criterion": "Technical details in collapsible sections below the fold", "met": true }
+  ],
+  "browser_test": false,
+  "tasks": [
+    {
+      "id": "readme-audit-and-outline",
+      "title": "Audit current README and draft marketing outline",
+      "status": "completed",
+      "priority": "P0",
+      "complexity": "simple",
+      "phases": ["build", "review"],
+      "agent": ["taylor"],
+      "user_scenario": "Builder reads the current README and creates a structured outline that prioritizes the developer's 30-second decision window.",
+      "scope": "Read README.md, verify demo.gif shows pixel-art office with agents. Produce outline with: hero section structure, above-the-fold content, comparison table columns, badge inventory, and mapping of current content (keep/move/delete).",
+      "dod": [
+        { "criterion": "Outline document exists in project directory with section-by-section plan", "met": true },
+        { "criterion": "Comparison table has at least 5 dimensions with data for gruai vs Devin vs CrewAI vs AutoGen", "met": true },
+        { "criterion": "docs/assets/demo.gif verified — status noted (current/needs-update)", "met": true },
+        { "criterion": "Every section of current README mapped to keep/move/delete decision", "met": true }
+      ]
+    },
+    {
+      "id": "readme-rewrite",
+      "title": "Rewrite README.md as marketing-grade document",
+      "status": "completed",
+      "priority": "P0",
+      "complexity": "simple",
+      "phases": ["build", "review"],
+      "agent": ["taylor"],
+      "user_scenario": "A developer lands on the GitHub repo and within 30 seconds understands what gruai does, why it is different, and how to try it.",
+      "scope": "Rewrite README.md following the outline. Hero: GIF centered, one-line value prop, badges. Above fold: 3-command quickstart. Feature highlights. Comparison table. Architecture diagram. Technical details in collapsible sections.",
+      "dod": [
+        { "criterion": "README.md starts with centered demo.gif, value prop, and badges visible without scrolling", "met": true },
+        { "criterion": "Quickstart section contains exactly 3 shell commands for a working setup", "met": true },
+        { "criterion": "Comparison table present: gruai vs Devin vs CrewAI vs AutoGen across 5+ dimensions", "met": true },
+        { "criterion": "Technical details (hooks, terminal support, scripts) in collapsible <details> sections", "met": true },
+        { "criterion": "No broken image links or badge URLs", "met": true }
+      ]
+    }
+  ],
+  "created": "2026-03-08T00:12:00Z",
+  "updated": "2026-03-08T01:00:00Z"
+}

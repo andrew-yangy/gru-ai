@@ -1,0 +1,96 @@
+{
+  "goal": "gruAI Marketing Launch -- Rename, README, Content Strategy, Landing Page",
+  "challenges": {
+    "risks": [
+      "Repo rename has cascading effects: 76+ files reference 'agent-conductor' in .context/, agents/, reports/, etc. Renaming ALL of them is high effort, low value since most are historical artifacts. Risk: scope creep from cosmetic find-replace across hundreds of files that don't affect functionality.",
+      "Full marketing strategy (content calendar, measurement framework, 3x/week cadence) is being planned as engineering tasks, but content creation is inherently iterative and manual. Risk: we produce a beautiful content plan document that nobody executes because actually recording screencasts and writing Chinese articles requires the CEO, not agents.",
+      "Brand conflict with Gru.ai (BabelCloud, $5.5M funded) is real but manageable. Risk: we invest in branding/landing page and then need to rebrand if they enforce trademark. Mitigation: proceed but keep the backup name conversation open."
+    ],
+    "over_engineering_flags": [
+      "Renaming EVERY occurrence of 'agent-conductor' in historical .context/ reports and completed directive artifacts is pure waste. Only rename in active files: CLAUDE.md, vision.md, agent definitions, README, server code comments. Historical artifacts stay as-is.",
+      "The marketing strategy could become a 20-page document nobody reads. Keep it to: content pillars, first 4 weeks of specific posts, tool recommendations, measurement. That is enough to start executing."
+    ],
+    "recommendation": "Simplify the rename scope -- only touch active framework files and source code, not historical reports/directives. Everything else proceed as directed."
+  },
+  "projects": [
+    {
+      "id": "repo-rename",
+      "title": "Rename repo from agent-conductor to gruai",
+      "priority": "P0",
+      "scope_summary": "Rename the GitHub repository from agent-conductor to gruai. Update active framework files: CLAUDE.md header, .context/vision.md title and references, agent definition files (.claude/agents/*.md), server code comments (server/config.ts, server/platform/types.ts), public/*.tsx asset path comments, and test fixture README. Do NOT bulk-rename historical .context/reports/ or completed directive artifacts. Update git remote URL. Verify npm package name stays gru-ai (no change needed).",
+      "complexity": "moderate",
+      "agent": ["devon"],
+      "reviewers": ["sarah"],
+      "auditor": "sarah",
+      "depends_on": [],
+      "touches_files_hint": [
+        "CLAUDE.md",
+        ".context/vision.md",
+        ".claude/agents/*.md",
+        "server/config.ts",
+        "server/platform/types.ts",
+        "server/platform/PLATFORM-ADAPTERS.md",
+        "public/00_Modern_Office_Singles.tsx",
+        "public/Office_Design_1.tsx",
+        "public/Office_Design_2.tsx",
+        "tests/fixture/README.md",
+        "tests/e2e/chrome-mcp-checklist.md"
+      ]
+    },
+    {
+      "id": "readme-overhaul",
+      "title": "Professional README that sells the vision",
+      "priority": "P0",
+      "scope_summary": "Rewrite README.md as a marketing-grade document. Lead with the pixel-art office GIF (verify docs/assets/demo.gif is current -- flag if stale). Clear value prop above the fold. Quickstart in 3 commands. Architecture diagram. Comparison table vs Devin/CrewAI/AutoGen. Badges, screenshots, feature highlights. Keep technical docs but move below the fold. Target audience: developer who found this on Reddit/GitHub and has 30 seconds to decide if they care.",
+      "complexity": "moderate",
+      "agent": ["taylor"],
+      "reviewers": ["priya", "marcus"],
+      "auditor": "priya",
+      "depends_on": ["repo-rename"],
+      "touches_files_hint": [
+        "README.md",
+        "docs/assets/"
+      ]
+    },
+    {
+      "id": "xiaohongshu-strategy",
+      "title": "小红书 content strategy and first posts",
+      "priority": "P1",
+      "scope_summary": "Produce a complete 小红书 marketing strategy document. Content pillars (AI agents running a company, pixel-art visualization, developer productivity). 4-week content calendar with 3x/week cadence. Specific post scripts/outlines for the first 6 posts. AI voiceover tool research and recommendations (HeyGen, ElevenLabs, etc.) with pros/cons/pricing. Chinese content writing guidance (tone, hashtags, trending topics on 小红书 for dev tools). Screencast recording guide (what to show, how long, which features to highlight). Measurement framework: metrics to track, what success looks like at 30/60/90 days. Output: a single actionable strategy document the CEO can execute from.",
+      "complexity": "moderate",
+      "agent": ["taylor"],
+      "reviewers": ["priya"],
+      "auditor": "priya",
+      "depends_on": ["readme-overhaul"],
+      "touches_files_hint": []
+    },
+    {
+      "id": "reddit-strategy",
+      "title": "Reddit launch strategy and draft posts",
+      "priority": "P1",
+      "scope_summary": "Produce Reddit launch strategy for r/ClaudeCode, r/ChatGPTCoding, and r/SideProject. Per-subreddit analysis: community norms, what gets upvoted, what gets flagged as spam. Draft launch posts tailored to each subreddit's culture. Timing recommendations. Comment strategy for engagement. Do NOT target r/artificial or r/LocalLLaMA. Output: ready-to-post drafts plus a posting guide.",
+      "complexity": "simple",
+      "agent": ["taylor"],
+      "reviewers": ["priya"],
+      "auditor": "priya",
+      "depends_on": ["readme-overhaul"],
+      "touches_files_hint": []
+    },
+    {
+      "id": "landing-page",
+      "title": "Static HTML landing page on GitHub Pages",
+      "priority": "P2",
+      "scope_summary": "Build a simple, high-quality static HTML landing page served from docs/ via GitHub Pages. No framework -- plain HTML/CSS/JS. Hero section with pixel-art office GIF. Value prop headline. Feature highlights (3-4 cards). Quickstart code block. GitHub star button and npm install command. Footer with links. Mobile responsive. Dark theme matching the pixel-art aesthetic. Should load in under 1 second.",
+      "complexity": "moderate",
+      "agent": ["riley"],
+      "reviewers": ["priya", "marcus"],
+      "auditor": "priya",
+      "depends_on": ["readme-overhaul"],
+      "touches_files_hint": [
+        "docs/index.html",
+        "docs/style.css",
+        "docs/assets/"
+      ]
+    }
+  ]
+}

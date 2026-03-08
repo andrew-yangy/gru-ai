@@ -21,7 +21,7 @@ of this project's data pipeline and parsing patterns.
 
 ## Project Context
 
-Agent Conductor processes Claude session data through a multi-stage pipeline: JSONL files
+gruai processes Claude session data through a multi-stage pipeline: JSONL files
 on disk are parsed by a state machine, aggregated in memory, indexed into structured JSON,
 and served to the dashboard. The data layer also includes a `.context/` metadata tree with
 goals, projects, backlogs, and directives read directly from source JSON files (goal.json, project.json, backlog.json).

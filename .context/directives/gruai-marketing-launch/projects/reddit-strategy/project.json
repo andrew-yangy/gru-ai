@@ -1,0 +1,42 @@
+{
+  "id": "reddit-strategy",
+  "title": "Reddit launch strategy and draft posts",
+  "status": "completed",
+  "priority": "P1",
+  "agent": ["taylor"],
+  "reviewers": ["priya"],
+  "auditor": "priya",
+  "description": "Reddit launch strategy for r/ClaudeCode, r/ChatGPTCoding, r/SideProject with ready-to-post drafts.",
+  "source_directive": "gruai-marketing-launch",
+  "scope": {
+    "in": "Subreddit analysis, 3 draft posts, comment strategy, posting guide",
+    "out": "r/artificial, r/LocalLLaMA, actual posting"
+  },
+  "dod": [
+    { "criterion": "Per-subreddit analysis for r/ClaudeCode, r/ChatGPTCoding, r/SideProject", "met": true },
+    { "criterion": "3 ready-to-post draft posts with title, body, flair, and timing", "met": true },
+    { "criterion": "Comment strategy and posting guide included", "met": true }
+  ],
+  "browser_test": false,
+  "tasks": [
+    {
+      "id": "reddit-subreddit-analysis-and-drafts",
+      "title": "Analyze target subreddits and draft launch posts",
+      "status": "completed",
+      "priority": "P0",
+      "complexity": "simple",
+      "phases": ["build", "review"],
+      "agent": ["taylor"],
+      "user_scenario": "Team can execute Reddit launch by following a single document with subreddit-specific posts and posting guide.",
+      "scope": "Analyze r/ClaudeCode, r/ChatGPTCoding, r/SideProject: rules, what gets upvoted, spam risks. Draft one post per subreddit. Comment strategy. Timing recommendations. Do-not-do list.",
+      "dod": [
+        { "criterion": "Per-subreddit analysis for all 3 targets with: subscriber estimate, posting rules, content that performs well, spam risks", "met": true },
+        { "criterion": "3 ready-to-post drafts with title, body, flair, and recommended posting time", "met": true },
+        { "criterion": "Comment strategy covers first-hour engagement, response templates, tone guidance", "met": true },
+        { "criterion": "Posting guide includes timing, do-not-do list, and explicit r/artificial + r/LocalLLaMA exclusion with rationale", "met": true }
+      ]
+    }
+  ],
+  "created": "2026-03-08T00:12:00Z",
+  "updated": "2026-03-08T01:00:00Z"
+}

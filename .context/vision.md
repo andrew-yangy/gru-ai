@@ -1,4 +1,4 @@
-# Agent Conductor — System Vision
+# gruai — System Vision
 
 > This file describes the conductor framework itself, not the consumer project (Wisely).
 > Consumer context lives in `.context/vision.md`, `.context/preferences.md`, etc.
@@ -80,7 +80,7 @@ Agents read BOTH layers:
 
 ## Harness Engineering Alignment
 
-Agent-conductor is an **organizational harness** — OpenAI's harness engineering describes the environment layer (how to set up a codebase for agents); we extend it with the organization layer (how to structure agents into an autonomous company).
+gruai is an **organizational harness** — OpenAI's harness engineering describes the environment layer (how to set up a codebase for agents); we extend it with the organization layer (how to structure agents into an autonomous company).
 
 | Harness Engineering Pillar | Our Implementation |
 |---|---|

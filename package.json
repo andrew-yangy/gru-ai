@@ -1,7 +1,7 @@
 {
   "name": "gru-ai",
   "private": false,
-  "version": "0.2.0",
+  "version": "0.2.1",
   "type": "module",
   "bin": {
     "gru-ai": "dist-cli/index.js"
@@ -18,7 +18,8 @@
     "README.md"
   ],
   "scripts": {
-    "dev": "concurrently \"tsx watch server/index.ts\" \"vite\"",
+    "predev": "lsof -ti :4444 | xargs kill -9 2>/dev/null; pkill -f 'vite.*gruai' 2>/dev/null; echo 'Cleaned stale dev processes'",
+    "dev": "concurrently --kill-others-on-fail \"tsx watch server/index.ts\" \"vite\"",
     "dev:server": "tsx watch server/index.ts",
     "dev:client": "vite",
     "build:cli": "tsc -p cli/tsconfig.json",

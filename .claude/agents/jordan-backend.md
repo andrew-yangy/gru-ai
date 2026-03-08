@@ -21,7 +21,7 @@ of this project's backend patterns.
 
 ## Project Context
 
-Agent Conductor's server is a Node.js HTTP + WebSocket server built with raw `node:http`
+gruai's server is a Node.js HTTP + WebSocket server built with raw `node:http`
 and the `ws` library. It watches the filesystem for Claude session changes using chokidar,
 aggregates state in memory, and broadcasts updates to connected dashboard clients. No
 Express, no Hono routing -- just a manual URL dispatch in `server/index.ts`.

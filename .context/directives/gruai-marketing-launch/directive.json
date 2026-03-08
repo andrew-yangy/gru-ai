@@ -1,0 +1,116 @@
+{
+  "id": "gruai-marketing-launch",
+  "title": "gruAI Marketing Launch — Rename, README, Content Strategy",
+  "status": "in_progress",
+  "created": "2026-03-08",
+  "weight": "strategic",
+  "produced_features": [],
+  "report": null,
+  "backlog_sources": [],
+  "started_at": "2026-03-08T00:00:00Z",
+  "updated_at": "2026-03-08T00:10:00Z",
+  "current_step": "execute",
+  "pipeline": {
+    "triage": {
+      "status": "completed",
+      "agent": "CEO",
+      "output": {
+        "weight": "strategic",
+        "rationale": "Multiple valid approaches (naming, content strategy, platform mix), crosses 3+ domains (engineering, content, marketing), lasting brand consequences."
+      }
+    },
+    "read": {
+      "status": "completed",
+      "agent": "CEO",
+      "output": {
+        "summary": "Read directive.md, vision.md, README.md, package.json. Package already published as 'gru-ai' on npm. GitHub repo still 'agent-conductor'. README exists but needs marketing polish."
+      }
+    },
+    "context": {
+      "status": "completed",
+      "agent": "CEO",
+      "output": {
+        "summary": "Vision: autonomous AI company framework. Key differentiators: pixel-art office visualization, structured pipeline, C-suite personalities. Competitors: Devin ($500/mo headless), CrewAI (YAML configs). npm name is gru-ai, GitHub repo is agent-conductor. No preferences.md exists."
+      }
+    },
+    "challenge": {
+      "status": "pending"
+    },
+    "brainstorm": {
+      "status": "completed",
+      "agent": "C-suite (Priya CMO, Marcus CPO, Sarah CTO)",
+      "output": {
+        "summary": "Phase 1 proposals + Phase 2 deliberation complete. Convergence on: rename to gruai, lead with pixel-art GIF, static HTML landing page. Key disagreements: 小红书-first vs Reddit-first, full marketing strategy vs minimal viable launch, AI video vs real screencasts. Brand conflict flagged: Gru.ai (BabelCloud, $5.5M funded, pivoted to gbox.ai).",
+        "artifact": "brainstorm.md"
+      }
+    },
+    "plan": {
+      "status": "completed",
+      "agent": "COO (Morgan)",
+      "output": {
+        "summary": "5 projects: repo-rename (P0, Devon), readme-overhaul (P0, Taylor), xiaohongshu-strategy (P1, Taylor), reddit-strategy (P1, Taylor), landing-page (P2, Riley). Sequential dependency chain: rename → README → content strategies + landing page.",
+        "artifact": "plan.json"
+      }
+    },
+    "audit": {
+      "status": "skipped",
+      "agent": "CEO",
+      "output": {
+        "summary": "Skipped — brainstorm phase already audited codebase (Sarah CTO confirmed: only 3 source files reference agent-conductor, no CI/CD, demo.gif exists). Technical risk is low."
+      }
+    },
+    "approve": {
+      "status": "active",
+      "agent": "CEO"
+    },
+    "project-brainstorm": {
+      "status": "completed",
+      "agent": "CTO (Sarah Chen)",
+      "output": {
+        "summary": "All 5 projects decomposed into tasks: repo-rename (3 tasks), readme-overhaul (2 tasks), xiaohongshu-strategy (3 tasks), reddit-strategy (1 task), landing-page (2 tasks). Total: 11 tasks."
+      }
+    },
+    "setup": {
+      "status": "completed",
+      "agent": "CEO",
+      "output": {
+        "summary": "Using existing 'game' branch. No worktree needed.",
+        "mode": "branch",
+        "branch": "game (existing)"
+      }
+    },
+    "execute": {
+      "status": "active",
+      "agent": "Multiple builders",
+      "output": {
+        "summary": "Starting Wave 1: repo-rename (Devon, P0)",
+        "waves": 4,
+        "current_wave": 1
+      }
+    },
+    "review-gate": {
+      "status": "pending"
+    },
+    "wrapup": {
+      "status": "pending"
+    },
+    "completion": {
+      "status": "pending"
+    }
+  },
+  "projects": ["repo-rename", "readme-overhaul", "xiaohongshu-strategy", "reddit-strategy", "landing-page"],
+  "planning": {
+    "coo_plan": {},
+    "ceo_approval": {
+      "status": "pending",
+      "modifications": []
+    },
+    "worktree_path": null
+  },
+  "wrapup": {
+    "okrs_persisted": false,
+    "follow_ups_processed": false,
+    "digest_path": null,
+    "lessons_updated": false
+  }
+}

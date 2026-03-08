@@ -26,7 +26,7 @@ that no single-domain specialist is the right fit.
 
 ## Project Context
 
-Agent Conductor is a full-stack TypeScript application with a React 19 + Tailwind CSS v4 frontend
+gruai is a full-stack TypeScript application with a React 19 + Tailwind CSS v4 frontend
 and a Node.js HTTP + WebSocket server. The frontend uses Zustand stores, shadcn/ui components,
 and React Router v7. The server uses manual URL dispatch, chokidar file watchers, and broadcasts
 state via WebSocket. The context tree (`.context/`) stores goals, projects, directives, and lessons

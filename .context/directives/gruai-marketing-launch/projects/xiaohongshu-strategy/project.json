@@ -1,0 +1,77 @@
+{
+  "id": "xiaohongshu-strategy",
+  "title": "小红书 content strategy and first posts",
+  "status": "completed",
+  "priority": "P1",
+  "agent": ["taylor"],
+  "reviewers": ["priya"],
+  "auditor": "priya",
+  "description": "Complete 小红书 marketing strategy with content pillars, 4-week calendar, AI voiceover tool research, and 6 ready-to-use post drafts.",
+  "source_directive": "gruai-marketing-launch",
+  "scope": {
+    "in": "Platform research, AI voiceover tool comparison, content strategy doc, 4-week calendar, 6 post scripts/outlines",
+    "out": "Actual video recording/editing, account setup, posting"
+  },
+  "dod": [
+    { "criterion": "Strategy document with 3 content pillars, 4-week calendar (12 slots), measurement framework", "met": true },
+    { "criterion": "AI voiceover tool comparison with 4+ tools evaluated", "met": true },
+    { "criterion": "6 post drafts with hooks, body, CTA, and hashtags", "met": true },
+    { "criterion": "Chinese content guidance with tone, key terms, and 10+ hashtags", "met": true }
+  ],
+  "browser_test": false,
+  "tasks": [
+    {
+      "id": "xhs-platform-research",
+      "title": "Research xiaohongshu platform mechanics and AI voiceover tools",
+      "status": "completed",
+      "priority": "P0",
+      "complexity": "simple",
+      "phases": ["build", "review"],
+      "agent": ["taylor"],
+      "user_scenario": "The marketing team understands xiaohongshu's algorithm, content format constraints, and available AI voiceover tools.",
+      "scope": "Research xiaohongshu content format specs, algorithm signals, developer/tech content examples. Compare AI voiceover tools: HeyGen, ElevenLabs, Speechify, Azure TTS, Volcengine TTS for Chinese voice quality, pricing, API access.",
+      "dod": [
+        { "criterion": "Research document covers xiaohongshu format constraints with specific numbers (max images, video length, caption length)", "met": true },
+        { "criterion": "At least 4 AI voiceover tools compared in table with: name, Chinese voice quality, pricing, API availability, recommendation", "met": true },
+        { "criterion": "At least 3 examples of successful developer/tech content on xiaohongshu cited", "met": true },
+        { "criterion": "Screencast recording guide covers: recommended tools, resolution, aspect ratio for xiaohongshu", "met": true }
+      ]
+    },
+    {
+      "id": "xhs-strategy-and-calendar",
+      "title": "Write content strategy with pillars, calendar, and measurement framework",
+      "status": "completed",
+      "priority": "P0",
+      "complexity": "simple",
+      "phases": ["build", "review"],
+      "agent": ["taylor"],
+      "user_scenario": "CEO has a single document defining what to post, when, and how to measure success over 90 days.",
+      "scope": "Content pillars: AI agents running a company, pixel-art visualization, developer productivity. 4-week calendar with 3x/week. Measurement framework at 30/60/90 days. Chinese content writing guidance.",
+      "dod": [
+        { "criterion": "Strategy document has 3 content pillars with descriptions and example topics", "met": true },
+        { "criterion": "4-week calendar grid has 12 slots each with pillar, format, topic, and hook", "met": true },
+        { "criterion": "Measurement framework defines specific numeric targets at 30, 60, and 90 days", "met": true },
+        { "criterion": "Chinese content guidance covers tone, key terms in Chinese, and 10+ recommended hashtags", "met": true }
+      ]
+    },
+    {
+      "id": "xhs-first-six-posts",
+      "title": "Draft scripts and outlines for the first 6 posts",
+      "status": "completed",
+      "priority": "P0",
+      "complexity": "simple",
+      "phases": ["build", "review"],
+      "agent": ["taylor"],
+      "user_scenario": "Team can start producing content immediately with detailed scripts, not just topics.",
+      "scope": "Write 6 detailed post outlines/scripts. Screencast posts get scene-by-scene voiceover scripts in Chinese. Image carousel posts get slide-by-slide content. Each post: hook, body, CTA, hashtags.",
+      "dod": [
+        { "criterion": "6 post drafts exist, each with hook line, body, CTA, and hashtag list", "met": true },
+        { "criterion": "At least 2 posts are screencast format with scene-by-scene voiceover scripts including Chinese text", "met": true },
+        { "criterion": "At least 2 posts feature the pixel-art office visualization as primary visual", "met": true },
+        { "criterion": "Posts cover at least 2 of the 3 content pillars", "met": true }
+      ]
+    }
+  ],
+  "created": "2026-03-08T00:12:00Z",
+  "updated": "2026-03-08T01:30:00Z"
+}

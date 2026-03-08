@@ -1,0 +1,77 @@
+{
+  "id": "repo-rename",
+  "title": "Rename repo from agent-conductor to gruai",
+  "status": "completed",
+  "priority": "P0",
+  "agent": ["devon"],
+  "reviewers": ["sarah"],
+  "auditor": "sarah",
+  "description": "Rename the GitHub repository from agent-conductor to gruai. Update active framework files only, not historical artifacts.",
+  "source_directive": "gruai-marketing-launch",
+  "scope": {
+    "in": "Update CLAUDE.md, vision.md, lessons/, agents/*.md, server comments, package.json scripts, test fixtures",
+    "out": "Historical .context/reports/, completed directive artifacts, dist-* build output"
+  },
+  "dod": [
+    { "criterion": "All active framework files reference 'gruai' instead of 'Agent Conductor' or 'agent-conductor'", "met": true },
+    { "criterion": "npm package name remains 'gru-ai' (unchanged)", "met": true },
+    { "criterion": "npm run type-check passes clean", "met": true },
+    { "criterion": "Historical .context/ artifacts are untouched", "met": true }
+  ],
+  "browser_test": false,
+  "tasks": [
+    {
+      "id": "rename-framework-core",
+      "title": "Rename agent-conductor to gruai in core framework files",
+      "status": "completed",
+      "priority": "P0",
+      "complexity": "simple",
+      "phases": ["build", "review"],
+      "agent": ["devon"],
+      "user_scenario": "A developer cloning the repo sees 'gruai' branding consistently across CLAUDE.md, vision.md, and package.json scripts.",
+      "scope": "Update the CLAUDE.md header from 'Agent Conductor' to 'gruai'. Update .context/vision.md title and all 'Agent Conductor' / 'agent-conductor' references. Update package.json predev script. Update .context/lessons/ path references. Update test fixtures.",
+      "dod": [
+        { "criterion": "CLAUDE.md header reads '# gruai' instead of '# Agent Conductor'", "met": true },
+        { "criterion": "grep -r 'agent-conductor' on CLAUDE.md, .context/vision.md, .context/lessons/, package.json, tests/ returns zero results", "met": true },
+        { "criterion": "grep -ri 'Agent Conductor' on CLAUDE.md, .context/vision.md, .context/lessons/ returns zero results", "met": true },
+        { "criterion": "npm run type-check passes clean", "met": true }
+      ]
+    },
+    {
+      "id": "rename-agents-and-server",
+      "title": "Rename agent-conductor to gruai in agent definitions and server code",
+      "status": "completed",
+      "priority": "P0",
+      "complexity": "simple",
+      "phases": ["build", "review"],
+      "agent": ["devon"],
+      "user_scenario": "Agent definitions and server code comments consistently reference 'gruai'.",
+      "scope": "Update all 7 agent definition files in .claude/agents/ to replace 'Agent Conductor' with 'gruai'. Update server/config.ts, server/platform/types.ts, and server/platform/PLATFORM-ADAPTERS.md.",
+      "dod": [
+        { "criterion": "grep -ri 'Agent Conductor' .claude/agents/ server/ returns zero results", "met": true },
+        { "criterion": "All 7 agent .md files contain 'gruai' where 'Agent Conductor' previously appeared", "met": true },
+        { "criterion": "server/config.ts, server/platform/types.ts, PLATFORM-ADAPTERS.md reference 'gruai'", "met": true },
+        { "criterion": "npm run type-check passes clean", "met": true }
+      ]
+    },
+    {
+      "id": "verify-no-regressions",
+      "title": "Verify npm package name unchanged and no regressions from rename",
+      "status": "completed",
+      "priority": "P0",
+      "complexity": "simple",
+      "phases": ["build", "review"],
+      "agent": ["devon"],
+      "user_scenario": "After rename, npm package still publishes as gru-ai, README works, no active functionality broken.",
+      "scope": "Verify package.json name is 'gru-ai'. Run type-check. Grep entire repo for remaining references and confirm they are only in historical artifacts.",
+      "dod": [
+        { "criterion": "package.json name field equals 'gru-ai'", "met": true },
+        { "criterion": "grep -ri 'agent.conductor' on active files returns zero results", "met": true },
+        { "criterion": "npm run type-check passes clean", "met": true },
+        { "criterion": "Remaining occurrences are exclusively in historical .context/ artifacts and dist-* directories", "met": true }
+      ]
+    }
+  ],
+  "created": "2026-03-08T00:12:00Z",
+  "updated": "2026-03-08T00:12:00Z"
+}

@@ -30,7 +30,7 @@
 ## Execution Attitude
 
 - **"Do everything" means KEEP GOING until verified, not stop at the report.** The CEO expects continuous autonomous execution: build -> verify visually -> review -> find gaps -> fix -> iterate. The digest is a checkpoint, not a finish line. If the CEO is asleep, that's MORE reason to keep working, not less.
-- **Agent-conductor is a safe playground — go wild.** Dashboard changes are isolated (separate repo, no production impact). Don't classify dashboard work as high-risk. SKILL.md updates for the conductor's own orchestration layer are medium-risk at most — just do them.
+- **gruai is a safe playground — go wild.** Dashboard changes are isolated (separate repo, no production impact). Don't classify dashboard work as high-risk. SKILL.md updates for the conductor's own orchestration layer are medium-risk at most — just do them.
 - **Always verify with Chrome MCP after building UI.** Building without visual testing is shipping untested code. Take screenshots, find issues, fix them in a loop.
 - **After building, spawn reviewers to find gaps.** The CTO for code quality, the CPO for UX, then fix what they find. Don't stop after one pass.
 
@@ -57,7 +57,7 @@
 
 ## Multi-Codebase Directives
 
-- **Directives spanning multiple repos need explicit coordination.** The work-state-management directive touched both `sw/` (context tree, SKILL.md) and `agent-conductor/` (dashboard). Worktree isolates only one repo. The agent-conductor changes were made directly (no worktree) — acceptable for this case but risky for larger changes. Consider: separate branches per repo, or a script that creates worktrees in both.
+- **Directives spanning multiple repos need explicit coordination.** The work-state-management directive touched both `sw/` (context tree, SKILL.md) and `gruai/` (dashboard). Worktree isolates only one repo. The gruai changes were made directly (no worktree) — acceptable for this case but risky for larger changes. Consider: separate branches per repo, or a script that creates worktrees in both.
 
 ## Context Window Management
 

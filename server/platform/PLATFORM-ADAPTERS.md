@@ -1,6 +1,6 @@
 # Platform Spawn Adapters
 
-This document describes the SpawnAdapter implementations available in Agent Conductor and their capability differences.
+This document describes the SpawnAdapter implementations available in gruai and their capability differences.
 
 ## Overview
 
