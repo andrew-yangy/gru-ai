@@ -3,7 +3,7 @@ import { runInit } from './commands/init.js';
 import { runStart } from './commands/start.js';
 import { runUpdate } from './commands/update.js';
 import { c } from './lib/color.js';
-const VERSION = '0.1.0';
+const VERSION = '0.2.0';
 const args = process.argv.slice(2);
 const command = args[0];
 function printUsage() {

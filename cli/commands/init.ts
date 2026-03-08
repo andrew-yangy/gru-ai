@@ -70,6 +70,7 @@ async function promptPreset(rl: readline.Interface, flags: Record<string, string
     const p = flags['preset'] as PresetName;
     if (['starter', 'standard', 'full', 'custom'].includes(p)) return p;
     console.error(c.red(`  Invalid preset: ${flags['preset']}. Must be starter, standard, full, or custom.`));
+    process.exit(1);
   }
   // Default to standard when --yes is passed
   if (flags['yes']) return 'standard';
@@ -204,17 +205,21 @@ export async function runInit(flags: Record<string, string | boolean>): Promise<
   const gruaiDir = path.join(projectPath, '.gruai');
   const configFile = path.join(projectPath, 'gruai.config.json');
   if (fs.existsSync(gruaiDir) || fs.existsSync(configFile)) {
-    const rl = createRL();
-    try {
-      console.log(c.yellow('\n  Warning: This project appears to already be initialized.'));
-      console.log(c.dim('  Existing files may be overwritten.\n'));
-      const answer = await ask(rl, `  ${c.bold('Continue anyway?')} ${c.dim('(y/N)')}: `);
-      if (answer.toLowerCase() !== 'y') {
-        console.log('  Cancelled.');
-        process.exit(0);
+    if (flags['yes']) {
+      console.log(c.yellow('\n  Warning: Re-initializing existing project (--yes).'));
+    } else {
+      const rl = createRL();
+      try {
+        console.log(c.yellow('\n  Warning: This project appears to already be initialized.'));
+        console.log(c.dim('  Existing files may be overwritten.\n'));
+        const answer = await ask(rl, `  ${c.bold('Continue anyway?')} ${c.dim('(y/N)')}: `);
+        if (answer.toLowerCase() !== 'y') {
+          console.log('  Cancelled.');
+          process.exit(0);
+        }
+      } finally {
+        rl.close();
       }
-    } finally {
-      rl.close();
     }
   }
 

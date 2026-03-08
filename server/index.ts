@@ -144,6 +144,13 @@ const server = http.createServer((req, res) => {
     return;
   }
 
+  // Unknown /api/* routes → 404 JSON (don't fall through to SPA)
+  if (url.pathname.startsWith('/api/')) {
+    res.writeHead(404, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ error: 'Not found' }));
+    return;
+  }
+
   // --- Static file serving for production ---
   // Resolve dist/ from the package installation directory (not CWD)
   const resolvedDistDir = distDir();

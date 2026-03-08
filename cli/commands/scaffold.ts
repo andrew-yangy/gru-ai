@@ -150,6 +150,7 @@ function scaffoldRegistry(projectPath: string, agents: AgentEntry[], preset: str
   const agentEntries = agents.map(a => ({
     id: a.id,
     name: a.name,
+    firstName: a.firstName,
     title: a.title,
     role: a.role,
     description: a.description,
