@@ -1,60 +1,64 @@
-## Plan: COO Strategic Planning
+<!-- Pipeline doc: 05-planning.md | Source: SKILL.md restructure -->
 
-The COO takes the directive brief, context, and audit data and produces a structured plan -- projects, agents, priorities, and scope. The COO plans for all weight classes because even simple work benefits from structured decomposition and agent casting.
+## Step 3: Spawn the COO (Strategic Planning)
 
-Since audit runs before planning, the COO has mechanical data about file counts, complexity scores, and existing code patterns. This produces more accurate plans than guessing at scope.
+Spawn the COO as an Agent (model: opus, subagent_type: COO's ID from registry).
 
-### Spawn the COO
+**The COO's prompt must include:**
+- The CEO directive text (personality is auto-loaded via the `subagent_type`)
+- The goals index, lessons, and agent summaries from the context step
+- These explicit instructions:
 
-Spawn the COO agent using your runtime's agent mechanism. Use a high-capability model. Load the COO's personality from the registry (`agentFile` field).
+> See [docs/reference/templates/planner-prompt.md](../reference/templates/planner-prompt.md) for the full COO planning prompt.
 
-**The COO's prompt includes:**
+> See [docs/reference/schemas/plan-schema.md](../reference/schemas/plan-schema.md) for the COO's output JSON schema.
 
-| Input | Source |
-|-------|--------|
-| Directive text | `.context/directives/{id}/directive.md` |
-| Audit findings | `audit-findings.json` from the audit step |
-| Context files | vision.md, preferences.md, lessons, active directives |
-| Brainstorm synthesis (if strategic) | `.context/directives/{id}/brainstorm.md` |
-| CEO clarification answers (if strategic) | From the brainstorm STOP gate |
+> See [docs/reference/rules/casting-rules.md](../reference/rules/casting-rules.md) for full casting rules.
 
-Note to include for strategic directives: "The team has brainstormed approach options. Use the synthesis and CEO's answers to inform your plan -- focus on execution planning, not re-deriving strategy."
+> See [docs/reference/rules/phase-definitions.md](../reference/rules/phase-definitions.md) for phase composable building blocks.
 
-The COO has audit data (file counts, complexity scores) -- this should drive accurate task complexity assignment rather than optimistic guessing.
+> See [docs/reference/rules/scope-and-dod.md](../reference/rules/scope-and-dod.md) for scope format rules, Definition of Done rules, and user scenario rules.
 
-> See [planner-prompt.md](../reference/templates/planner-prompt.md) for the full prompt.
-> See [plan-schema.md](../reference/schemas/plan-schema.md) for the output schema.
-> See [casting-rules.md](../reference/rules/casting-rules.md) for casting rules.
-> See [phase-definitions.md](../reference/rules/phase-definitions.md) for phase building blocks.
-> See [scope-and-dod.md](../reference/rules/scope-and-dod.md) for scope and DOD rules.
+**If this directive was classified as strategic**, also include in the COO's prompt:
+- The brainstorm synthesis from `.context/directives/{directive-id}/brainstorm.md`
+- CEO's clarification answers
+- Additional instruction to the COO: "The team has brainstormed approach options for this directive. Use the brainstorm synthesis and CEO's answers to inform your plan — you don't need to re-derive the approach from scratch. Focus on execution planning, not strategy."
 
-### Parse and Save
+**Parse the COO's response** as JSON. Extract the JSON object from the response (find the first `{` and last `}`). If it fails to parse, show the error and stop.
 
-Parse the COO's response as JSON (find first `{`, last `}`). If parsing fails, show the error and stop.
+### Save the COO's plan (DO NOT create project.json yet)
 
-Save to `.context/directives/{id}/plan.json`. Do not create project.json at this step -- that happens in the approve step after CEO modifications are incorporated. Creating project.json before approval causes plan/project drift.
+Save the COO's parsed JSON plan to `.context/directives/{directive-id}/plan.json` for reference. The directive directory should already exist from the read step.
 
-### Multi-Project Plans
+**Do NOT create project.json at this step.** The project.json is created in the approve step (after CEO approval) so that CEO modifications to the plan are reflected in the source of truth. Creating it before approval causes plan/project drift when the CEO requests changes.
 
-If the COO's plan contains a `projects` array:
+### Handle Multi-Project Plans
 
-1. **Verify independence** -- if project B depends on project A's output, prefer merging them into one project. If they must stay separate, use the `depends_on` field (see planner-prompt.md). Task array ordering within a project is the intra-project dependency mechanism.
-2. Each independent project gets its own project directory, brainstorm, and execution cycle.
-3. Projects execute sequentially by priority tier (all P0 before P1).
-4. Project directories: `.context/directives/{id}/projects/{project-id}/`
+If the COO's plan contains a `projects` array (triggered when genuinely complex work can't be decomposed into simple tasks):
 
-Most directives use a single project. Multi-project is for genuinely complex AND independent work.
+1. **Verify projects are independent** — if project B depends on project A's output (shared code, shared data structures, one builds on the other), they MUST be merged into a single project with ordered tasks. Task array ordering IS the dependency mechanism. There is no cross-project dependency field.
+2. **Create a separate project directory and project.json for each independent project** in the approve step (after CEO approval)
+3. **Each project gets its own brainstorm** (2-3 agents + deliberation) before build
+4. **Each project gets its own execution cycle** in the execute step: brainstorm -> audit -> build -> review -> verify
+5. **Projects execute sequentially by priority tier** (all P0 projects before P1)
+6. **Project directories**: `.context/directives/{directive-id}/projects/{project-id}/` (use the project's `id`, not the directive name)
 
-### Validate the Cast
+Most directives should use a single project with simple tasks. Multi-project is the exception for genuinely complex AND independent work.
 
-Pipe the plan through `validate-cast.sh` for mechanical casting checks:
+**Validate the cast** — pipe the parsed JSON through `validate-cast.sh` to mechanically check casting rules:
 
 ```bash
 echo "$PLAN_JSON" | .claude/hooks/validate-cast.sh
 ```
 
-The script checks: auditor assigned, builder not in reviewers, complex tasks have C-suite reviewer, no self-review of own behavior. If validation fails, auto-fix clear violations or re-prompt the COO.
+The script checks:
+1. Every task has an auditor assigned
+2. Builder is not in the reviewers array (conflict of interest)
+3. Complex tasks (5+ phases) have at least one C-suite reviewer
+4. Agents don't review changes to their own behavior/prompts
 
-### Update directive.json
+If validation fails (`valid: false`), log the violations and either:
+- **Auto-fix** if the violation is clear (e.g., swap a conflicting reviewer for the next-best match per casting rules)
+- **Block** and re-prompt the COO with the violations if auto-fix isn't possible
 
-Update per the [checkpoint protocol](../reference/checkpoint-protocol.md). Set `current_step: "approve"`. Save plan reference to `pipeline.plan.output`.
+> See `.claude/hooks/validate-cast.sh` for the validation script (copied to consumer project by `/gruai-config`).

@@ -1,222 +1,132 @@
 ---
 name: "directive"
-description: "Execute work through the directive pipeline -- evaluate, plan, cast agents, build, review, and report. Takes a directive name (matching .context/directives/), a project path, or an ad-hoc CEO request.\n\nTRIGGER: Use this skill whenever the user requests non-trivial work that goes beyond a one-liner fix. This includes: building features, running projects with project.json, executing multiple tasks, multi-file changes, or any work with defined DOD/reviewers. Route through this pipeline so reviews and verification steps fire. Do NOT spawn builder agents directly.\n\nFor heavyweight/strategic work, create a directive file in .context/directives/ first. For medium work with an existing project.json, pass the project path. For quick multi-step tasks, pass an ad-hoc description -- no directive file needed."
+description: "Execute work through the directive pipeline — evaluate, plan, cast agents, build, review, and report. Takes a directive name (matching .context/directives/), a project path, or an ad-hoc CEO request.\n\nTRIGGER: Use this skill whenever the user requests non-trivial work that goes beyond a one-liner fix. This includes: building features, running projects with project.json, executing multiple tasks, multi-file changes, or any work with defined DOD/reviewers. Route through this pipeline so reviews and verification steps fire. Do NOT spawn builder agents directly.\n\nFor heavyweight/strategic work, create a directive file in .context/directives/ first. For medium work with an existing project.json, pass the project path. For quick multi-step tasks, pass an ad-hoc description — no directive file needed."
 ---
 
 # Execute Directive
 
 Execute the CEO directive: $ARGUMENTS
 
-## Role Resolution
+## Role Resolution — Read First
 
-Read `.claude/agent-registry.json` to map roles to agent names. The pipeline uses role-based language; resolve to concrete agents using the registry.
+Before executing, read `.claude/agent-registry.json` to map roles to agent names. The pipeline uses role-based language throughout. Resolve roles to concrete agent names using the registry:
 
-| Role | Registry Title | Responsibility |
-|------|---------------|----------------|
-| COO | `"COO"` | Plans projects, orchestrates execution |
-| CTO | `"CTO"` | Architecture, audits, reviews, technical decomposition |
-| CPO | `"CPO"` | Product strategy, UX review |
-| CMO | `"CMO"` | Growth, SEO, content strategy |
-| Frontend Developer | `"FE"` | React, Tailwind, components |
-| Backend Developer | `"BE"` | Server, API, infrastructure |
-| Full-Stack Engineer | `"FS"` | Cross-domain work |
-| Data Engineer | `"DE"` | Pipelines, parsers, indexing |
-| Content Builder | `"CB"` | MDX, documentation, copywriting |
-| QA Engineer | `"QA"` | Testing, investigation, validation |
-| UI/UX Designer | `"UX"` | Design review, wireframes, visual quality |
+- **COO** = the agent with `"title": "COO"` (plans projects, orchestrates execution)
+- **CTO** = the agent with `"title": "CTO"` (architecture, audits, reviews, technical decomposition)
+- **CPO** = the agent with `"title": "CPO"` (product strategy, UX review, user perspective)
+- **CMO** = the agent with `"title": "CMO"` (growth, SEO, content strategy)
+- **Frontend Developer** = the agent with `"title": "FE"` (React, Tailwind, components)
+- **Backend Developer** = the agent with `"title": "BE"` (server, API, infrastructure)
+- **Full-Stack Engineer** = the agent with `"title": "FS"` (cross-domain work)
+- **Data Engineer** = the agent with `"title": "DE"` (pipelines, parsers, indexing)
+- **Content Builder** = the agent with `"title": "CB"` (MDX, documentation, copywriting)
+- **QA Engineer** = the agent with `"title": "QA"` (testing, investigation, validation)
+- **UI/UX Designer** = the agent with `"title": "UX"` (design review, wireframes, visual quality)
 
-Use each agent's `id` to spawn them via your runtime's agent mechanism. The registry is the single source of truth.
+Use each agent's `id` field as the `subagent_type` value when spawning. Use the `agentFile` field to locate personality files. The registry is the single source of truth for who fills each role.
 
 ---
 
-## Start with Triage
+## MANDATORY: Start with Triage — DO NOT SKIP
 
-Start with triage because it determines how much process overhead is needed. A one-file bug fix should not go through C-suite challenges and CEO approval gates. Triage classifies the directive's weight, and the weight controls which steps run.
+**YOU MUST read and execute [00-delegation-and-triage.md](docs/pipeline/00-delegation-and-triage.md) BEFORE doing anything else.**
 
-Read and execute [00-delegation-and-triage.md](docs/pipeline/00-delegation-and-triage.md) before anything else. Do not read source code or edit files until triage and planning are complete — the pipeline exists to prevent the "I know how to fix this, let me just do it" impulse that skips reviews and verification.
+DO NOT read source code. DO NOT edit files. DO NOT start solving the problem. The pipeline exists to ensure quality — every shortcut you take skips a review, a gate, or a verification step.
 
-Classify the weight, output the triage block, then proceed to the next step. The COO plans for all weights -- even lightweight work gets a structured plan.
+Your FIRST action must be: Read the triage doc, classify the directive weight, output the triage block, and create directive.json. Only then proceed to the next pipeline step.
 
----
-
-## Pipeline Progress Protocol
-
-Every pipeline step must update `directive.json`. The dashboard reads this file via WebSocket, and the checkpoint system uses it for resume after context exhaustion. Without updates, progress is invisible and unrecoverable.
-
-See [checkpoint-protocol.md](docs/reference/checkpoint-protocol.md) for the full protocol with examples.
-
-**Quick reference -- after each step:**
-1. `pipeline.{stepId}.status` = `"completed"` with `agent`, `output.summary`, `artifacts`
-2. `current_step` = next step's ID
-3. `updated_at` = current ISO timestamp
-4. Write directive.json
+If you catch yourself wanting to "just fix it quickly" — STOP. That impulse is exactly what the pipeline prevents. Even lightweight directives have a defined process (triage → context → plan → audit → build → review → digest → completion). The COO plans for ALL weights.
 
 ---
 
-## Step Execution Loop
+## How to Use This Routing Map
 
-After completing a step and updating directive.json, immediately read and execute the next step's doc from the routing table. The pipeline runs end-to-end in a single pass.
+This file is a routing table. Each row points to a modular doc containing full instructions for that step. **Read only the docs you need for the current step** — don't load everything at once.
 
-**STOP gates -- the only two points where you pause for the CEO:**
+### Pipeline Progress Protocol
 
-1. **`approve`** -- heavyweight/strategic only. Lightweight and medium auto-approve.
-2. **`completion`** -- all weights. CEO approves the final result or reopens.
+**After completing each pipeline step**, update `.context/directives/{id}/directive.json`:
+1. Set `pipeline.{stepId}.status` to `"completed"` with:
+   - `agent`: who performed this step (e.g. "CEO", "COO", "CTO, full-stack engineer")
+   - `output`: REQUIRED object with at least a `summary` string (1-2 sentences of what happened/decided). Add other keys as relevant (e.g. `decision`, `weight`, `projects`).
+   - `artifacts`: array of file paths produced (if any)
+2. Set `current_step` to the next step's ID
+3. Set `updated_at` to the current ISO timestamp
+4. Use the Write tool to overwrite the full directive.json
 
-If a step is skipped for the current weight class (e.g., challenge for lightweight), advance past it.
+**When starting a step**, set `pipeline.{stepId}.status` to `"active"`.
 
----
+> **Why output is mandatory:** The dashboard renders pipeline step details directly from directive.json. Without `output.summary`, the UI shows empty steps — the CEO can't see what happened. Every step must leave a trace.
 
-## Pipeline Steps
+The server's directive-watcher reads `directive.json` directly (NOT `current.json`) and pushes pipeline state to the dashboard via WebSocket. Keeping `pipeline` updated is what makes the stepper UI show real-time progress.
+
+### Step Execution Loop
+
+After completing a step and updating directive.json, **immediately** read the next step's doc from the routing table below and execute it. Do NOT stop, do NOT pause, do NOT ask for confirmation between steps. The pipeline is designed to run end-to-end in a single pass.
+
+**STOP gates — the only two points where you must stop and wait for the CEO:**
+
+1. **`approve`** — heavyweight/strategic directives only. Lightweight and medium directives auto-approve and skip this gate entirely.
+2. **`completion`** — all weights. The CEO must approve the final result or reopen the directive.
+
+At every other step, transition directly to the next step without delay. If a step is skipped for the current weight class, advance past it and continue to the next applicable step.
+
+### Pipeline Steps
 
 | # | Step ID | Doc | Purpose | Depends On |
 |---|---------|-----|---------|------------|
-| 1 | triage | [00-delegation-and-triage.md](docs/pipeline/00-delegation-and-triage.md) | Classify weight, select process | -- |
-| 2 | checkpoint | [01-checkpoint.md](docs/pipeline/01-checkpoint.md) | Resume if prior progress exists | -- |
-| 3 | read | [02-read-directive.md](docs/pipeline/02-read-directive.md) | Read directive + create directive.json | triage |
-| 4 | context | [03-read-context.md](docs/pipeline/03-read-context.md) | Read context files before planning | read |
+| 1 | triage | [00-delegation-and-triage.md](docs/pipeline/00-delegation-and-triage.md) | Triage directive weight + select process | — |
+| 2 | checkpoint | [01-checkpoint.md](docs/pipeline/01-checkpoint.md) | Check for existing checkpoint, resume if found | — |
+| 3 | read | [02-read-directive.md](docs/pipeline/02-read-directive.md) | Read directive file + create directive.json | triage |
+| 4 | context | [03-read-context.md](docs/pipeline/03-read-context.md) | Read all context files before planning | read |
 | 5 | challenge | [04-challenge.md](docs/pipeline/04-challenge.md) | C-suite challenge (heavyweight only) | context |
-| 6 | brainstorm | [00-delegation-and-triage.md](docs/pipeline/00-delegation-and-triage.md) § "Heavyweight Brainstorm" | Brainstorm (heavyweight/strategic only) | context |
-| 7 | audit | [06-technical-audit.md](docs/pipeline/06-technical-audit.md) | Codebase audit -- feeds into planning | context |
-| 8 | plan | [05-planning.md](docs/pipeline/05-planning.md) | COO planning (with audit data) | audit |
-| 9 | approve | [07-plan-approval.md](docs/pipeline/07-plan-approval.md) | CEO approval (heavyweight/strategic only) | plan |
-| 10 | project-brainstorm | [07b-project-brainstorm.md](docs/pipeline/07b-project-brainstorm.md) | CTO + builder decompose tasks + DOD | approve |
-| 11 | setup | [08-worktree-and-state.md](docs/pipeline/08-worktree-and-state.md) | Branch/worktree isolation | project-brainstorm |
-| 12 | execute | [execute-loop.md](docs/pipeline/execute-loop.md) | Execute tasks via waves | setup |
-| 13 | review-gate | [execute-loop.md](docs/pipeline/execute-loop.md) | Review verification | execute |
-| 14 | wrapup | [10-wrapup.md](docs/pipeline/10-wrapup.md) | Digest, lessons, report | review-gate |
-| 15 | completion | [11-completion-gate.md](docs/pipeline/11-completion-gate.md) | CEO approval gate | wrapup |
+| 6 | plan | [05-planning.md](docs/pipeline/05-planning.md) | COO strategic planning | context |
+| 7 | audit | [06-technical-audit.md](docs/pipeline/06-technical-audit.md) | Technical codebase audit | plan |
+| 8 | approve | [07-plan-approval.md](docs/pipeline/07-plan-approval.md) | Present plan to CEO for approval | audit |
+| 9 | project-brainstorm | [07b-project-brainstorm.md](docs/pipeline/07b-project-brainstorm.md) | CTO + builder decompose projects into tasks with DOD | approve |
+| 10 | setup | [08-worktree-and-state.md](docs/pipeline/08-worktree-and-state.md) | Worktree isolation + directive state init | project-brainstorm |
+| 11 | execute | [09-execute-projects.md](docs/pipeline/09-execute-projects.md) | Execute all tasks (phases, agents, UX) | setup |
+| 12 | review-gate | [09-execute-projects.md](docs/pipeline/09-execute-projects.md) | Review verification gate (end of doc) | execute |
+| 13 | wrapup | [10-wrapup.md](docs/pipeline/10-wrapup.md) | OKRs, follow-ups, stale doc detection, digest, lessons, report | review-gate |
+| 14 | completion | [11-completion-gate.md](docs/pipeline/11-completion-gate.md) | CEO completion gate -- approve or reopen | wrapup |
 
-### Steps Skipped by Weight
-
-| Weight | Skipped Steps |
-|--------|--------------|
-| Lightweight | challenge, brainstorm |
-| Medium | challenge, brainstorm |
-| Heavyweight | (none) |
-| Strategic | (none -- adds deliberation round in brainstorm) |
-
----
-
-## Reference Docs
-
-### Schemas
+### Reference Docs — Schemas
 
 | Doc | Content |
 |-----|---------|
 | [plan-schema.md](docs/reference/schemas/plan-schema.md) | COO plan output JSON schema |
-| [audit-output.md](docs/reference/schemas/audit-output.md) | Architect output JSON schema |
-| [investigation-output.md](docs/reference/schemas/investigation-output.md) | QA Engineer investigation output schema |
-| [checkpoint.md](docs/reference/schemas/checkpoint.md) | Checkpoint JSON schema |
-| [directive-json.md](docs/reference/schemas/directive-json.md) | Directive JSON schema (dashboard source of truth) |
+| [audit-output.md](docs/reference/schemas/audit-output.md) | Architect output JSON schema (design recommendations — second phase of two-agent audit) |
+| [investigation-output.md](docs/reference/schemas/investigation-output.md) | QA Engineer's investigation output JSON schema (pure data — first phase of two-agent audit) |
+| [checkpoint.md](docs/reference/schemas/checkpoint.md) | Checkpoint JSON schema (includes dod_verification field) |
+| [directive-json.md](docs/reference/schemas/directive-json.md) | Directive JSON schema (THE source of truth — includes pipeline progress for dashboard) |
 | [challenger-output.md](docs/reference/schemas/challenger-output.md) | Challenger output JSON schema |
-| [brainstorm-output.md](docs/reference/schemas/brainstorm-output.md) | Brainstorm output JSON schema |
+| [brainstorm-output.md](docs/reference/schemas/brainstorm-output.md) | Brainstorm output JSON schema (proposals + rebuttals) |
 
-### Templates
+### Reference Docs — Templates
 
 | Doc | Content |
 |-----|---------|
-| [planner-prompt.md](docs/reference/templates/planner-prompt.md) | COO planning prompt |
-| [investigator-prompt.md](docs/reference/templates/investigator-prompt.md) | QA Engineer investigation prompt |
-| [architect-prompt.md](docs/reference/templates/architect-prompt.md) | Architect prompt (audit phase 2) |
-| [auditor-prompt.md](docs/reference/templates/auditor-prompt.md) | Combined audit prompt (single-agent path) |
-| [challenger-prompt.md](docs/reference/templates/challenger-prompt.md) | Challenger prompt |
-| [brainstorm-prompt.md](docs/reference/templates/brainstorm-prompt.md) | Brainstorm prompt (Phase 1 + Phase 2) |
-| [code-review-prompt.md](docs/reference/templates/code-review-prompt.md) | Code-review prompt (fresh-context, no builder bias) |
+| [planner-prompt.md](docs/reference/templates/planner-prompt.md) | Full COO planning prompt |
+| [investigator-prompt.md](docs/reference/templates/investigator-prompt.md) | Investigation prompt template for the QA Engineer (pure data gathering — first phase of audit) |
+| [architect-prompt.md](docs/reference/templates/architect-prompt.md) | Architect prompt template (design recommendations — second phase of audit) |
+| [auditor-prompt.md](docs/reference/templates/auditor-prompt.md) | Combined audit prompt for the CTO (single-agent path for simple tasks) |
+| [challenger-prompt.md](docs/reference/templates/challenger-prompt.md) | Challenger prompt template |
+| [brainstorm-prompt.md](docs/reference/templates/brainstorm-prompt.md) | Brainstorm agent prompt template (Phase 1 proposals + Phase 2 deliberation) |
 | [digest.md](docs/reference/templates/digest.md) | Digest report template |
 
-### Rules
+### Reference Docs — Rules
 
 | Doc | Content |
 |-----|---------|
-| [casting-rules.md](docs/reference/rules/casting-rules.md) | Agent casting: delegation, auditing, reviewing |
+| [casting-rules.md](docs/reference/rules/casting-rules.md) | Agent casting: delegation, auditing, reviewing, specialists |
 | [phase-definitions.md](docs/reference/rules/phase-definitions.md) | Phase building blocks + common patterns |
 | [scope-and-dod.md](docs/reference/rules/scope-and-dod.md) | Scope format + Definition of Done rules |
 | [failure-handling.md](docs/reference/rules/failure-handling.md) | Failure handling table |
-| [checkpoint-protocol.md](docs/reference/checkpoint-protocol.md) | Status update protocol + examples |
 
 ### Validation Scripts
 
-| Script | Purpose |
+| Script | Content |
 |--------|---------|
-| [validate-cast.sh](../../hooks/validate-cast.sh) | Casting validation: auditor present, builder != reviewer |
-| [validate-project-json.sh](../../hooks/validate-project-json.sh) | Pre-execution gate: tasks, DOD, scope present |
-| [validate-reviews.sh](../../hooks/validate-reviews.sh) | Review-gate: blocks if completed tasks lack review evidence |
-| [validate-browser-test.sh](../../hooks/validate-browser-test.sh) | Wrapup gate: blocks if browser_test=true but no design-review.md |
-| [validate-project-completion.sh](../../hooks/validate-project-completion.sh) | Wrapup gate: blocks if tasks still pending after execute |
-| [detect-stale-docs.sh](../../hooks/detect-stale-docs.sh) | Post-directive: flags stale doc references |
-
----
-
-## Examples
-
-### Example 1: Lightweight Run
-
-A directive to fix a typo in the dashboard header.
-
-**Triage output:**
-```
-Directive: fix-header-typo
-Classification: lightweight
-Reasoning: Single file change, no risk, no user-facing behavior change.
-Process: triage -> checkpoint -> read -> context -> audit -> plan -> project-brainstorm (auto) -> setup -> execute -> review-gate -> wrapup -> completion
-```
-
-**directive.json progression:**
-
-| Step | current_step | pipeline.{step}.output.summary |
-|------|-------------|-------------------------------|
-| triage | checkpoint | "Lightweight: single-file typo fix." |
-| checkpoint | read | "No prior progress found." |
-| read | context | "Created directive.json for fix-header-typo." |
-| context | audit | "Read vision.md, lessons/agent-behavior.md." |
-| audit | plan | "1 active file: DashboardHeader.tsx. No risks." |
-| plan | approve | "1 project, 1 task: fix typo in header component." |
-| approve (auto) | project-brainstorm | "Auto-approved. project.json created." |
-| project-brainstorm (auto) | setup | "Tasks derived from COO plan. 1 task, 1 DOD criterion." |
-| setup | execute | "Branch directive/fix-header-typo created." |
-| execute | review-gate | "Task completed. 1 of 1 DOD criteria met." |
-| review-gate | wrapup | "Review passed. All DOD verified." |
-| wrapup | completion | "Digest written to .context/reports/." |
-| completion | (done) | "CEO approved. Directive completed." |
-
-Skipped: challenge, brainstorm. Approve and project-brainstorm run as auto (no CEO gate, tasks derived from COO plan).
-
-### Example 2: Medium Run
-
-A directive to add WebSocket reconnection logic (frontend + server changes, but well-scoped).
-
-**Triage output:**
-```
-Directive: websocket-reconnect
-Classification: medium
-Reasoning: Touches 2 systems (frontend hook + server), 6 files predicted, but within a single domain (WebSocket).
-Process: triage -> checkpoint -> read -> context -> audit -> plan -> project-brainstorm -> setup -> execute -> review-gate -> wrapup -> completion
-```
-
-Differences from lightweight:
-- Full context load (all lessons, all active directives)
-- COO spawned with audit data for informed planning
-- Project-brainstorm runs: CTO + builder decompose into tasks with DOD
-- Skips: challenge (COO's inline challenge covers it)
-- Auto-approves: no CEO gate before execution
-
-### Example 3: Heavyweight Run with Brainstorm
-
-A directive to redesign the authentication system.
-
-**Triage output:**
-```
-Directive: auth-redesign
-Classification: heavyweight
-Reasoning: Crosses frontend + backend + database, touches auth (sensitive), 15+ files predicted, architectural decisions needed.
-Process: Full pipeline including challenge, brainstorm, and CEO approval gate.
-```
-
-Key differences:
-- C-suite challenge spawns (CTO for security, CPO for UX impact)
-- Brainstorm phase: 2-3 C-suite agents propose approaches (Phase 1 only, no deliberation)
-- Brainstorm synthesis written to `.context/directives/auth-redesign/brainstorm.md`
-- Audit runs with full two-agent flow (QA investigation + architect recommendations)
-- COO receives audit data + brainstorm synthesis for informed planning
-- CEO approval gate: pipeline STOPs, writes plan-for-approval.md, waits for CEO
-- After CEO approves: project-brainstorm decomposes tasks, then execution proceeds
+| [validate-cast.sh](../../hooks/validate-cast.sh) | Mechanical casting validation — checks auditor present, builder != reviewer, complex has C-suite reviewer |
+| [validate-project-json.sh](../../hooks/validate-project-json.sh) | Pre-execution gate — blocks execute step if project.json missing or incomplete (no tasks, no DOD, no scope) |
+| [detect-stale-docs.sh](../../hooks/detect-stale-docs.sh) | Post-directive — scans docs for references to modified files, flags potentially stale docs |

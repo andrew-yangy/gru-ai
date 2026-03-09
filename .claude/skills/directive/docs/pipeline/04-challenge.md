@@ -1,36 +1,38 @@
-## Challenge: C-Suite Risk Assessment
+<!-- Pipeline doc: 04-challenge.md | Source: SKILL.md restructure -->
 
-Challenge exists because the COO optimizes for execution speed and may underweight risks that cross domain boundaries. A second opinion from the CTO (security), CPO (user impact), or CMO (positioning) catches blind spots before planning commits to an approach.
+## Challenge: C-Suite Challenge (Heavyweight Directives Only)
 
-**Skipped for:** lightweight, medium. The COO's inline challenge (built into the planning prompt) is sufficient when risk is low.
+**Default behavior:** Challenge is INLINED into the COO's planning prompt (see plan step). The COO identifies the top 3 risks and flags over-engineering concerns as part of the planning output.
 
-**Runs for:** heavyweight. Separate challengers provide independent risk assessment.
-
-### When to Spawn Separate Challengers
-
-The default challenge is inlined into the COO's planning prompt -- the COO identifies top 3 risks and over-engineering flags as part of planning output. Separate challenger agents add value when:
-
+**Separate challenger agents are only spawned when:**
 - The CEO explicitly flags the directive as controversial
-- The directive crosses multiple domains (e.g., touches revenue + auth + UI)
+- The directive is heavyweight AND crosses multiple domains (e.g., touches revenue + auth + UI)
 
-### Agent Selection
+When separate challengers ARE needed, spawn 1-2 relevant C-suite members:
+- Security / architecture / technical debt → **the CTO**
+- User-facing features / product changes → **the CPO**
+- Growth / SEO / marketing / positioning → **the CMO**
+- Operational / process / resource changes → spawn **two** of the above (most relevant pair)
 
-| Domain | Challenger |
-|--------|-----------|
-| Security / architecture / tech debt | CTO |
-| User-facing features / product changes | CPO |
-| Growth / SEO / positioning | CMO |
-| Crosses 2+ domains | Spawn the two most relevant |
+> See [docs/reference/templates/challenger-prompt.md](../reference/templates/challenger-prompt.md) for the full challenger prompt template.
 
-### Spawn Pattern
+> See [docs/reference/schemas/challenger-output.md](../reference/schemas/challenger-output.md) for the challenger JSON output schema.
 
-Challengers run in parallel using your runtime's background/concurrent agent mechanism. Use a lightweight model -- this is a gut-check, not deep analysis.
+**Spawn challengers in parallel** using `run_in_background: true`. Each is a lightweight agent call — use the agent's `id` from the registry as the `subagent_type`, `model: "sonnet"` (fast, cheap — this is a gut check, not deep analysis).
 
-> See [challenger-prompt.md](../reference/templates/challenger-prompt.md) for the prompt template.
-> See [challenger-output.md](../reference/schemas/challenger-output.md) for the output schema.
+```
+Agent tool call (per challenger):
+  subagent_type: "{agent_name}"
+  model: "sonnet"
+  run_in_background: true
+  prompt: |
+    {challenger prompt from template}
+```
 
-Collect results from all spawned challengers. If a challenger fails, continue -- challenge is advisory and does not block the pipeline. Store challenges for the approve step.
+**Collect results** — after spawning all challengers, collect results using TaskOutput for each agent ID. Wait for all background agents to return before proceeding.
 
-### Update directive.json
+**Error handling** — if a background agent fails or times out, log the error and continue. Challenge is advisory — a failed challenger does not block the pipeline. If ALL challengers fail, note "challenge phase unavailable" and proceed to COO planning.
 
-Update per the [checkpoint protocol](../reference/checkpoint-protocol.md). Set `current_step: "brainstorm"` (if heavyweight/strategic) or `"audit"` (if brainstorm is skipped).
+**Parse responses** as JSON. If any fail to parse, log the error and continue.
+
+**Store challenges** — they get presented alongside the COO's plan in the approve step.

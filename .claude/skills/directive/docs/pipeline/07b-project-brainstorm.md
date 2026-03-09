@@ -1,35 +1,30 @@
+<!-- Pipeline doc: 07b-project-brainstorm.md | Source: pipeline-v2 directive -->
+
 ## Project-Brainstorm: Task Decomposition
 
-Project brainstorm exists because the COO's plan describes WHAT to build, but the CTO and builder need to determine HOW -- breaking projects into implementable tasks with clear acceptance criteria. The COO thinks in scope and priority; the CTO and builder think in files, dependencies, and sequencing.
-
-**Skipped for:** lightweight directives. The COO's plan for lightweight work is simple enough that tasks can be derived directly in the approve step without a separate decomposition round.
-
-**Runs for:** medium, heavyweight, strategic.
-
-If the project already has a populated `tasks` array (from a prior partial run), skip this step and proceed to execution.
+After the CEO approves the COO's plan (approve step), each project needs task decomposition before execution. The COO defined WHAT projects to create and WHO works on them. This step defines HOW -- breaking each project into concrete tasks with DOD.
 
 ### Participants
 
-| Role | Contribution |
-|------|-------------|
-| CTO | Technical decomposition, DOD quality, sequencing |
-| Assigned builder | Implementation perspective, file-level scope awareness |
-
-For **simple** projects (complexity = `simple`): CTO produces the breakdown solo.
-For **moderate/complex** projects: CTO produces initial breakdown, then builder reviews and adjusts.
+- **The CTO** -- owns technical decomposition, DOD quality, sequencing
+- **The assigned builder** from the project's `agent` field -- provides implementation perspective, file-level scope awareness
 
 ### Inputs
 
-| Input | Source |
-|-------|--------|
-| Approved project scope | Project entry from plan.json |
-| Audit findings | `audit-findings.json` -- active_files, baseline, recommended_approach |
-| Directive brainstorm (if exists) | `.context/directives/{id}/brainstorm.md` |
-| Vision guardrails | `.context/vision.md` |
-| CEO preferences | `.context/preferences.md` |
-| Domain lessons | `.context/lessons/` topic files matched to project domain |
+The brainstorm participants receive:
+- **The COO's plan** (the approved project entry from plan.json) -- scope_summary, priority, cast
+- **Audit findings** (from audit step) -- active_files, baseline, recommended_approach per task scope area
+- **Directive brainstorm** (if it exists, from `.context/directives/{directive-id}/brainstorm.md`) -- approach decisions made during strategic/heavyweight brainstorm
+- **Vision guardrails** (`.context/vision.md`) and **CEO preferences** (`.context/preferences.md`)
+- **Relevant lessons** (`.context/lessons/` topic files matched to the project domain)
 
-### Brainstorm Prompt
+### Process
+
+**For simple projects** (complexity = `simple`): The CTO produces the task breakdown solo. Spawn the CTO with the inputs above and the project brainstorm prompt below.
+
+**For moderate/complex projects**: Spawn the CTO + the assigned builder in sequence. The CTO produces the initial task breakdown, then the builder reviews and suggests adjustments based on implementation knowledge.
+
+### Project Brainstorm Prompt
 
 ```
 You are decomposing a project into executable tasks. The project scope and cast are already decided. Your job is to define the TASKS -- what gets built, in what order, with what acceptance criteria.
@@ -53,9 +48,10 @@ TASK DECOMPOSITION RULES:
 - DOD criteria must be verifiable by the reviewer (not vague like "improve quality")
 - For UI/visual tasks (files matching *.tsx, *.jsx, *.css, components/, pages/): DOD must
   describe what the USER SEES at default state, not the implementation technique.
-  BAD: "Component renders without errors"
-  GOOD: "Name labels visible above every character at default zoom (1x)"
-  Backend/data/infra tasks keep technical DOD.
+  BAD: "Component renders without errors" or "Labels use ctx.fillText"
+  GOOD: "Name labels visible above every character at default zoom (1x)" or
+  "Settings panel shows all 5 categories without horizontal scroll at 100% zoom"
+  Backend/data/infra tasks keep technical DOD -- this rule applies only to UI work.
 - Include the right phases for each task: simple fix = ["build", "review"], integration work = ["build", "code-review", "review"]
 
 OUTPUT (JSON):
@@ -79,12 +75,17 @@ OUTPUT (JSON):
 CRITICAL: First character `{`, last `}`. JSON only.
 ```
 
-### After Brainstorm
+### After Project Brainstorm
 
-1. **Parse output** as JSON. If parsing fails, re-prompt.
-2. **Write tasks into project.json** -- update the project.json created in the approve step. Each task gets `status: "pending"`, `agent` from the project cast, and `dod` from the brainstorm output (each criterion as `{ "criterion": "...", "met": false }`).
-3. **Validate** -- run `validate-project-json.sh` to confirm tasks, DOD, and agent fields are present.
+1. **Parse the output** as JSON. If it fails to parse, re-prompt.
+2. **Write tasks into project.json** -- update the project.json created in the approve step with the full `tasks` array. Each task gets `status: "pending"`, `agent` from the project cast, and `dod` from the brainstorm output (each criterion as `{ "criterion": "...", "met": false }`).
+3. **Validate project.json** -- run `validate-project-json.sh` to confirm tasks, DOD, and agent fields are present.
+
+### When to Skip
+
+- **Lightweight directives** skip this step entirely -- they have no COO plan and no project.json.
+- If the project already has a `tasks` array populated (e.g., from a prior partial run or manual creation), skip the brainstorm and proceed to execution.
 
 ### Update directive.json
 
-Update per the [checkpoint protocol](../reference/checkpoint-protocol.md). Set `current_step: "setup"`.
+Set `current_step: "project-brainstorm"`. Update `pipeline["project-brainstorm"].status` to `"completed"` with output summary.

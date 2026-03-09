@@ -8,13 +8,12 @@ import { directivesDir as resolveDirectivesDir } from '../paths.js';
 // Pipeline steps by weight class. Steps not in a weight's list are skipped.
 const FULL_PIPELINE_STEPS: Array<{ id: string; label: string }> = [
   { id: 'triage',             label: 'Triage' },
-  { id: 'checkpoint',         label: 'Checkpoint' },
   { id: 'read',               label: 'Read' },
   { id: 'context',            label: 'Context' },
   { id: 'challenge',          label: 'Challenge' },
   { id: 'brainstorm',         label: 'Brainstorm' },
-  { id: 'audit',              label: 'Audit' },
   { id: 'plan',               label: 'Plan' },
+  { id: 'audit',              label: 'Audit' },
   { id: 'approve',            label: 'Approve' },
   { id: 'project-brainstorm', label: 'Project Brainstorm' },
   { id: 'setup',              label: 'Setup' },
@@ -25,8 +24,8 @@ const FULL_PIPELINE_STEPS: Array<{ id: string; label: string }> = [
 ];
 
 const SKIPPED_STEPS: Record<string, Set<string>> = {
-  lightweight: new Set(['challenge', 'brainstorm']),
-  medium: new Set(['challenge', 'brainstorm']),
+  lightweight: new Set(['challenge', 'brainstorm', 'approve']),
+  medium: new Set(['challenge']),
   heavyweight: new Set([]),
   strategic: new Set([]),
 };
@@ -391,7 +390,7 @@ export class DirectiveWatcher {
     if (currentStep === 'execute' || currentStep === 'review-gate') currentPhase = 'executing';
     else if (currentStep === 'wrapup') currentPhase = 'wrapup';
     else if (currentStep === 'completion') currentPhase = 'completion';
-    else if (['triage', 'checkpoint', 'read', 'context', 'challenge', 'brainstorm', 'audit', 'plan', 'approve', 'project-brainstorm', 'setup'].includes(currentStep)) currentPhase = 'planning';
+    else if (['triage', 'read', 'context', 'challenge', 'brainstorm', 'plan', 'audit', 'approve', 'project-brainstorm', 'setup'].includes(currentStep)) currentPhase = 'planning';
     else if (directive.pipeline?.execute?.status === 'completed') currentPhase = 'wrapup';
 
     // Build pipeline steps

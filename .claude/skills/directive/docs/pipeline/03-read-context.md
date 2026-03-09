@@ -1,22 +1,13 @@
-## Context: Load Project Context
+<!-- Pipeline doc: 03-read-context.md | Source: SKILL.md restructure -->
 
-The COO, auditors, and builders all need context about the system's vision, existing work, and past lessons. Loading this once and passing it into agent prompts prevents each agent from independently (and inconsistently) discovering context.
+## Step 2: Read Context
 
-### Read These Files
-
-| File | Purpose | Who Needs It |
-|------|---------|-------------|
-| `.context/vision.md` | North star + guardrails | All agents |
-| `.context/preferences.md` | CEO standing orders | All agents |
-| `.context/directives/*/directive.json` | Current directive states | COO |
-| `.context/directives/*/projects/*/project.json` | Current project/task status | COO |
-| `.context/lessons/agent-behavior.md` | Agent behavior patterns | All agents |
-| `.context/lessons/orchestration.md` | Planning lessons | COO |
-| `.context/lessons/*.md` (other topic files) | Domain-specific lessons | Matched by role |
-| C-suite agent personality files | Agent identities | Resolved from `.claude/agent-registry.json` |
-
-For **lightweight** directives, read a subset: vision.md, preferences.md, agent-behavior.md, and the most relevant lessons. Full context loading is not needed for single-file changes.
-
-### Update directive.json
-
-Update per the [checkpoint protocol](../reference/checkpoint-protocol.md). Set `current_step` to the next applicable step (challenge for heavyweight, brainstorm for heavyweight/strategic that includes brainstorm, or audit for lightweight/medium).
+Read ALL of these before spawning the COO:
+- `.context/vision.md` — north star + guardrails (agents must respect guardrails)
+- `.context/preferences.md` — CEO standing orders (agents must follow these)
+- `.context/directives/*/directive.json` — current directives and status
+- `.context/lessons/*.md` — project gotchas and patterns (read topic files as needed per agent role)
+- `.context/lessons/orchestration.md` — for the COO and orchestration
+- `.context/lessons/agent-behavior.md` — for all agents
+- All `.context/directives/*/projects/*/project.json` — current project states and task status
+- The C-suite agent personality files (resolve names from `.claude/agent-registry.json`)

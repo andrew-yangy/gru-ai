@@ -1,16 +1,16 @@
-## Setup: Branch Isolation + State Verification
+<!-- Pipeline doc: 08-worktree-and-state.md | Source: SKILL.md restructure -->
 
-Branch isolation keeps directive changes separate from main so the CEO can review a clean diff. This matters because multiple directives may be in flight, and mixing changes makes review impossible.
+## Setup: Branch / Worktree Isolation
 
-### Create Branch
+After CEO approval, create a branch to isolate directive changes.
 
-Default is branch-only (no worktree):
+**Default: branch-only (no worktree).** Create a branch for the directive:
 
 ```bash
 git checkout -b directive/$ARGUMENTS
 ```
 
-Use a worktree only when `git status` shows uncommitted changes that should be preserved:
+**Use worktree ONLY when** `git status` shows uncommitted changes that should be preserved. In that case:
 
 ```bash
 git worktree add ../sw-directive-$ARGUMENTS -b directive/$ARGUMENTS
@@ -18,26 +18,33 @@ git worktree add ../sw-directive-$ARGUMENTS -b directive/$ARGUMENTS
 
 If the worktree already exists, reuse it. All agent spawn prompts must include `"Working directory: {worktree_path}"` so agents operate in the isolated copy.
 
-**Skip isolation if:** the user explicitly says "no branch", or all task phases are research-only (no code changes).
+At the end (wrapup step), tell the CEO the branch name so they can review with `git diff main..directive/$ARGUMENTS`.
 
-### Verify Directive State
+**Skip isolation entirely if:** the user explicitly says "no branch", or all task phases are research-only (no code changes).
 
-Before execution begins, confirm directive.json has consistent state:
+**Update directive.json:** Set `current_step: "setup"`, `planning.worktree_path` to the worktree path (or null if branch-only or skipped). Update `pipeline.setup.status` to `"completed"` with output.
 
-| Field | Expected Value |
-|-------|---------------|
-| `pipeline.setup.status` | `"completed"` |
-| `pipeline.execute.status` | `"active"` |
-| `current_step` | `"execute"` |
-| `projects[]` | All projects from COO's plan with `status: "pending"` |
-| `updated_at` | Current timestamp |
+## Setup (cont.): Verify Directive State
 
-directive.json is the single source of truth for both checkpoint/resume and dashboard display. There is no separate state file.
+Ensure `directive.json` has the correct state before execution:
 
-### Artifact Writes
+1. `pipeline.setup.status` = `"completed"`
+2. `pipeline.execute.status` = `"active"`
+3. `current_step` = `"execute"`
+4. `projects[]` array lists all projects from the COO's plan with `status: "pending"`
+5. `updated_at` is current
 
-After each phase completes during execution, write phase output (design doc, build report, review JSON) to the project directory: `.context/directives/{id}/projects/{project-id}/{phase}.md`. These survive context exhaustion and allow resumed runs to provide context to downstream phases.
+The dashboard watches `directive.json` via chokidar for real-time pipeline progress. There is NO separate `current.json` — directive.json IS the single source of truth for both checkpoint/resume and dashboard display.
 
-### Update directive.json
+## State Write Protocol
 
-Update per the [checkpoint protocol](../reference/checkpoint-protocol.md). Set `current_step: "execute"`, `planning.worktree_path` to the path (or null if branch-only).
+directive.json is THE single source of truth. It stores both checkpoint/resume state and pipeline progress for the dashboard.
+
+**File:** `.context/directives/{directive-name}/directive.json`
+**Artifact files:** Write to the directive directory: `.context/directives/{directive-id}/projects/{project-id}/{phase}.md`
+
+> See [docs/reference/schemas/directive-json.md](../reference/schemas/directive-json.md) for the full schema.
+
+**Write mechanism:** Use the Write tool to overwrite directive.json. Always update `updated_at`. Update `pipeline.{step}` status/output after each step. Update `current_step` at each transition.
+
+**Artifact writes:** After each phase completes in the execute step, write the phase output (design doc, build report, review JSON) to the project directory. These survive context exhaustion and allow resumed runs to provide context to downstream phases.
