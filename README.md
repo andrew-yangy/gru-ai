@@ -1,12 +1,12 @@
-<!-- TODO: CEO — capture hero GIF showing the pixel-art office with agents walking, typing, and reviewing code in real time. ~10 seconds, 720px wide. -->
+<!-- TODO: CEO — replace with hero GIF showing the pixel-art office with agents walking, typing, and reviewing code in real time. ~10 seconds, 720px wide. -->
 <p align="center">
-  <img src="docs/assets/demo.gif" alt="gruAI pixel-art office with agents working" width="720" />
+  <img src="docs/assets/game-office.png" alt="gruAI pixel-art office with agents working" width="720" />
 </p>
 
 <h1 align="center">gruAI</h1>
 
 <p align="center">
-  <strong>An autonomous AI company in your terminal. You run the company. Agents build, review, and ship the code.</strong>
+  <strong>An autonomous AI company in your terminal — with a pixel-art office to watch it happen.</strong>
 </p>
 
 <p align="center">
@@ -20,106 +20,145 @@
 
 ## What Is gruAI?
 
-Most AI coding tools put you in the driver's seat -- prompting, reviewing, re-prompting, clarifying, re-clarifying. You become a full-time AI babysitter.
+Most AI coding tools put you in the driver's seat — prompting, reviewing, re-prompting, clarifying, re-clarifying. You become a full-time AI babysitter.
 
 gruAI flips this. You are the CEO. You hand down a directive ("add dark mode to the dashboard"), and a team of named AI agents handles the rest:
 
-1. Your CTO audits the codebase. C-suite agents **brainstorm approaches, argue trade-offs, and challenge your assumptions** -- then clarify with you before anyone writes code.
+1. Your CTO audits the codebase. C-suite agents **brainstorm approaches, argue trade-offs, and challenge your assumptions** — then clarify with you before anyone writes code.
 2. Your COO decomposes the work, assigns builders and reviewers. Engineers build. Reviewers review with fresh context. A mechanical gate blocks shipping until all reviews pass.
 3. You get a digest: files changed, tests passed, review summary. Approve or reopen.
 
-The system is designed for **depth, not speed.** Every directive flows through a 15-step pipeline grounded in Anthropic's [evaluator-optimizer pattern](https://www.anthropic.com/research/building-effective-agents) -- agents build, reviewers evaluate, issues get fixed in-loop, not after the fact. This is how output quality is guaranteed, not hoped for.
-
-Agents accumulate institutional memory across directives -- lessons learned, design rationale, standing corrections. Your 10th directive runs better than your 1st because the team remembers what went wrong.
+The system is designed for **depth, not speed.** Agents accumulate institutional memory across directives — lessons learned, design rationale, standing corrections. Your 10th directive runs better than your 1st because the team remembers what went wrong.
 
 ---
 
-## How the Pipeline Works
+## Why Is the Output Better?
 
-Every piece of work -- from fixing a typo to redesigning a subsystem -- flows through a structured pipeline. The weight system adapts automatically: lightweight tasks skip brainstorming and auto-approve; heavyweight tasks get the full process with CEO review gates.
+Every point below traces to published research from Anthropic and OpenAI. This isn't a workflow we invented — it's assembled from what the research says actually works.
 
-This isn't ceremony for ceremony's sake. Each phase exists because [skipping it caused failures in production](https://www.anthropic.com/engineering/building-c-compiler) -- Anthropic's research on building a C compiler found that **harness quality determines output quality**, not model intelligence. [OpenAI reached the same conclusion](https://openai.com/index/harness-engineering/): environment design outweighs prompt engineering.
+**Agents brainstorm and argue before anyone writes code.** For strategic directives, your C-suite agents independently propose approaches, then deliberate — challenging assumptions, resolving disagreements, and surfacing questions for you. Anthropic's research found [multi-agent outperformed single-agent by 90.2%](https://www.anthropic.com/engineering/multi-agent-research-system). The pipeline implements their [orchestrator-workers pattern](https://www.anthropic.com/research/building-effective-agents) where specialized agents collaborate, producing better results than any single agent.
 
-```mermaid
-graph LR
-    subgraph Intake
-        T[Triage] --> CK[Checkpoint] --> R[Read]
-    end
-    subgraph Analysis
-        R --> CX[Context] --> AU[Audit] --> BR[Brainstorm]
-    end
-    subgraph Planning
-        BR --> CL[Clarification] --> PL[Plan] --> AP[Approve]
-    end
-    subgraph Execution
-        AP --> PB[Project<br/>Brainstorm] --> SU[Setup] --> EX[Execute]
-    end
-    subgraph Verification
-        EX --> RG[Review<br/>Gate] --> WU[Wrapup] --> CO[Completion]
-    end
+**Reviewers evaluate intent, not just code.** Each reviewer gets [fresh context](https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents) scoped to the task — they never see the builder's reasoning, preventing confirmation bias. They verify against your Definition of Done (what you asked for), not just whether the code compiles. This is Anthropic's [evaluator-optimizer pattern](https://www.anthropic.com/research/building-effective-agents): one agent generates, another evaluates, issues get fixed in-loop — not after the fact.
 
-    style T fill:#4a9eff,color:#fff
-    style AP fill:#ff6b6b,color:#fff
-    style RG fill:#ff6b6b,color:#fff
-    style CO fill:#ff6b6b,color:#fff
-```
+**Context is isolated, not accumulated.** Each agent spawns with a [clean context window](https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents) scoped to exactly what it needs. No 200K-token sessions where the model forgets what it read at the start. Anthropic's context engineering research shows accuracy degrades as token count increases — gruAI treats context as a finite resource under active degradation.
 
-**Red nodes = hard gates.** Approve requires CEO sign-off (heavyweight/strategic only). Review Gate blocks completion until all reviews pass. Completion requires CEO confirmation -- no directive auto-ships.
+**Verification is mechanical.** Bash scripts — not LLMs — enforce pipeline integrity: schema validation, self-review prevention, step dependency checks, role assignment verification. This follows Anthropic's [poka-yoke principle](https://www.anthropic.com/research/building-effective-agents) (error-proof design) and OpenAI's finding that [invariants should be enforced through structural tests](https://openai.com/index/harness-engineering/), not judgment.
 
-### Weight Adaptation
+**The harness determines output quality, not model intelligence.** Anthropic found that ["the task verifier must be nearly perfect, otherwise the agent solves the wrong problem"](https://www.anthropic.com/engineering/building-c-compiler). OpenAI's team reached the same conclusion: [3 engineers produced 1M lines of code](https://openai.com/index/harness-engineering/) not by writing better prompts, but by designing better environments and feedback loops. gruAI's 15-step pipeline IS that harness.
 
-Not every task needs the full process. The pipeline classifies directives by weight and adapts:
+**Memory compounds across directives.** Lessons, design rationale, and standing corrections persist in `.context/` and get loaded into every future agent. This implements the [codified context pattern](https://arxiv.org/abs/2602.20478) — hot-memory + specialized agents + cold-memory knowledge base.
 
-| Weight | Example | What Changes |
-|--------|---------|-------------|
-| **Lightweight** | Fix a typo, update a config value | Skips brainstorm, auto-approves plan |
-| **Medium** | Add a feature, refactor a module | Skips brainstorm, auto-approves plan |
-| **Heavyweight** | Multi-system feature, new subsystem | Full pipeline with CEO gates |
-| **Strategic** | Architecture migration, new platform | Full pipeline + deliberation round + CEO STOP gates at Clarification and Approve |
+---
 
-Lightweight and medium directives still run audit, clarification, code review, and the review gate. Every step that was "skipped for efficiency" eventually caused a production failure -- the cost of running lightweight steps is small; the cost of skipping them is rework.
+## Every Step Has a Reason
 
-### Worked Example: "Rewrite the README with research citations"
+Each pipeline step implements a specific recommendation from the research:
 
-This README was itself built through the pipeline as a **strategic** directive -- full brainstorm, CEO gates, the works:
+| What the Research Says | Source | What gruAI Does |
+|------------------------|--------|-----------------|
+| Start simple, add complexity only when needed | [Building Effective Agents](https://www.anthropic.com/research/building-effective-agents) | **Triage** classifies by weight — lightweight auto-approves, strategic gets full deliberation |
+| Context rot: accuracy degrades as tokens increase | [Context Engineering](https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents) | Each agent gets **fresh, scoped context** — never a 200K-token accumulated session |
+| Multi-agent outperformed single-agent by 90.2% | [Multi-Agent Research](https://www.anthropic.com/engineering/multi-agent-research-system) | C-suite agents **brainstorm independently**, then **deliberate and argue** |
+| Give a map, not a 1,000-page manual | [Harness Engineering](https://openai.com/index/harness-engineering/) | CLAUDE.md is a ~100-line pointer file. Detail lives in `.context/` loaded just-in-time |
+| Task verifier must be nearly perfect | [Building a C Compiler](https://www.anthropic.com/engineering/building-c-compiler) | **Review gate** mechanically blocks completion without review artifacts |
+| One agent generates, another evaluates in a loop | [Building Effective Agents](https://www.anthropic.com/research/building-effective-agents) | Builder → code review → fix → standard review → fix → **review gate** |
+| Sub-agents return condensed results with clean context | [Context Engineering](https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents) | Builders return structured reports. Reviewers never see builder reasoning |
+| Persistent state survives session death | [Building a C Compiler](https://www.anthropic.com/engineering/building-c-compiler) | `directive.json` IS the checkpoint — any session reads it and resumes |
+| Human review at trust boundaries only | [Building a C Compiler](https://www.anthropic.com/engineering/building-c-compiler) | CEO gates at **approve** and **completion** — not at every step |
+| Guardrails enable speed, not impede it | [Harness Engineering](https://openai.com/index/harness-engineering/) | Every skipped step eventually caused a failure — lightweight still runs verification |
+
+---
+
+## The Pipeline
+
+15 steps across 5 phases. The weight system adapts: lightweight tasks skip brainstorming and auto-approve. Strategic tasks get the full process with CEO gates.
+
+**Intake:** Triage → Checkpoint → Read | **Analysis:** Context → Audit → Brainstorm | **Planning:** Clarification → Plan → Approve | **Execution:** Project Brainstorm → Setup → Execute | **Verification:** Review Gate → Wrapup → Completion
+
+Hard gates (require approval): **Approve** (heavyweight/strategic only), **Review Gate** (all weights), **Completion** (all weights).
+
+<details>
+<summary><strong>Worked Example: "Rewrite the README"</strong></summary>
+
+This README was built through the pipeline as a **strategic** directive:
 
 | Step | What Happens |
 |------|-------------|
-| **Triage** | Classified as **strategic** -- involves external research, cross-domain content decisions |
-| **Audit** | CTO (Sarah) identifies 10 messaging gaps and 3 existing assets in the current README |
-| **Brainstorm** | CTO, CPO, and CMO independently propose approaches, then **argue trade-offs in a deliberation round**. All 3 reject "revolutionary" language. They disagree on line count (150 vs 400) and resolve at 250-350. They surface 3 questions for the CEO. |
-| **Clarification** | CEO reviews the synthesized intent, answers the 3 questions, adds constraint: "multi-platform is roadmap, not shipped" |
-| **Plan** | COO casts Taylor (content) as builder, Priya (CMO) as reviewer |
-| **Execute** | Taylor researches 7 competitors, verifies citation URLs. Then writes the full README. Priya [reviews with fresh context](https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents) -- no builder reasoning, just the output. |
-| **Review Gate** | validate-reviews.sh confirms: no self-review, all 10 DOD criteria verified by Priya |
-| **Completion** | CEO reviews the digest: approve, amend, or reopen |
+| **Triage** | Classified as **strategic** — external research, cross-domain content decisions |
+| **Audit** | The CTO identifies 10 messaging gaps and 3 existing assets |
+| **Brainstorm** | CTO, CPO, and CMO independently propose approaches, then **argue trade-offs in a deliberation round**. All 3 reject "revolutionary" language. They disagree on line count and resolve at 250-350. They surface 3 questions for the CEO. |
+| **Clarification** | CEO answers the 3 questions, adds constraint: "multi-platform is roadmap, not shipped" |
+| **Plan** | COO assigns a content builder and a CMO reviewer |
+| **Execute** | Builder researches 7 competitors, verifies citation URLs, writes README. Reviewer evaluates with fresh context — no builder reasoning. |
+| **Review Gate** | Validation script confirms: no self-review, all 10 DOD criteria verified by reviewer |
+| **Completion** | CEO reviews digest: approve, amend, or reopen |
 
-> For lighter work (e.g., "fix a typo"), the pipeline skips brainstorming and auto-approves -- same verification, less ceremony.
+For lighter work (e.g., "fix a typo"), the pipeline skips brainstorming and auto-approves — same verification, less ceremony.
+
+</details>
 
 ---
 
-## Meet Your Team
+## The Context Tree
 
-gruAI ships with 11 agents organized into 4 teams. Each has a name, personality, domain expertise, and persistent memory.
+All state lives in `.context/` at your repo root — plain markdown and JSON, version-controlled alongside your code.
 
-| Agent | Role | Domain | Team |
-|-------|------|--------|------|
-| **You** | CEO | Direction, reviews, approvals | -- |
-| Sarah Chen | CTO | Architecture, security, code quality | C-Suite |
-| Marcus Rivera | CPO | Product strategy, UX, prioritization | C-Suite |
-| Morgan Park | COO | Planning, orchestration, agent casting | C-Suite |
-| Priya Sharma | CMO | Growth, SEO, positioning | C-Suite |
-| Jordan Okafor | Backend Engineer | Server, API, database | Engineering |
-| Casey Liu | Data Engineer | Pipelines, indexing, state | Engineering |
-| Devon Lee | Full-Stack Engineer | Cross-domain work | Engineering |
-| Riley Kim | Frontend Engineer | React, Tailwind, components | Product |
-| Quinn Torres | UI/UX Designer | Design review, wireframes | Product |
-| Sam Nakamura | QA Engineer | Testing, validation, edge cases | Product |
-| Taylor Reeves | Content Builder | MDX, copywriting, documentation | Growth |
+```
+.context/
+├── directives/              # All work lives here
+│   └── dark-mode/
+│       ├── directive.json   # Pipeline state, weight, progress
+│       ├── directive.md     # CEO brief
+│       ├── audit.md         # CTO's technical audit
+│       ├── brainstorm.md    # C-suite deliberation
+│       └── projects/
+│           └── dark-mode/
+│               └── project.json  # Tasks, DOD, agents, reviews
+├── lessons/                 # What went wrong (reactive)
+├── design/                  # Why the system works this way (proactive)
+├── intel/                   # External research from /scout
+└── reports/                 # CEO digests
+```
 
-C-Suite agents have **institutional memory** -- they accumulate lessons, design rationale, and standing corrections across directives. Engineers are spawned per-task with fresh context, scoped to exactly what they need.
+**Directive → Projects → Tasks.** A directive is a unit of work ("add dark mode"). The COO decomposes it into projects, each with tasks, agents, reviewers, and a Definition of Done. `directive.json` tracks pipeline progress — any session can read it and resume where it left off. `project.json` is the source of truth for what needs building and whether it passed review.
 
-Agents are markdown files in `.claude/agents/`. Add your own by creating a new file -- the dashboard and pipeline will detect it automatically.
+**Knowledge compounds.** Lessons, design rationale, and standing corrections persist across directives. Agents load relevant context just-in-time — not everything, just what they need for their role and task. No database, no external service — just files.
+
+---
+
+## Your Team
+
+gruAI ships with 11 customizable agents. You are the CEO — everyone reports to you.
+
+```mermaid
+graph TD
+    CEO["👤 CEO (You)<br/>Direction & Approvals"]
+    CTO["CTO<br/>Architecture & Code Quality"]
+    CPO["CPO<br/>Product & UX"]
+    COO["COO<br/>Planning & Orchestration"]
+    CMO["CMO<br/>Growth & Positioning"]
+    BE["Backend<br/>Engineer"]
+    DE["Data<br/>Engineer"]
+    FS["Full-Stack<br/>Engineer"]
+    FE["Frontend<br/>Engineer"]
+    UX["UI/UX<br/>Designer"]
+    QA["QA<br/>Engineer"]
+    CB["Content<br/>Builder"]
+
+    CEO --> CTO
+    CEO --> CPO
+    CEO --> COO
+    CEO --> CMO
+    CTO --> BE
+    CTO --> DE
+    CTO --> FS
+    CPO --> FE
+    CPO --> UX
+    CPO --> QA
+    CMO --> CB
+```
+
+C-suite agents have **institutional memory** — lessons and corrections persist across directives. Engineers spawn per-task with fresh context. All agents are markdown files in `.claude/agents/` — add, rename, or customize freely.
 
 ---
 
@@ -130,37 +169,23 @@ Agents are markdown files in `.claude/agents/`. Add your own by creating a new f
 | **License** | MIT | MIT | MIT | Apache 2.0 | MIT | MIT | Proprietary | Proprietary |
 | **Cost** | Free | Free / $25+ | Free / $39+ | Free | Free | Free | $20-500+/mo | $39-199/mo |
 | **Open Source** | Yes | Yes | Yes | Yes | Yes | Yes | No | No |
-| **Built-in Pipeline** | 15-step with weight adaptation | No (user-defined chains) | No (user-built graphs) | No (user-defined) | No (conversation loops) | No (handoff-based) | Internal (closed) | Internal (closed) |
-| **Code Review** | 3-layer: code review, standard review, review gate | None | None | None | None | None | Internal | None |
-| **Institutional Memory** | Lessons, design docs, standing corrections | No | No | No | No | No | Limited | No |
-| **Agent Personalities** | Named agents with domains and persistent identity | Role descriptions | None | None | None | None | Single agent | Single agent |
+| **Built-in Pipeline** | 15-step, weight-adaptive | No | No | No | No | No | Internal (closed) | Internal (closed) |
+| **Code Review** | 3-layer + mechanical gate | None | None | None | None | None | Internal | None |
+| **Institutional Memory** | Lessons, design docs, corrections | No | No | No | No | No | Limited | No |
+| **Agent Personalities** | 11 named agents | Role descriptions | None | None | None | None | Single agent | Single agent |
 | **Visual Dashboard** | Session kanban + pixel-art office | None | LangSmith (paid) | None | AutoGen Studio | Traces API | Web IDE | Web IDE |
-| **Runs Locally** | Yes (reads ~/.claude/) | Yes | Yes | Yes | Yes | Yes | No (cloud) | No (cloud) |
-| **Primary Use Case** | Autonomous software company | Business workflow automation | Stateful agent graphs | Multi-modal agent toolkit | Distributed agent systems | Lightweight agent handoffs | Cloud coding agent | General productivity |
+| **Runs Locally** | Yes | Yes | Yes | Yes | Yes | Yes | No (cloud) | No (cloud) |
 
 ---
 
-## Dashboard and Office
+## The Office
 
-<!-- TODO: CEO — capture screenshot of the full dashboard showing session kanban, activity panel, and agent cards. 1200px wide. -->
+<!-- TODO: CEO — capture screenshot of the full dashboard showing the pixel-art office with HUD panels open. 1200px wide. -->
 <p align="center">
-  <img src="docs/assets/dashboard-full.png" alt="gruAI dashboard with session kanban and agent monitoring" width="720" />
+  <img src="docs/assets/dashboard-full.png" alt="gruAI pixel-art office dashboard" width="720" />
 </p>
 
-The dashboard monitors all active Claude Code sessions in real time:
-
-- **Session kanban** -- cards grouped by status (active, idle, waiting for approval, completed)
-- **Activity feed** -- live stream of tool calls, file edits, and agent actions
-- **Terminal focus** -- one click jumps to any session's terminal pane (iTerm2, Warp, tmux)
-- **Approval actions** -- approve or reject permission prompts without leaving the dashboard
-- **Multi-repo support** -- discovers all conductor-enabled repos in `~/.claude/projects/`
-
-<!-- TODO: CEO — capture screenshot or short GIF of the pixel-art office with agents at desks, walking, and at the whiteboard. 720px wide. -->
-<p align="center">
-  <img src="docs/assets/game-office.png" alt="gruAI pixel-art office with agents at their desks" width="720" />
-</p>
-
-Your agents have a pixel-art office. Every animation is tied to real session state -- when an agent starts a code review, you see them walk to the reviewer's desk. When they're idle, they sit at their workstation. When they're waiting for approval, they stand up and look at you. It's functional monitoring with personality.
+The dashboard is an interactive pixel-art office. Click agents to see their sessions. Click furniture (whiteboard, bookshelf, mailbox) to see brainstorms, knowledge base, and notifications. Four HUD tabs — Team, Tasks, Status, Log — show real-time directive progress, DOD tracking, and pipeline state. Every animation is tied to real session state: agents walk to desks when building, gather at the whiteboard when brainstorming, stand up when waiting for approval.
 
 ---
 
@@ -172,27 +197,16 @@ cd gruai && npm install
 npm run dev
 ```
 
-Open [http://localhost:5173](http://localhost:5173) to see the dashboard and office.
+Open [http://localhost:5173](http://localhost:5173). Then scaffold your AI team in Claude Code: `/gruai-agents`
 
-Then scaffold your AI team:
+Or: `npm install gru-ai && npx gru-ai`
 
-```
-# In Claude Code, run the skill:
-/gruai-agents
-```
-
-This creates agent personality files in `.claude/agents/`, a context tree in `.context/`, and a starter directive you can run immediately with `/directive`.
-
-Or install as an npm package: `npm install gru-ai && npx gru-ai`
-
-gruAI currently works with **Claude Code**. Adapters for Codex CLI, Gemini CLI, and Aider are planned -- the pipeline and dashboard are engine-agnostic by design.
+gruAI currently works with **Claude Code**. Adapters for Codex CLI, Gemini CLI, and Aider are planned — the pipeline and dashboard are engine-agnostic by design.
 
 ---
 
 <details>
 <summary><strong>Terminal Support</strong></summary>
-
-Session discovery works on any OS. Terminal focus requires OS integration:
 
 | Environment | Focus | Send Input | Notes |
 |-------------|:-----:|:----------:|-------|
@@ -209,8 +223,7 @@ Linux and Windows support coming soon.
 <details>
 <summary><strong>Claude Code Hooks</strong></summary>
 
-gruAI works without hooks. For instant status detection (permission prompts,
-idle states), add hooks to `~/.claude/settings.json`:
+gruAI works without hooks. For instant status detection (permission prompts, idle states), add hooks to `~/.claude/settings.json`:
 
 ```json
 {
@@ -239,9 +252,6 @@ idle states), add hooks to `~/.claude/settings.json`:
   }
 }
 ```
-
-Without hooks, status updates via filesystem scanning (slight delay). With hooks,
-updates are instant.
 
 </details>
 
@@ -290,15 +300,12 @@ npm run lint         # ESLint
 <details>
 <summary><strong>Research References</strong></summary>
 
-The pipeline design draws from published research by Anthropic and OpenAI:
-
-- [Building Effective Agents](https://www.anthropic.com/research/building-effective-agents) (Anthropic, Dec 2024) -- six composable agent patterns; start with simple workflows, add complexity only when needed
-- [Effective Context Engineering](https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents) (Anthropic, Sep 2025) -- context rot begins at 8K-16K tokens; progressive disclosure and sub-agent architectures as mitigations
-- [Multi-Agent Research System](https://www.anthropic.com/engineering/multi-agent-research-system) (Anthropic, Jun 2025) -- multi-agent outperformed single-agent by 90.2%; token usage explained 80% of performance variance
-- [Building a C Compiler](https://www.anthropic.com/engineering/building-c-compiler) (Anthropic, Feb 2026) -- test harness quality is the steering mechanism; environment design > instructions
-- [Harness Engineering](https://openai.com/index/harness-engineering/) (OpenAI, Feb 2026) -- 3 engineers + Codex produced 1M lines; environment design outweighs prompt engineering
-- [Practices for Governing Agentic AI Systems](https://openai.com/index/practices-for-governing-agentic-ai-systems/) (OpenAI, Dec 2023) -- capability boundaries, human review gates, trust hierarchies
-- [Codified Context](https://arxiv.org/abs/2602.20478) (ArXiv, Feb 2026) -- hot-memory + specialized agents + cold-memory knowledge base pattern
+- [Building Effective Agents](https://www.anthropic.com/research/building-effective-agents) (Anthropic, Dec 2024) — evaluator-optimizer, orchestrator-workers, poka-yoke
+- [Effective Context Engineering](https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents) (Anthropic, Sep 2025) — context rot, progressive disclosure, sub-agent isolation
+- [Multi-Agent Research System](https://www.anthropic.com/engineering/multi-agent-research-system) (Anthropic, Jun 2025) — 90.2% multi-agent improvement, token usage = 80% of variance
+- [Building a C Compiler](https://www.anthropic.com/engineering/building-c-compiler) (Anthropic, Feb 2026) — harness quality > model intelligence
+- [Harness Engineering](https://openai.com/index/harness-engineering/) (OpenAI, Feb 2026) — 3 engineers + Codex = 1M lines, structural invariants
+- [Codified Context](https://arxiv.org/abs/2602.20478) (ArXiv, Feb 2026) — hot-memory + specialized agents + cold-memory knowledge base
 
 </details>
 
