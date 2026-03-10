@@ -246,7 +246,7 @@ Pre-build Q&A answers: {clarification Q&A from artifact}
 Use these to guide implementation. Incorporate scope changes revealed.
 ```
 
-**All agents get:** `model: "opus"`, `.context/preferences.md`, `.context/vision.md` guardrails, relevant `.context/lessons/` files per role (engineers: agent-behavior + skill-design; CTO: agent-behavior + review-quality; CPO: review-quality; COO: orchestration + review-quality; CMO: agent-behavior).
+**All agents get:** `model: "opus"`, `.context/preferences.md`, `.context/vision.md` guardrails, relevant `.context/lessons/` files per role (engineers: agent-behavior + skill-design; CTO: agent-behavior + review-quality; CPO: review-quality; COO: orchestration + review-quality; CMO: agent-behavior), relevant `.context/design/` docs (all agents get context-flow + agent-model; auditors also get verification + pipeline-architecture; COO also gets pipeline-architecture + state-and-recovery).
 
 ### UX Verification Phase (mandatory for UI work)
 

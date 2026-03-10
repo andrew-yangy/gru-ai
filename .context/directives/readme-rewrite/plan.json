@@ -1,0 +1,29 @@
+{
+  "goal": "Rewrite README.md from scratch as a marketing-quality technical document with Mermaid pipeline diagram (worked example), inline research citations, agent framework competitor comparison, multi-platform support highlight, and image placeholders for CEO to capture later.",
+  "challenges": {
+    "risks": [
+      "Competitor research quality: Need accurate data on Manus and other agent frameworks for comparison table. Mitigation: Taylor has WebSearch/WebFetch tools for research.",
+      "250-350 line target vs depth: Pipeline worked example, competitor table, research citations, agent team, multi-platform — all within budget. Mitigation: collapsible sections for depth.",
+      "Research citation accuracy: Paper URLs must be correct or credibility is undermined. Mitigation: citations already in .context/design/ docs, plus Taylor can verify URLs via web search."
+    ],
+    "over_engineering_flags": [
+      "Single-file rewrite. One project, one builder, one reviewer. No multi-project needed.",
+      "No code changes, no tests, no architecture. Content work: Taylor builds, Priya reviews."
+    ],
+    "recommendation": "Proceed as-is"
+  },
+  "projects": [
+    {
+      "id": "readme-rewrite",
+      "title": "README.md Complete Rewrite — Marketing-Quality Technical Document",
+      "priority": "P0",
+      "scope_summary": "Rewrite README.md from scratch with: (1) hero section with value prop and image placeholder, (2) Mermaid pipeline diagram with worked example showing a directive flowing through 15 steps, (3) research-grounded pipeline explanation with inline citations, (4) agent framework competitor comparison table (CrewAI, AutoGen, Devin, Manus — research needed), (5) multi-platform support section, (6) 'Meet Your Team' agent table, (7) game UI as visual hook not headline, (8) collapsible sections for depth. Target 250-350 visible lines. No marketing superlatives. Image placeholders for CEO.",
+      "complexity": "moderate",
+      "agent": ["taylor"],
+      "reviewers": ["priya"],
+      "auditor": "priya",
+      "depends_on": [],
+      "touches_files_hint": ["README.md"]
+    }
+  ]
+}

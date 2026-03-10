@@ -54,7 +54,7 @@ This file is a routing table. Each row points to a modular doc containing full i
 3. Set `updated_at` to the current ISO timestamp
 4. Use the Write tool to overwrite the full directive.json
 
-**When starting a step**, set `pipeline.{stepId}.status` to `"active"`.
+**When starting a step**, set `pipeline.{stepId}.status` to `"active"` and `pipeline.{stepId}.agent` to the array of participating agent first names (lowercase, e.g. `["sarah", "marcus", "morgan"]`). This is critical for the dashboard game view — the game reads step agents to route characters to the meeting room during brainstorm/plan/clarification steps. Without this, characters won't move.
 
 > **Why output is mandatory:** The dashboard renders pipeline step details directly from directive.json. Without `output.summary`, the UI shows empty steps — the CEO can't see what happened. Every step must leave a trace.
 

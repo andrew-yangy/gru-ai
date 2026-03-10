@@ -1,0 +1,219 @@
+{
+  "id": "readme-rewrite",
+  "title": "README Rewrite — Marketing-Quality with Visual Assets and Research References",
+  "status": "awaiting_completion",
+  "created": "2026-03-10",
+  "completed": null,
+  "weight": "strategic",
+  "produced_features": [],
+  "report": "readme-rewrite-2026-03-10",
+  "backlog_sources": [],
+  "dod": {
+    "success_looks_like": [
+      "README opens with hero GIF placeholder + factual tagline (no 'revolutionary')",
+      "Pipeline diagram using Mermaid with a worked example showing a directive flowing through the 15 steps",
+      "Research citations inline-linked to Anthropic context engineering, OpenAI harness engineering, Anthropic multi-agent research",
+      "Competitor comparison table against agent frameworks (CrewAI, AutoGen, Devin, Manus, etc.) — no coding assistants",
+      "CEO-as-CEO narrative: give directives, agents brainstorm and challenge, you review",
+      "Multi-platform support highlighted (Codex CLI, Aider, Gemini CLI)",
+      "Game UI shown as visual proof, not headline feature",
+      "Custom AI agents with personality system explained",
+      "Image placeholders for CEO to fill later"
+    ],
+    "failure_looks_like": [
+      "README uses marketing superlatives ('revolutionary', 'groundbreaking')",
+      "Pipeline explanation is superficial without research connections",
+      "Screenshots are broken links or missing placeholders",
+      "Comparison includes coding assistants (Cursor, Cline) instead of agent frameworks"
+    ],
+    "quality_bar": "Marketing-quality README that makes developers stop scrolling, backed by research references that establish credibility. Factual and specific, not hype-driven.",
+    "examples": []
+  },
+  "current_step": "completion",
+  "updated_at": "2026-03-10T13:30:00Z",
+  "pipeline": {
+    "triage": {
+      "status": "completed",
+      "agent": "CEO",
+      "output": {
+        "summary": "Classified as strategic.",
+        "weight": "strategic"
+      }
+    },
+    "checkpoint": {
+      "status": "completed",
+      "agent": "CEO",
+      "output": {
+        "summary": "Fresh directive."
+      }
+    },
+    "read": {
+      "status": "completed",
+      "agent": "CEO",
+      "output": {
+        "summary": "Created directive files with DOD extraction.",
+        "directive_title": "README Rewrite"
+      },
+      "artifacts": [
+        ".context/directives/readme-rewrite/directive.md",
+        ".context/directives/readme-rewrite/directive.json"
+      ]
+    },
+    "context": {
+      "status": "completed",
+      "agent": "CEO",
+      "output": {
+        "summary": "All context loaded: vision, lessons, design docs, agent registry."
+      }
+    },
+    "audit": {
+      "status": "completed",
+      "agent": "Sarah Chen (CTO)",
+      "output": {
+        "summary": "10 differentiators, 10 messaging gaps, 3 existing assets. Critical gap: no dashboard panel screenshots. Multi-platform adapters undocumented.",
+        "weight_recommendation": null
+      }
+    },
+    "brainstorm": {
+      "status": "completed",
+      "agent": "Sarah Chen, Marcus Rivera, Priya Sharma",
+      "output": {
+        "summary": "Full strategic brainstorm with deliberation. 8 convergence points, 3 resolved disagreements, 3 CEO clarifications answered.",
+        "convergence_points": 8
+      },
+      "artifacts": [
+        ".context/directives/readme-rewrite/brainstorm.md"
+      ]
+    },
+    "clarification": {
+      "status": "completed",
+      "agent": "CEO",
+      "output": {
+        "summary": "CEO verified intent: no 'revolutionary' language, image placeholders (CEO captures later), competitor comparison against agent frameworks only (research Manus etc.), pipeline diagram with worked example.",
+        "verified_intent": {
+          "goal": "Rewrite README.md as a marketing-quality technical document with Mermaid pipeline diagram (including worked example), inline research citations, agent framework competitor comparison, and image placeholders for CEO to fill later.",
+          "constraints": [
+            "No marketing superlatives ('revolutionary', 'groundbreaking', 'game-changing')",
+            "Image placeholders only — CEO will capture screenshots/GIF personally",
+            "Competitor comparison: agent frameworks only (CrewAI, AutoGen, Devin, Manus, others to research). No coding assistants (Cursor, Cline, aider)",
+            "Pipeline diagram must include a worked example showing a real directive flowing through steps",
+            "Research citations must be inline links with plain-language context, not footnotes",
+            "Target 250-350 visible lines with collapsible sections for depth",
+            "Mermaid for pipeline diagram (GitHub renders natively)",
+            "Game UI as visual hook, not headline feature"
+          ],
+          "quality_bar": "Marketing-quality README that makes developers stop scrolling, backed by research references that establish credibility. Factual and specific, not hype-driven.",
+          "acceptance_scenarios": [
+            {
+              "scenario": "First-time visitor understands value prop",
+              "given": "A developer lands on the GitHub repo from a Twitter/HN link",
+              "when": "They read the first 10 lines",
+              "then": "They understand gruai is an autonomous AI company framework with research-grounded pipeline"
+            },
+            {
+              "scenario": "Pipeline depth is visible",
+              "given": "A developer scrolls to the pipeline section",
+              "when": "They see the Mermaid diagram with worked example",
+              "then": "They understand the 15-step flow and how weight adaptation works, with research citations inline"
+            },
+            {
+              "scenario": "Competitor differentiation is clear",
+              "given": "A developer evaluating agent frameworks",
+              "when": "They read the comparison table",
+              "then": "They see how gruai differs from CrewAI, AutoGen, Devin, Manus on specific dimensions"
+            },
+            {
+              "scenario": "Image placeholders are ready for CEO",
+              "given": "README is complete",
+              "when": "CEO opens it",
+              "then": "They see clear placeholder comments indicating where to add hero GIF, dashboard screenshot, game screenshot, pipeline screenshot"
+            }
+          ],
+          "out_of_scope": [
+            "Capturing actual screenshots or GIF — CEO will do this",
+            "Creating a separate landing page or documentation site",
+            "Changing any source code — README.md only",
+            "Comparing against coding assistants (Cursor, Cline, aider, SWE-Agent)"
+          ]
+        },
+        "modifications": [
+          "CEO accepted: no 'revolutionary' language",
+          "CEO modified: screenshots/GIF — use placeholders, CEO captures later",
+          "CEO modified: competitor scope — agent frameworks only, research Manus and others",
+          "CEO added: pipeline diagram should include a worked example"
+        ],
+        "auto_approved": false
+      }
+    },
+    "plan": {
+      "status": "completed",
+      "agent": "Morgan Park (COO)",
+      "output": {
+        "summary": "Single project plan: Taylor (Content Builder) builds, Priya (CMO) reviews. Moderate complexity. Cast validated.",
+        "projects": 1
+      },
+      "artifacts": [
+        ".context/directives/readme-rewrite/plan.json"
+      ]
+    },
+    "approve": {
+      "status": "completed",
+      "agent": "CEO",
+      "output": {
+        "summary": "CEO approved with one modification: multi-platform adapters mentioned as roadmap/in-development, NOT as shipped feature.",
+        "decision": "approved_with_changes",
+        "modifications": [
+          "Multi-platform support changed from feature claim to roadmap mention"
+        ]
+      }
+    },
+    "project-brainstorm": {
+      "status": "completed",
+      "agent": "Sarah Chen (CTO)",
+      "output": {
+        "summary": "Decomposed into 2 sequential tasks: (1) research competitors + verify citation URLs, (2) write complete README. Task 2 depends on task 1. Project.json validated."
+      }
+    },
+    "setup": {
+      "status": "completed",
+      "agent": "CEO",
+      "output": {
+        "summary": "Created branch directive/readme-rewrite. No worktree needed (uncommitted changes don't overlap with README.md)."
+      }
+    },
+    "execute": {
+      "status": "completed",
+      "agent": "Taylor Reeves (Content Builder)",
+      "output": {
+        "summary": "Both tasks completed. Task 1: researched 7 competitors, verified 7 citation URLs. Task 2: wrote complete README.md (263 visible lines, 364 total). Priya (CMO) reviewed: PASS on all 10 DOD criteria, 0 critical issues, 9 non-blocking suggestions."
+      }
+    },
+    "review-gate": {
+      "status": "completed",
+      "agent": "CEO",
+      "output": {
+        "summary": "validate-reviews.sh passed. Review artifact present for write-readme task. No self-review, no self-certification. All DOD criteria verified by reviewer (Priya)."
+      }
+    },
+    "wrapup": {
+      "status": "completed",
+      "agent": "CEO",
+      "output": {
+        "summary": "Digest generated. No follow-ups needed (content-only directive). Stale doc detection ran — no actionable stale docs. No design doc or lesson updates warranted.",
+        "digest_path": ".context/reports/readme-rewrite-2026-03-10.md"
+      }
+    },
+    "completion": {
+      "status": "active"
+    }
+  },
+  "gates": {
+    "execute": {
+      "passed_at": "2026-03-10T11:36:27Z",
+      "validated_artifacts": [
+        "directive.json:pipeline.setup.status",
+        ".context/directives/readme-rewrite/projects/readme-rewrite/project.json"
+      ]
+    }
+  }
+}

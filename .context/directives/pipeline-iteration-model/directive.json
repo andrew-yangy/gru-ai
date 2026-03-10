@@ -1,7 +1,7 @@
 {
   "id": "pipeline-iteration-model",
   "title": "Pipeline Iteration Model",
-  "status": "active",
+  "status": "completed",
   "created": "2026-03-09",
   "completed": null,
   "weight": "strategic",
@@ -11,7 +11,7 @@
 
   "started_at": "2026-03-09T12:00:00Z",
   "updated_at": "2026-03-10T09:00:00Z",
-  "current_step": "execute",
+  "current_step": "completion",
 
   "dod": {
     "success_looks_like": [

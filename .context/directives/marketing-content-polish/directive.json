@@ -1,0 +1,119 @@
+{
+  "id": "marketing-content-polish",
+  "title": "Marketing Content Polish — README, RedNote, Reddit",
+  "status": "completed",
+  "created": "2026-03-10",
+  "weight": "medium",
+  "produced_features": [],
+  "report": null,
+  "backlog_sources": ["gruai-marketing-launch"],
+  "started_at": "2026-03-10T00:00:00Z",
+  "updated_at": "2026-03-10T00:35:00Z",
+  "current_step": "completion",
+  "dod": {
+    "success_looks_like": [
+      "README.md is publication-ready with correct URLs and world-class copy",
+      "6 RedNote posts ready to copy-paste with natural Chinese tone",
+      "3 Reddit posts ready to copy-paste with authentic developer voice"
+    ],
+    "failure_looks_like": [
+      "Content reads as machine-translated or AI-generated marketing copy",
+      "Posts reference outdated features or wrong URLs",
+      "README is generic and doesn't differentiate from competitors"
+    ],
+    "quality_bar": "Content should be immediately publishable without editing",
+    "examples": []
+  },
+  "pipeline": {
+    "triage": {
+      "status": "completed",
+      "agent": ["CEO"],
+      "output": { "weight": "medium", "summary": "Content polish directive." }
+    },
+    "checkpoint": {
+      "status": "completed",
+      "agent": ["CEO"],
+      "output": { "summary": "New directive." }
+    },
+    "read": {
+      "status": "completed",
+      "agent": ["CEO"],
+      "output": { "summary": "Read directive.md. DOD extracted." }
+    },
+    "context": {
+      "status": "completed",
+      "agent": ["CEO"],
+      "output": { "summary": "Read vision, registry, lessons, prior marketing outputs." }
+    },
+    "audit": {
+      "status": "completed",
+      "agent": ["CEO"],
+      "output": { "summary": "GitHub remote still agent-conductor. npm gru-ai v0.2.1. demo.gif exists. Prior content drafts substantial." }
+    },
+    "brainstorm": {
+      "status": "skipped",
+      "output": { "summary": "Skipped — medium weight." }
+    },
+    "clarification": {
+      "status": "completed",
+      "agent": ["pipeline"],
+      "output": { "summary": "Auto-approved intent for medium directive.", "auto_approved": true }
+    },
+    "plan": {
+      "status": "completed",
+      "agent": ["morgan"],
+      "output": { "summary": "Single project: content-polish-for-launch. Taylor builds, Priya reviews." },
+      "artifacts": [".context/directives/marketing-content-polish/plan.json"]
+    },
+    "approve": {
+      "status": "completed",
+      "agent": ["pipeline"],
+      "output": { "summary": "Auto-approved for medium weight.", "decision": "approved" }
+    },
+    "project-brainstorm": {
+      "status": "completed",
+      "agent": ["CEO"],
+      "output": { "summary": "3 simple tasks: polish-readme, finalize-rednote-posts, finalize-reddit-posts." }
+    },
+    "setup": {
+      "status": "completed",
+      "agent": ["CEO"],
+      "output": { "summary": "No worktree needed — content files only, working on main branch.", "mode": "direct" }
+    },
+    "execute": {
+      "status": "completed",
+      "agent": ["taylor"],
+      "output": { "summary": "2 of 3 tasks completed. RedNote (6 posts) and Reddit (3 posts) finalized and ready to publish. README rewrite deferred to new directive — CEO rejected initial polish, wants complete rewrite with screenshots, pipeline explanation, harness engineering references, and CEO experience narrative." }
+    },
+    "review-gate": {
+      "status": "completed",
+      "agent": ["pipeline"],
+      "output": { "summary": "RedNote and Reddit tasks reviewed by Priya. README task deferred — no review needed. 2/3 tasks passed review." }
+    },
+    "wrapup": {
+      "status": "completed",
+      "agent": ["CEO"],
+      "output": { "summary": "Directive partially completed. Follow-up: new directive for README rewrite with expanded scope. Deliverables: rednote-posts-final.md (6 posts), reddit-posts-final.md (3 posts). Screenshots captured to docs/assets/." }
+    },
+    "completion": {
+      "status": "completed",
+      "agent": ["CEO"],
+      "output": { "summary": "CEO approved completion. 2/3 deliverables done. README deferred to dedicated directive with fuller scope.", "decision": "approved_partial" }
+    }
+  },
+  "projects": ["content-polish-for-launch"],
+  "planning": {
+    "coo_plan": {},
+    "ceo_approval": {
+      "status": "approved",
+      "modifications": []
+    },
+    "worktree_path": null
+  },
+  "wrapup": {
+    "okrs_persisted": false,
+    "follow_ups_processed": true,
+    "digest_path": null,
+    "lessons_updated": false
+  }
+}

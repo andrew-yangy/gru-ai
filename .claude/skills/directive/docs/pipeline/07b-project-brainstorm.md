@@ -6,6 +6,10 @@ After the CEO approves the COO's plan (approve step), each project needs task de
 
 > **Timing:** This step (project-brainstorm) runs AFTER the COO plan and approval. Note that the *directive-level* brainstorm (heavyweight/strategic only) runs BEFORE the COO plans -- it produces approach options. This step is a separate, later activity that decomposes approved projects into tasks.
 
+### Step Entry — Update directive.json immediately
+
+Before spawning participants, write `pipeline["project-brainstorm"]` to directive.json with `"status": "active"` and `"agent"` set to the CTO + assigned builder first names (lowercase, from the project's cast). This triggers the dashboard game to route those characters to the meeting room.
+
 ### Participants
 
 - **The CTO** -- owns technical decomposition, DOD quality, sequencing
@@ -116,6 +120,6 @@ CRITICAL: First character `{`, last `}`. JSON only.
 
 ### Update directive.json
 
-Set `current_step: "setup"` (the next step). Update `pipeline["project-brainstorm"].status` to `"completed"` with output summary.
+Set `current_step: "setup"` (the next step). Update `pipeline["project-brainstorm"].status` to `"completed"` with `agent` (the participant first names array, same as the step entry) and output summary.
 
 **Next step:** Proceed to [08-worktree-and-state.md](08-worktree-and-state.md) (setup) for branch/worktree isolation.

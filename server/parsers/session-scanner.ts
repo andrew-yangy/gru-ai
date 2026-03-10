@@ -65,6 +65,18 @@ export function cleanPromptText(raw: string): string | undefined {
     if (/^The CEO\s/i.test(line)) continue;
     if (/^You are being spawned/i.test(line)) continue;
     if (/^You have \d+\s*(sequential\s+)?tasks?/i.test(line)) continue;
+    // Skip "Your job:" / "Your task:" preambles
+    if (/^Your\s+(job|task|goal|objective|mission)\s*(is\s+to)?[:\s]/i.test(line)) {
+      line = line.replace(/^Your\s+(?:job|task|goal|objective|mission)\s*(?:is\s+to)?[:\s]*/i, '').trim();
+      if (!line) continue;
+    }
+    // Skip generic instruction noise
+    if (/^(?:Don't|Do not|Never|Always|Think|Remember)\s/i.test(line)) continue;
+    if (/^Socratic refinement\./i.test(line)) continue;
+    if (/^(?:QUESTION|CONTEXT|BACKGROUND|INSTRUCTIONS?)\s*:/i.test(line)) {
+      line = line.replace(/^(?:QUESTION|CONTEXT|BACKGROUND|INSTRUCTIONS?)\s*:\s*/i, '').trim();
+      if (!line) continue;
+    }
     if (line.startsWith('# Plan:') || line.startsWith('## ')) {
       line = line.replace(/^#+ (?:Plan:\s*)?/, '').trim();
       if (!line) continue;

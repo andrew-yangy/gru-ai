@@ -9,6 +9,7 @@ Read ALL of these before spawning the COO:
 - `.context/lessons/*.md` — project gotchas and patterns (read topic files as needed per agent role)
 - `.context/lessons/orchestration.md` — for the COO and orchestration
 - `.context/lessons/agent-behavior.md` — for all agents
+- `.context/design/*.md` — system design rationale (why the system works the way it does). Read all design docs — they are short and high-signal. Pass relevant ones to agents based on task domain.
 - All `.context/directives/*/projects/*/project.json` — current project states and task status
 - The C-suite agent personality files (resolve names from `.claude/agent-registry.json`)
 

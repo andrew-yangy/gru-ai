@@ -4,6 +4,10 @@
 
 Spawn the COO as an Agent (model: opus, subagent_type: COO's ID from registry).
 
+### Step Entry — Update directive.json immediately
+
+Before spawning the COO, write `pipeline.plan` to directive.json with `"status": "active"` and `"agent"` set to the COO's first name (lowercase). This triggers the dashboard game to route the COO character to the meeting room.
+
 **The COO's prompt must include:**
 - The CEO directive text (personality is auto-loaded via the `subagent_type`)
 - The goals index, lessons, and agent summaries from the context step
@@ -67,6 +71,6 @@ If validation fails (`valid: false`), log the violations and either:
 
 ### Update directive.json
 
-Set `current_step: "approve"` (the next step). Update `pipeline.plan.status` to `"completed"` with output summary including the plan goal and project count. Set `artifacts` to `[".context/directives/{id}/plan.json"]`.
+Set `current_step: "approve"` (the next step). Update `pipeline.plan.status` to `"completed"` with `agent: ["morgan"]`, output summary including the plan goal and project count, and `artifacts: [".context/directives/{id}/plan.json"]`.
 
 **Next step:** Proceed to [07-plan-approval.md](07-plan-approval.md) (approve) to present the combined plan to the CEO.

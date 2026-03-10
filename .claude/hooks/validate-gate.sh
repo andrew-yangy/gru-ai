@@ -488,6 +488,94 @@ gate_completion() {
 }
 
 # ---------------------------------------------------------------------------
+# Pipeline state consistency check
+# ---------------------------------------------------------------------------
+# Verifies that directive.json.current_step matches the target step and that
+# ALL prior steps in the pipeline have status "completed" or "skipped".
+# This catches the failure mode where the orchestrator executes steps but
+# forgets to update directive.json — a mechanical enforcement, not advisory.
+
+FULL_PIPELINE_ORDER=(triage checkpoint read context audit brainstorm clarification plan approve project-brainstorm setup execute review-gate wrapup completion)
+
+check_pipeline_state_consistency() {
+  local target="$1"
+
+  # 1. Check current_step matches target
+  local current_step
+  current_step=$(jq -r '.current_step // empty' "$DIRECTIVE_JSON" 2>/dev/null)
+
+  if [[ -n "$current_step" && "$current_step" != "$target" ]]; then
+    # Find positions of current_step and target in pipeline order
+    local current_pos=-1
+    local target_pos=-1
+    for i in "${!FULL_PIPELINE_ORDER[@]}"; do
+      if [[ "${FULL_PIPELINE_ORDER[$i]}" == "$current_step" ]]; then
+        current_pos=$i
+      fi
+      if [[ "${FULL_PIPELINE_ORDER[$i]}" == "$target" ]]; then
+        target_pos=$i
+      fi
+    done
+
+    # Only flag if target is AHEAD of current_step (steps were skipped)
+    if [[ $target_pos -gt $current_pos && $current_pos -ge 0 ]]; then
+      # Build list of steps between current_step and target that need updating
+      local stale_steps=""
+      for (( j=current_pos; j<target_pos; j++ )); do
+        local step_id="${FULL_PIPELINE_ORDER[$j]}"
+        local step_status
+        step_status=$(jq -r ".pipeline.\"${step_id}\".status // \"pending\"" "$DIRECTIVE_JSON" 2>/dev/null)
+        if [[ "$step_status" != "completed" && "$step_status" != "skipped" ]]; then
+          if [[ -n "$stale_steps" ]]; then
+            stale_steps="${stale_steps}, ${step_id}"
+          else
+            stale_steps="${step_id}"
+          fi
+        fi
+      done
+
+      if [[ -n "$stale_steps" ]]; then
+        add_violation "stale_pipeline_state" "directive.json.current_step is '${current_step}' but entering '${target}'. These steps were executed but not updated in directive.json: [${stale_steps}]. Update their pipeline status to 'completed' with output.summary, then set current_step to '${target}'."
+      fi
+    fi
+  fi
+
+  # 2. Check ALL prior steps have status completed or skipped
+  for step_id in "${FULL_PIPELINE_ORDER[@]}"; do
+    # Stop when we reach the target step
+    if [[ "$step_id" == "$target" ]]; then
+      break
+    fi
+
+    local step_status
+    step_status=$(jq -r ".pipeline.\"${step_id}\".status // \"pending\"" "$DIRECTIVE_JSON" 2>/dev/null)
+
+    if [[ "$step_status" == "completed" || "$step_status" == "skipped" ]]; then
+      continue
+    fi
+
+    # Check if this step is skippable for this weight
+    if is_skippable "$step_id"; then
+      continue
+    fi
+
+    # Step is not completed, not skipped, and not skippable — violation
+    local has_output
+    has_output=$(jq -r ".pipeline.\"${step_id}\".output.summary // empty" "$DIRECTIVE_JSON" 2>/dev/null)
+    if [[ -z "$has_output" ]]; then
+      add_violation "step_not_persisted" "Step '${step_id}' has status '${step_status}' with no output.summary. It was likely executed but not persisted to directive.json. Set pipeline.${step_id}.status to 'completed' with output.summary before proceeding."
+    else
+      add_violation "step_incomplete" "Step '${step_id}' has status '${step_status}' (expected 'completed' or 'skipped')"
+    fi
+  done
+}
+
+# Run consistency check before per-step gates (skip for triage — first step)
+if [[ "$TARGET_STEP" != "triage" ]]; then
+  check_pipeline_state_consistency "$TARGET_STEP"
+fi
+
+# ---------------------------------------------------------------------------
 # Run the gate for the target step
 # ---------------------------------------------------------------------------
 

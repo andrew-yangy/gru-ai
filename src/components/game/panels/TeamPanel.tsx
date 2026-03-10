@@ -89,9 +89,19 @@ interface TeamGroup {
 /** Extract a meaningful task description from a session prompt */
 function extractTask(prompt: string | undefined): string | undefined {
   if (!prompt) return undefined;
-  const afterIntro = prompt.replace(/^You are [^.]+\.\s*/i, '');
-  if (afterIntro === prompt || !afterIntro) return undefined;
-  const first = afterIntro.split(/[.\n]/)[0]?.trim();
+  let text = prompt;
+  // Strip "You are Name, Role." preamble
+  text = text.replace(/^You are [^.]+\.\s*/i, '');
+  // Strip "Your job:" / "Your task:" preambles
+  text = text.replace(/^Your\s+(?:job|task|goal|objective|mission)\s*(?:is\s+to)?[:\s]*/i, '');
+  // Strip instruction noise
+  text = text.replace(/^(?:Don't|Do not|Never|Always|Think|Remember)[^.\n]*\.\s*/i, '');
+  text = text.replace(/^Socratic refinement\.\s*/i, '');
+  text = text.replace(/^The CEO\s+[^.\n]*\.\s*/i, '');
+  text = text.replace(/^(?:QUESTION|CONTEXT|BACKGROUND|INSTRUCTIONS?)\s*:\s*/i, '');
+  text = text.trim();
+  if (!text) return undefined;
+  const first = text.split(/[.\n]/)[0]?.trim();
   return first ? (first.length > 80 ? first.slice(0, 77) + '...' : first) : undefined;
 }
 

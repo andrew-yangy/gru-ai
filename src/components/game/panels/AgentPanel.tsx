@@ -53,6 +53,13 @@ function cleanPromptTitle(prompt: string): string {
   }
   // Strip "You " if still starting with it and followed by a past tense verb
   text = text.replace(/^You (proposed|completed|finished|started|created|built|reviewed|performed)\s+/i, '$1 ');
+  // Strip "Your job:" / "Your task:" preambles
+  text = text.replace(/^Your\s+(?:job|task|goal|objective|mission)\s*(?:is\s+to)?[:\s]*/i, '');
+  // Strip instruction noise
+  text = text.replace(/^(?:Don't|Do not|Never|Always|Think|Remember)[^.\n]*\.\s*/i, '');
+  text = text.replace(/^Socratic refinement\.\s*/i, '');
+  text = text.replace(/^The CEO\s+[^.\n]*\.\s*/i, '');
+  text = text.replace(/^(?:QUESTION|CONTEXT|BACKGROUND|INSTRUCTIONS?)\s*:\s*/i, '');
   // Capitalize first letter
   if (text.length > 0) text = text[0].toUpperCase() + text.slice(1);
   return text.slice(0, 60);
@@ -173,7 +180,7 @@ export default function AgentPanel({ agentName, agentStatuses }: AgentPanelProps
         activeSessions.map((sess) => {
           const activity = sessionActivities[sess.id];
           const title = sessionTitle(sess);
-          const prompt = sess.latestPrompt ?? sess.initialPrompt;
+          const prompt = cleanPromptTitle(sess.latestPrompt ?? sess.initialPrompt ?? '');
           const subagents = sessions.filter(
             (s) => s.parentSessionId === sess.id && s.isSubagent,
           );
@@ -312,7 +319,7 @@ export default function AgentPanel({ agentName, agentStatuses }: AgentPanelProps
             <SectionHeader>History</SectionHeader>
             {recentIdle.map((s) => {
               const title = sessionTitle(s);
-              const prompt = s.initialPrompt || s.latestPrompt;
+              const prompt = cleanPromptTitle(s.initialPrompt || s.latestPrompt || '');
               const statusColor = s.status === 'done' ? '#5B8C3E'
                 : s.status === 'error' ? '#B44' : '#9CA3AF';
               return (

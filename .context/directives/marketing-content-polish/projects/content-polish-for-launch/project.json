@@ -1,0 +1,90 @@
+{
+  "id": "content-polish-for-launch",
+  "title": "Polish README, RedNote, and Reddit content for publication",
+  "status": "completed",
+  "priority": "P0",
+  "agent": ["taylor"],
+  "reviewers": ["priya"],
+  "description": "Review and finalize all three content areas from the prior gruai-marketing-launch directive for immediate publication.",
+  "source_directive": "marketing-content-polish",
+  "scope": {
+    "in": [
+      "Polish README.md for world-class quality",
+      "Fix GitHub URLs (currently references gruai but repo is agent-conductor)",
+      "Finalize 6 RedNote posts for natural Chinese and copy-paste readiness",
+      "Finalize 3 Reddit posts for authentic developer voice"
+    ],
+    "out": [
+      "GitHub repo rename",
+      "Landing page creation",
+      "Video/GIF production",
+      "New strategy creation"
+    ]
+  },
+  "dod": [
+    { "criterion": "README.md is publication-ready with correct URLs and world-class copy", "met": false },
+    { "criterion": "6 RedNote posts ready to copy-paste with natural Chinese tone", "met": true },
+    { "criterion": "3 Reddit posts ready to copy-paste with authentic developer voice", "met": true }
+  ],
+  "browser_test": false,
+  "tasks": [
+    {
+      "id": "polish-readme",
+      "title": "Complete README rewrite — marketing-grade with screenshots, pipeline explanation, research references",
+      "status": "deferred",
+      "priority": "P0",
+      "complexity": "simple",
+      "agent": ["taylor"],
+      "phases": ["build", "review"],
+      "user_scenario": "A developer visiting the GitHub repo sees a world-class README that immediately explains gruai's autonomous AI company vision, shows screenshots/GIF, explains the pipeline with references to harness/context engineering research, and positions the CEO experience as the core value prop.",
+      "scope": "COMPLETE REWRITE of README.md. CEO rejected initial polish — wants fundamentally different README with screenshots, pipeline explanation, harness engineering references, CEO experience narrative, custom agents section, and game UI. Deferred to new directive.",
+      "dod": [
+        { "criterion": "Hero GIF (demo.gif) at top + at least 2 screenshots (dashboard-full.png, game-office.png) embedded", "met": false },
+        { "criterion": "Pipeline explained with diagram showing triage→plan→challenge→audit→build→review→completion flow", "met": false },
+        { "criterion": "References to OpenAI harness engineering, Anthropic building effective agents, with table mapping concepts to gruai implementation", "met": false },
+        { "criterion": "CEO experience section — 45 min/week, /scout, /directive, /report workflow", "met": false },
+        { "criterion": "Custom agents section — markdown files, personalities, C-suite + ephemeral engineers", "met": false },
+        { "criterion": "Positioned as 'designed for depth not speed' — agents challenge, brainstorm, push back", "met": false },
+        { "criterion": "GitHub clone URL points to https://github.com/andrew-yangy/agent-conductor.git", "met": false },
+        { "criterion": "npm install command is accurate (npm install -g gru-ai && gru-ai)", "met": false },
+        { "criterion": "Copy reads naturally — not like AI-generated marketing material", "met": false }
+      ]
+    },
+    {
+      "id": "finalize-rednote-posts",
+      "title": "Finalize 6 RedNote (小红书) posts for publication",
+      "status": "completed",
+      "priority": "P0",
+      "complexity": "simple",
+      "agent": ["taylor"],
+      "phases": ["build", "review"],
+      "user_scenario": "CEO copies each post directly into 小红书 without any editing — the Chinese is natural, hooks are compelling, and CTAs vary.",
+      "scope": "Review the 6 draft posts in posts.md. Fix GitHub URLs to agent-conductor. Vary the CTAs. Ensure Chinese reads naturally and follows 小红书 conventions.",
+      "dod": [
+        { "criterion": "All 6 posts have correct GitHub URL (agent-conductor)", "met": true },
+        { "criterion": "CTAs are varied — not all ending with the same npm install + follow formula", "met": true },
+        { "criterion": "Chinese is natural 小红书 tone, not machine-translated", "met": true },
+        { "criterion": "Each post is clearly separated and ready to copy-paste", "met": true }
+      ]
+    },
+    {
+      "id": "finalize-reddit-posts",
+      "title": "Finalize 3 Reddit posts for publication",
+      "status": "completed",
+      "priority": "P0",
+      "complexity": "simple",
+      "agent": ["taylor"],
+      "phases": ["build", "review"],
+      "user_scenario": "CEO copies each post directly into the appropriate subreddit without editing — tone matches each community, links work, and content sounds like a developer sharing.",
+      "scope": "Review the 3 draft posts. Fix GitHub URLs to agent-conductor. Shorten titles. Ensure tone matches subreddits.",
+      "dod": [
+        { "criterion": "All 3 posts have correct GitHub URL (agent-conductor)", "met": true },
+        { "criterion": "r/ChatGPTCoding title is under 80 characters", "met": true },
+        { "criterion": "Each post tone matches its target subreddit's culture", "met": true },
+        { "criterion": "All feature claims are accurate against current codebase", "met": true }
+      ]
+    }
+  ],
+  "created": "2026-03-10T00:04:00Z",
+  "updated": "2026-03-10T00:30:00Z"
+}

@@ -122,7 +122,7 @@ export function createCharacter(
     hueShift,
     frame: 0,
     frameTimer: 0,
-    wanderTimer: 0,
+    wanderTimer: seat ? randomRange(WANDER_PAUSE_MIN_SEC, WANDER_PAUSE_MAX_SEC) : 0,
     wanderCount: 0,
     wanderLimit: randomInt(WANDER_MOVES_BEFORE_REST_MIN, WANDER_MOVES_BEFORE_REST_MAX),
     isActive: false,
@@ -320,8 +320,8 @@ export function updateCharacter(
         ch.frame = (ch.frame + 1) % 2
       }
       // If no longer active, stand up and start wandering (after seatTimer expires)
-      // But stay seated if in a routed zone (meeting/review)
-      if (!ch.isActive && !ch.routingZone) {
+      // But stay seated if in a meeting/review zone (not kitchen/break-room)
+      if (!ch.isActive && (ch.routingZone !== 'meeting' && ch.routingZone !== 'review')) {
         if (ch.seatTimer > 0) {
           ch.seatTimer -= dt
           break
@@ -398,8 +398,8 @@ export function updateCharacter(
         }
         break
       }
-      // If in a routed zone (meeting/review), sit at assigned seat if arrived
-      if (ch.routingZone && ch.seatId) {
+      // If in a meeting/review zone, sit at assigned seat if arrived
+      if ((ch.routingZone === 'meeting' || ch.routingZone === 'review') && ch.seatId) {
         const seat = seats.get(ch.seatId)
         if (seat && isAtSeatOrApproach(ch, seat)) {
           snapToSeat(ch, seat)
@@ -409,7 +409,9 @@ export function updateCharacter(
         }
         break
       }
-      if (ch.routingZone) break
+      if (ch.routingZone === 'meeting' || ch.routingZone === 'review') break
+      // Clear non-meeting routing zones (kitchen/break-room) — handled by normal wander logic
+      if (ch.routingZone) ch.routingZone = null
 
       // Not yet long-idle: stay at desk. Long-idle (wandering tier): wander to furniture.
       if (!shouldWander(ch)) {

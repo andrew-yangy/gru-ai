@@ -1151,8 +1151,8 @@ export function renderIdentityPlates(
           const taskFontSize = Math.max(9, Math.round(pillZoom * 3.5))
           ctx.font = `${taskFontSize}px monospace`
           const taskMetrics = ctx.measureText(taskText)
-          const tPadX = Math.round(pillZoom)
-          const tPadY = Math.round(pillZoom * 0.5)
+          const tPadX = Math.round(pillZoom * 6)
+          const tPadY = Math.round(pillZoom * 3)
           const cardW = Math.ceil(taskMetrics.width) + tPadX * 2
           const cardH = taskFontSize + tPadY * 2
           const gap = Math.floor(1 * zoom)

@@ -17,6 +17,10 @@ Spawn 2-3 C-suite agents + the auditor (CTO or architect) from the agent registr
 
 The auditor who ran the technical audit step always participates -- they ground proposals in codebase reality.
 
+### Step Entry — Update directive.json immediately
+
+Before spawning any agents, write `pipeline.brainstorm` to directive.json with `"status": "active"` and `"agent"` set to the array of selected participant first names (lowercase). The agent list must match whoever you chose from the Participants section above — it is NOT a fixed set. This update triggers the dashboard game to route those characters to the meeting room.
+
 ### Process
 
 **Phase 1 -- Proposals (+ Challenge)**
@@ -68,6 +72,6 @@ If a background agent fails or times out, log the error and continue. Brainstorm
 
 ### Update directive.json
 
-Set `current_step: "clarification"` (the next step). Update `pipeline.brainstorm.status` to `"completed"` with output summary including the brainstorm synthesis and any challenge assessments. Set `artifacts` to `[".context/directives/{id}/brainstorm.md"]` if a brainstorm artifact was written.
+Set `current_step: "clarification"` (the next step). Update `pipeline.brainstorm.status` to `"completed"` with `agent` (the participant first names array, same as the step entry), output summary including the brainstorm synthesis and any challenge assessments, and `artifacts: [".context/directives/{id}/brainstorm.md"]` if a brainstorm artifact was written.
 
 **Next step:** Proceed to [04b-clarification.md](04b-clarification.md) (clarification) to verify directive intent with the CEO before the COO plans.

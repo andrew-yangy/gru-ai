@@ -30,7 +30,14 @@ An autonomous AI company framework. See `.context/vision.md` for the full vision
 |   |-- weekly-{date}.md
 |   +-- walkthrough-{date}.md
 |
-|-- lessons/                            # Flat, topic-based knowledge
+|-- design/                             # System design rationale (WHY the system works this way)
+|   |-- context-flow.md                 # How context reaches agents, progressive disclosure
+|   |-- pipeline-architecture.md        # Why these steps, this order, weight adaptation
+|   |-- agent-model.md                  # Sub-agent scoping, isolation, constraints
+|   |-- verification.md                 # Reviews, DOD, trust boundaries
+|   +-- state-and-recovery.md           # Persistence, checkpoints, crash recovery
+|
+|-- lessons/                            # Flat, topic-based knowledge (reactive — what went wrong)
 |   |-- orchestration.md
 |   |-- agent-behavior.md
 |   |-- review-quality.md
@@ -41,9 +48,9 @@ An autonomous AI company framework. See `.context/vision.md` for the full vision
 ## How to Read the Context Tree
 
 - **"What should we do now?"** -> Read `directives/*/directive.json` for active directives, check `directives/*/projects/*/project.json` for active projects
-- **Planning a feature:** -> Read `vision.md` + relevant directive context + `lessons/` + relevant project context.md files
-- **Building a feature:** -> Read project.json for tasks (at `directives/{id}/projects/{project}/project.json`), relevant `lessons/` files
-- **After completing work:** -> Update project.json tasks, create report.md in project dir, update `lessons/` if new patterns discovered
+- **Planning a feature:** -> Read `vision.md` + relevant directive context + `design/` + `lessons/` + relevant project context.md files
+- **Building a feature:** -> Read project.json for tasks (at `directives/{id}/projects/{project}/project.json`), relevant `design/` + `lessons/` files
+- **After completing work:** -> Update project.json tasks, create report.md in project dir, update `design/` if new patterns established, update `lessons/` if new patterns discovered
 
 ## Key Conventions
 
@@ -54,6 +61,18 @@ An autonomous AI company framework. See `.context/vision.md` for the full vision
 - Directives discovered via glob: `directives/*/directive.json`
 - Projects discovered via glob: `directives/*/projects/*/project.json`
 - No indexer or computed state files -- read source files directly
+
+## Design Docs Routing
+
+Design docs capture **why the system works the way it does** — principles, rationale, evidence, constraints. Unlike lessons (reactive — "what went wrong"), design docs are proactive — "how the system should behave and why."
+
+| Role | Read These |
+|------|-----------|
+| All agents | design/context-flow.md, design/agent-model.md |
+| COO (planning/orchestration) | design/pipeline-architecture.md, design/state-and-recovery.md |
+| CTO (audit/review) | design/verification.md, design/pipeline-architecture.md |
+| Engineers (building) | design/context-flow.md, design/agent-model.md |
+| Reviewers | design/verification.md |
 
 ## Lessons Routing
 

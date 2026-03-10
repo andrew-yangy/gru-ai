@@ -181,6 +181,8 @@ export default function CanvasOffice({
 
   // Sync agent statuses from props (debounced inside OfficeState)
   // Skip player-controlled CEO
+  // Must re-run when agents changes too — init effect creates a new OfficeState
+  // with fresh characters that need their status set
   useEffect(() => {
     const state = stateRef.current
     if (!state) return
@@ -189,7 +191,7 @@ export default function CanvasOffice({
       const status = agentStatuses[agent.agentName] ?? 'offline'
       state.setAgentStatus(agent.id, status)
     }
-  }, [agentStatuses])
+  }, [agentStatuses, agents])
 
   // Sync session context info (task name, tool name)
   useEffect(() => {
@@ -201,7 +203,7 @@ export default function CanvasOffice({
         state.setAgentSessionInfo(agent.id, info)
       }
     }
-  }, [agentSessionInfos])
+  }, [agentSessionInfos, agents])
 
   // Sync busy map (multi-session indicator)
   useEffect(() => {
@@ -210,7 +212,7 @@ export default function CanvasOffice({
     for (const agent of agents) {
       state.setAgentBusy(agent.id, agentBusyMap[agent.agentName] ?? false)
     }
-  }, [agentBusyMap])
+  }, [agentBusyMap, agents])
 
   // Sync subagent-by-parent map (for meeting room routing)
   useEffect(() => {

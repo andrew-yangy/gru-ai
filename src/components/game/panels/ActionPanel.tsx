@@ -775,10 +775,18 @@ function SessionCard({
   focusingPane: string | null;
 }) {
   const feature = session.feature;
-  const prompt = session.latestPrompt ?? session.initialPrompt;
+  const rawPrompt = session.latestPrompt ?? session.initialPrompt;
   // Extract a meaningful snippet from the prompt (first ~120 chars, after any role preamble)
-  const promptSnippet = prompt
-    ? prompt.replace(/^You are [^.]+\.\s*/i, '').slice(0, 120).split('\n')[0]
+  const promptSnippet = rawPrompt
+    ? rawPrompt
+        .replace(/^You are [^.]+\.\s*/i, '')
+        .replace(/^Your\s+(?:job|task|goal|objective|mission)\s*(?:is\s+to)?[:\s]*/i, '')
+        .replace(/^The CEO\s+[^.\n]*\.\s*/i, '')
+        .replace(/^(?:Don't|Do not|Never|Always|Think|Remember)[^.\n]*\.\s*/i, '')
+        .replace(/^Socratic refinement\.\s*/i, '')
+        .replace(/^(?:QUESTION|CONTEXT|BACKGROUND|INSTRUCTIONS?)\s*:\s*/i, '')
+        .trim()
+        .slice(0, 120).split('\n')[0]
     : null;
   const isWaiting = session.status === 'waiting-approval' || session.status === 'waiting-input';
   const isError = session.status === 'error';

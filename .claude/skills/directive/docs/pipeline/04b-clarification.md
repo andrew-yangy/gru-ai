@@ -16,6 +16,10 @@ costs a full reopen cycle.
 
 ---
 
+### Step Entry — Update directive.json immediately
+
+Before reading inputs, write `pipeline.clarification` to directive.json with `"status": "active"` and `"agent"` set to the participants. For heavyweight/strategic, include the brainstorm participants who contributed to the synthesis alongside the CEO. For lightweight/medium, set to `["pipeline"]` (auto-approved). This triggers the dashboard game to route characters to the meeting room.
+
 ### Inputs
 
 | Source | File | What to extract |

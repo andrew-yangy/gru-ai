@@ -12,7 +12,6 @@ import {
   CHARACTER_HIT_HALF_WIDTH,
   CHARACTER_HIT_HEIGHT,
   CHARACTER_SPRITE_SCALE,
-  STATUS_CHANGE_DEBOUNCE_SEC,
   LINGER_MIN_SEC,
   LINGER_MAX_SEC,
   COLLISION_FLASH_DURATION_SEC,
@@ -776,37 +775,12 @@ export class OfficeState {
     }
   }
 
-  /**
-   * Set the full agent status with debounce/smoothing. Instead of immediately
-   * flipping isActive, this queues the status change with a short delay. If the
-   * status reverts within the delay window, the transition is cancelled — this
-   * prevents jittery sprite flipping from rapid working/idle/working oscillation.
-   *
-   * The actual application of the pending status happens in update() each frame.
-   */
+  /** Set agent status and apply immediately. */
   setAgentStatus(id: number, status: AgentStatus): void {
     const ch = this.characters.get(id)
     if (!ch) return
-
-    const previousStatus = ch.agentStatus
-
-    // If status hasn't changed (committed), clear any pending transition and bail
-    if (status === previousStatus) {
-      ch.pendingStatus = null
-      ch.statusChangeTimer = 0
-      return
-    }
-
-    // If the same status is already pending, don't reset the timer —
-    // repeated calls (e.g. from useEffect re-runs) must not prevent
-    // the debounce from completing
-    if (ch.pendingStatus === status) {
-      return
-    }
-
-    // Queue the new status for debounced application
-    ch.pendingStatus = status
-    ch.statusChangeTimer = STATUS_CHANGE_DEBOUNCE_SEC
+    if (status === ch.agentStatus) return
+    this.applyAgentStatus(ch, status)
   }
 
   /** Update session context data on a character (task name, tool name) */
@@ -1196,19 +1170,8 @@ export class OfficeState {
       }
     }
 
-    // Tick status debounce timers and apply pending status changes
+    // Tick per-character timers
     for (const ch of this.characters.values()) {
-      if (ch.pendingStatus !== null && ch.statusChangeTimer > 0) {
-        ch.statusChangeTimer -= dt
-        if (ch.statusChangeTimer <= 0) {
-          // Debounce window elapsed — commit the pending status
-          const pending = ch.pendingStatus
-          ch.pendingStatus = null
-          ch.statusChangeTimer = 0
-          this.applyAgentStatus(ch, pending)
-        }
-      }
-
       // Tick linger timer — when it expires, route the agent to their destination
       if (ch.lingerTimer > 0) {
         ch.lingerTimer -= dt

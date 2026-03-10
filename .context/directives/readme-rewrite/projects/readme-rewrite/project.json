@@ -1,0 +1,88 @@
+{
+  "id": "readme-rewrite",
+  "title": "README.md Complete Rewrite — Marketing-Quality Technical Document",
+  "status": "completed",
+  "priority": "P0",
+  "agent": ["taylor"],
+  "reviewers": ["priya"],
+  "description": "Rewrite README.md from scratch as a marketing-quality technical document with Mermaid pipeline diagram, inline research citations, agent framework competitor comparison, and image placeholders.",
+  "source_directive": "readme-rewrite",
+  "scope": {
+    "in": [
+      "Hero section with image placeholder + factual tagline",
+      "Mermaid pipeline diagram with worked example",
+      "Pipeline explanation with inline research citations",
+      "Agent framework competitor comparison table",
+      "Roadmap mention for other AI tools",
+      "Meet Your Team agent table",
+      "Game UI as visual hook",
+      "Collapsible sections for depth",
+      "250-350 visible lines target",
+      "Image placeholders for CEO"
+    ],
+    "out": [
+      "Capturing actual screenshots or GIF",
+      "Creating landing page or docs site",
+      "Source code changes",
+      "Comparing against coding assistants",
+      "Claiming multi-platform as shipped feature"
+    ]
+  },
+  "dod": [
+    { "criterion": "README has hero section with image placeholder and factual tagline (no superlatives)", "met": true },
+    { "criterion": "Mermaid pipeline diagram with worked example showing a directive flowing through steps", "met": true },
+    { "criterion": "Research citations inline-linked (Anthropic context engineering, OpenAI harness engineering, Anthropic multi-agent)", "met": true },
+    { "criterion": "Competitor comparison table against agent frameworks (CrewAI, AutoGen, Devin, Manus)", "met": true },
+    { "criterion": "Other AI tools mentioned as roadmap/in-development, not shipped feature", "met": true },
+    { "criterion": "Meet Your Team section with agent table", "met": true },
+    { "criterion": "Game UI shown as visual proof, not headline", "met": true },
+    { "criterion": "250-350 visible lines with collapsible sections for depth", "met": true },
+    { "criterion": "Image placeholders clearly marked for CEO to fill", "met": true }
+  ],
+  "browser_test": false,
+  "tasks": [
+    {
+      "id": "research-competitors-and-citations",
+      "title": "Research competitor frameworks and verify citation URLs",
+      "status": "completed",
+      "agent": ["taylor"],
+      "phases": ["research"],
+      "scope": "Research current state of agent framework competitors (CrewAI, AutoGen, Devin, Manus, LangGraph, Google ADK) for comparison table. Verify all citation URLs are live. Output structured research artifact with competitor data and verified URLs.",
+      "dod": [
+        { "criterion": "Competitor data collected for at least 5 agent frameworks with pricing, license, architecture type, open-source status, and differentiators vs gruai", "met": true },
+        { "criterion": "All citation URLs verified as live: Anthropic context engineering, Anthropic multi-agent research, OpenAI harness engineering", "met": true },
+        { "criterion": "Research artifact saved as research-output.md in the project directory", "met": true }
+      ]
+    },
+    {
+      "id": "write-readme",
+      "title": "Write complete README.md with all sections",
+      "status": "completed",
+      "agent": ["taylor"],
+      "phases": ["build", "review"],
+      "scope": "Write README.md from scratch incorporating research artifact. All sections: hero, value prop, Mermaid pipeline diagram with worked example, agent table, competitor comparison, research citations, game UI, multi-platform roadmap, quickstart, collapsible details. 250-350 visible lines. No superlatives.",
+      "depends_on": ["research-competitors-and-citations"],
+      "dod": [
+        { "criterion": "README opens with hero GIF placeholder and factual tagline containing no superlatives", "met": true },
+        { "criterion": "Mermaid pipeline diagram renders on GitHub with 5 macro phases and 15 steps, plus worked example showing a directive flowing through key steps", "met": true },
+        { "criterion": "Competitor comparison table includes at least 5 agent frameworks with no coding assistants", "met": true },
+        { "criterion": "At least 3 research citations appear as inline links with plain-language context", "met": true },
+        { "criterion": "Image placeholders clearly marked for hero GIF, dashboard screenshot, game screenshot", "met": true },
+        { "criterion": "CEO-as-CEO narrative present: directives, agents brainstorming/challenging, CEO reviewing", "met": true },
+        { "criterion": "Multi-platform adapters mentioned as roadmap, not shipped features", "met": true },
+        { "criterion": "Game UI appears as visual proof but not headline section", "met": true },
+        { "criterion": "Custom AI agents section explains personality system and lists agents from registry", "met": true },
+        { "criterion": "Visible line count between 250-350 lines (excluding collapsible content)", "met": true }
+      ],
+      "review": {
+        "reviewer": "priya",
+        "verdict": "PASS",
+        "critical_issues": 0,
+        "suggestions": 9,
+        "summary": "All 10 DOD criteria passed. No critical issues. 9 non-blocking suggestions for polish (tagline refinement, opening tightness, contributing section, SEO title). Well-structured, credible, and factual."
+      }
+    }
+  ],
+  "created": "2026-03-10T12:25:00Z",
+  "updated": "2026-03-10T13:10:00Z"
+}

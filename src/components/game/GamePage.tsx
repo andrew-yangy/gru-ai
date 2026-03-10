@@ -33,31 +33,38 @@ function formatSlug(slug?: string | null): string | undefined {
 function extractTaskName(prompt?: string | null): string | undefined {
   if (!prompt) return undefined;
   let text = prompt;
-  // Strip "MODE: ..." as a label (keep the description after it)
+
+  // Structured headers — extract directly if present
   const modeMatch = text.match(/^MODE:\s*([^\n]+)/);
   if (modeMatch) return modeMatch[1].trim().slice(0, 60);
-  // Strip "You are [Name Surname], [Role]." — greedy match to the first period
-  text = text.replace(/^You are [A-Z][^\n.]*\.\s*/, '');
-  // Strip "You are the [Role]." (e.g. "You are the COO.")
-  text = text.replace(/^You are the [A-Za-z/\- ]+\.\s*/, '');
-  // Strip "You are operating in [MODE]."
-  text = text.replace(/^You are operating in [A-Z_ ]+\.\s*/, '');
-  // Strip "You are decomposing..."
+  const taskHeader = text.match(/^(?:TASK_NAME|TASK|OBJECTIVE):\s*([^\n]+)/im);
+  if (taskHeader) return taskHeader[1].trim().slice(0, 60);
+
+  // Strip role identification lines
+  text = text.replace(/^You are [A-Z][^\n.]*\.\s*/g, '');
+  text = text.replace(/^You are the [A-Za-z/\- ]+\.\s*/g, '');
+  text = text.replace(/^You are operating in [A-Z_ ]+\.\s*/g, '');
+
+  // Strip instruction preambles that aren't the task description
+  text = text.replace(/^Your job\s*(?:is to)?[:\s]*/i, '');
+  text = text.replace(/^Your (?:task|goal|objective|mission)\s*(?:is to)?[:\s]*/i, '');
+  text = text.replace(/^(?:QUESTION|CONTEXT|BACKGROUND|INSTRUCTIONS?)\s*:\s*/i, '');
   text = text.replace(/^You are (decomposing|reviewing|executing|performing)\s+/, '$1 ');
-  // Strip past-tense "You proposed/completed/..."
-  text = text.replace(/^You (proposed|completed|finished|started)\s+/, '$1 ');
-  // Strip directive-style preamble: "Execute all N tasks below..." or "Complete the following..."
-  text = text.replace(/^(Execute|Complete|Implement|Perform|Run)\s+(all\s+)?\d*\s*(tasks?|items?|steps?)\s+(below|listed|described|following)[^.\n]*\.\s*/i, '');
-  // Strip "The CEO has/is issued/directing/requesting..."
-  text = text.replace(/^The CEO\s+[^.\n]*\.\s*/i, '');
-  // Strip "You are being spawned..." test preambles
-  text = text.replace(/^You are being spawned[^.\n]*\.\s*/i, '');
-  // Strip "You are reviewing/auditing/executing..."
   text = text.replace(/^You are (reviewing|auditing|executing|building|implementing)[^.\n]*\.\s*/i, '');
-  // Strip "You have N (sequential) tasks..."
+  text = text.replace(/^You are being spawned[^.\n]*\.\s*/i, '');
+  text = text.replace(/^You (proposed|completed|finished|started)\s+/, '$1 ');
+  text = text.replace(/^(Execute|Complete|Implement|Perform|Run)\s+(all\s+)?\d*\s*(tasks?|items?|steps?)\s+(below|listed|described|following)[^.\n]*\.\s*/i, '');
+  text = text.replace(/^The CEO\s+[^.\n]*\.\s*/i, '');
   text = text.replace(/^You have \d+\s*(sequential\s+)?tasks?[^.\n]*\.\s*/i, '');
+
+  // Strip generic instruction noise
+  text = text.replace(/^(?:Don't|Do not|Never|Always|Think|Remember)[^.\n]*\.\s*/i, '');
+  text = text.replace(/^(?:Instead|First|Before)[^.\n]*[.:]\s*/i, '');
+  text = text.replace(/^Socratic refinement\.\s*/i, '');
+
   text = text.trim();
   if (text.length === 0) return undefined;
+
   // Take first sentence only
   const firstSentence = text.match(/^[^.!?\n]+/)?.[0]?.trim();
   if (!firstSentence || firstSentence.length < 5) return undefined;
@@ -145,9 +152,8 @@ export default function GamePage() {
   // Uses semantic relationships (builder↔reviewer, planners in meeting) instead of session parent/child
   const activeDirectives = useDashboardStore((s) => s.activeDirectives);
 
-  // Derive agent statuses from sessions + directive pipeline state
-  // Agents actively participating in a directive step show as 'working' even if their session is idle
-  // Agents with NO sessions at all default to 'offline' (not 'idle')
+  // Derive agent statuses purely from real session data.
+  // Pipeline state drives interaction icons, NOT working/idle/offline status.
   const agentStatuses = useMemo<Record<string, AgentStatus>>(() => {
     const map: Record<string, AgentStatus> = {};
     for (const name of KNOWN_AGENTS) {
@@ -162,38 +168,8 @@ export default function GamePage() {
         }
       }
     }
-    // Override: agents listed in the current pipeline step show as working
-    for (const directive of activeDirectives) {
-      const stepId = directive.currentStepId ?? '';
-      const currentStep = directive.pipelineSteps?.find(s => s.id === stepId);
-      // Mark all agents listed in the current step as working
-      for (const name of currentStep?.agents ?? []) {
-        const n = capitalize(name);
-        if (KNOWN_AGENTS.has(n)) map[n] = 'working';
-      }
-      // Also mark in-progress task agents during execute
-      if (stepId === 'execute') {
-        for (const proj of directive.projects) {
-          if (proj.status !== 'in_progress') continue;
-          for (const t of proj.tasks ?? []) {
-            if (t.status === 'in_progress' && t.agent) {
-              const n = capitalize(t.agent);
-              if (KNOWN_AGENTS.has(n)) map[n] = 'working';
-            }
-          }
-        }
-      }
-      // Mark reviewers during review-gate/audit
-      if (stepId === 'review-gate' || stepId === 'audit') {
-        for (const proj of directive.projects) {
-          for (const r of (proj.reviewers ?? []).map(capitalize)) {
-            if (KNOWN_AGENTS.has(r)) map[r] = 'working';
-          }
-        }
-      }
-    }
     return map;
-  }, [sessions, activeDirectives]);
+  }, [sessions]);
 
   // Build agent → task title map from directive pipeline (authoritative source)
   const directiveTaskNames = useMemo<Record<string, string>>(() => {

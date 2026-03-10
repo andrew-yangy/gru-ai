@@ -2,6 +2,21 @@
 // LogPanel — Reverse-chronological activity feed (management sim message log)
 // ---------------------------------------------------------------------------
 
+/** Strip agent preamble noise from prompt text for display */
+function cleanPrompt(raw: string | undefined, maxLen = 80): string | undefined {
+  if (!raw) return undefined;
+  let t = raw;
+  t = t.replace(/^You are [^.]+\.\s*/i, '');
+  t = t.replace(/^Your\s+(?:job|task|goal|objective|mission)\s*(?:is\s+to)?[:\s]*/i, '');
+  t = t.replace(/^The CEO\s+[^.\n]*\.\s*/i, '');
+  t = t.replace(/^(?:Don't|Do not|Never|Always|Think|Remember)[^.\n]*\.\s*/i, '');
+  t = t.replace(/^Socratic refinement\.\s*/i, '');
+  t = t.replace(/^(?:QUESTION|CONTEXT|BACKGROUND|INSTRUCTIONS?)\s*:\s*/i, '');
+  t = t.trim();
+  if (!t) return undefined;
+  return t.length > maxLen ? t.slice(0, maxLen - 3) + '...' : t;
+}
+
 import { useState, useMemo, useRef, useEffect } from 'react';
 import React from 'react';
 import {
@@ -88,7 +103,7 @@ function sessionMeta(s: Session): MetaItem[] {
     items.push({ label: 'Dir', value: shortCwd });
   }
   if (s.latestPrompt) {
-    const prompt = s.latestPrompt.length > 200 ? s.latestPrompt.slice(0, 197) + '...' : s.latestPrompt;
+    const prompt = cleanPrompt(s.latestPrompt, 200) ?? s.latestPrompt.slice(0, 197) + '...';
     items.push({ label: 'Prompt', value: prompt });
   }
   return items;
@@ -142,7 +157,7 @@ function buildSessionEvents(sessions: Session[]): FeedEvent[] {
         icon: <AlertTriangle className="h-3 w-3" />,
         iconColor: '#EF4444',
         description: `${agentLabel} encountered an error`,
-        detail: s.feature ?? s.latestPrompt?.slice(0, 80) ?? undefined,
+        detail: s.feature ?? cleanPrompt(s.latestPrompt) ?? undefined,
         priority: 'high',
         source: 'session',
         meta,

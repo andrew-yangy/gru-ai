@@ -91,7 +91,26 @@ Write a digest to `.context/reports/$ARGUMENTS-{date}.md`.
 
 > See [docs/reference/templates/digest.md](../reference/templates/digest.md) for the full digest report template.
 
-## Step 6e: Update Lessons
+## Step 6e: Update Design Docs (If Warranted)
+
+If the directive established new architectural patterns, settled a design question, or revealed a system-level insight worth preserving:
+
+1. Read existing `.context/design/*.md` files to avoid duplicates
+2. Update the appropriate design doc — or create a new topic file if none fits:
+   - Context flow patterns → `design/context-flow.md`
+   - Pipeline step changes → `design/pipeline-architecture.md`
+   - Agent scoping/constraints → `design/agent-model.md`
+   - Review/DOD patterns → `design/verification.md`
+   - State/recovery patterns → `design/state-and-recovery.md`
+   - New domain → `design/{topic}.md`
+
+**Format per entry:** State the principle, the rationale (why it works), and the evidence (which directive established it or which industry research supports it). Keep entries concise — 2-4 sentences.
+
+**Only update if:** the directive established a NEW pattern, settled a previously-open design question, or the audit/review revealed a system-level insight. Skip if the directive executed existing patterns cleanly.
+
+**Consolidation:** On the same 10th-directive cycle as lessons consolidation, review design docs for outdated patterns, conflicting recommendations, or entries that are too implementation-specific (design docs capture principles, not implementation details).
+
+## Step 6f: Update Lessons
 
 If the directive produced new learnings, append them to the appropriate topic file:
 - Agent behavior lessons → `.context/lessons/agent-behavior.md`
@@ -117,13 +136,13 @@ Read existing topic files first to avoid duplicates.
 
 Replace the contents between `## Learned Patterns` and the next `##` heading. Keep each pattern as a single bullet with bold lead + explanation. Max 8 patterns per agent — keep only the most impactful.
 
-## Step 6f: Re-index State
+## Step 6g: Re-index State
 
 The dashboard reads source files directly via glob + chokidar. No indexer step needed. Changes to project.json, directive.json are picked up automatically.
 
 **Update directive.json:** Set `wrapup.digest_path` to the report path. Set `current_step: "completion"` (the next step). Update `pipeline.wrapup.status` to `"completed"` with output summary.
 
-## Step 6g: Mark Directive Awaiting Completion
+## Step 6h: Mark Directive Awaiting Completion
 
 Update the directive JSON to signal the CEO completion gate. The directive is NOT marked `completed` here -- that happens in the completion step after CEO approval.
 
@@ -205,6 +224,7 @@ Show the CEO:
 - Include the COO's inline challenge analysis in every plan -- separate brainstorm agents (with challenge) for heavyweight/strategic only
 - Read preferences.md + vision.md guardrails before spawning any agent
 - Run technical audit before CEO approval to verify scope
+- Read .context/design/ docs before spawning any agent (system design rationale)
 - Read .context/lessons/ topic files before spawning any agent
 - Include personality text in named agent prompts
 - Include preferences.md + guardrails in all agent prompts
@@ -219,6 +239,7 @@ Show the CEO:
 - Include self-assessment metrics in the digest
 - Include agent-proposed improvements in the digest
 - Include UX verification results in the digest
+- Update design docs if the directive established new system-level patterns
 - Update lessons if the directive produced new learnings
 - Log task status after each completes
 - ~~Generate a digest even if everything fails~~ _Hook-enforced: stop hook blocks if no digest artifact for medium+ weight_

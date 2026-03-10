@@ -1,0 +1,32 @@
+{
+  "goal": "Polish README, finalize 6 RedNote posts and 3 Reddit posts for immediate publication",
+  "challenges": {
+    "risks": [
+      "GitHub URL mismatch: README and all Reddit/RedNote posts reference github.com/andrew-yangy/gruai which does not exist -- the actual repo is github.com/andrew-yangy/agent-conductor. Content must use the real URL or it will 404. Since repo rename is out of scope, all URLs must point to agent-conductor.",
+      "Natural language quality: The RedNote posts read well but have some formulaic patterns (every post ends with 'npm install gru-ai' + follow CTA). A real 小红书 user would vary their endings. The Reddit posts are solid but the r/ChatGPTCoding draft title is 94 characters (Reddit soft-caps at ~100 but shorter performs better).",
+      "Quickstart accuracy: README shows 'git clone gruai.git' and 'npm install -g gru-ai' but the actual repo is agent-conductor. The npm global install flow needs verification against package.json -- does bin entry exist for npx gru-ai?"
+    ],
+    "over_engineering_flags": [
+      "This is content polish, not content creation. The drafts are 90% there. Risk of over-engineering is spending time rewriting good content instead of fixing the specific issues (URLs, natural tone, accuracy). Keep edits surgical."
+    ],
+    "recommendation": "Proceed as-is"
+  },
+  "projects": [
+    {
+      "id": "content-polish-for-launch",
+      "title": "Polish README, RedNote, and Reddit content for publication",
+      "priority": "P0",
+      "scope_summary": "Review and finalize all three content areas from the prior gruai-marketing-launch directive. Fix GitHub URLs to use agent-conductor (not gruai) throughout. Polish README for world-class quality with correct install commands. Finalize 6 RedNote posts for natural Chinese tone and copy-paste readiness. Finalize 3 Reddit posts to sound like a developer sharing, not a company marketing. Ensure npm package name gru-ai is used consistently. All content must be immediately publishable without further editing.",
+      "complexity": "simple",
+      "agent": ["taylor"],
+      "reviewers": ["priya"],
+      "auditor": "priya",
+      "depends_on": [],
+      "touches_files_hint": [
+        "README.md",
+        ".context/directives/gruai-marketing-launch/projects/xiaohongshu-strategy/posts.md",
+        ".context/directives/gruai-marketing-launch/projects/reddit-strategy/reddit-launch-guide.md"
+      ]
+    }
+  ]
+}
