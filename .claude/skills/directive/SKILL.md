@@ -82,7 +82,7 @@ At every other step, transition directly to the next step without delay. If a st
 | 4 | context | [03-read-context.md](docs/pipeline/03-read-context.md) | Read all context files before planning | read |
 | 5 | audit | [06-technical-audit.md](docs/pipeline/06-technical-audit.md) | Technical codebase audit | context |
 | 6 | brainstorm | [04-brainstorm.md](docs/pipeline/04-brainstorm.md) | Approach brainstorm (includes challenge for heavyweight/strategic) | audit |
-| 7 | clarification | [04b-clarification.md](docs/pipeline/04b-clarification.md) | CEO clarification on unresolved brainstorm questions | brainstorm |
+| 7 | clarification | [04b-clarification.md](docs/pipeline/04b-clarification.md) | Synthesize verified intent (auto-approve for lightweight/medium) | audit |
 | 8 | plan | [05-planning.md](docs/pipeline/05-planning.md) | COO strategic planning | clarification |
 | 9 | approve | [07-plan-approval.md](docs/pipeline/07-plan-approval.md) | Present plan to CEO for approval | plan |
 | 10 | project-brainstorm | [07b-project-brainstorm.md](docs/pipeline/07b-project-brainstorm.md) | CTO + builder decompose projects into tasks with DOD | approve |
