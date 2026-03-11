@@ -38,11 +38,12 @@ The system is designed for **depth, not speed.** Agents accumulate institutional
 
 ### gruAI is right for you if:
 
-- ✅ You want to give direction, not write prompts — and have agents that brainstorm, challenge your thinking, and get it right without a reprompt loop
-- ✅ You want mandatory code review and mechanical verification, not optional "looks good to me"
-- ✅ You want institutional memory — agents that learn from mistakes and carry lessons across every task
-- ✅ You want a structured pipeline backed by context engineering research, not ad-hoc agent orchestration
-- ✅ You coordinate specialized roles (CTO, COO, CPO, CMO, engineers) not generic "AI assistants"
+- ✅ You're running 10+ terminals, juggling context, reprompting the same mistakes — and you want to hand down a directive and walk away
+- ✅ You've been burned by agents that "review" their own code — you want reviews that are mandatory, mechanical, and impossible to skip
+- ✅ Your agents forget everything between sessions — you want a team that remembers what broke last time
+- ✅ You're the bottleneck for every decision, every prompt, every context refresh — you want to be the CEO, not the project manager
+- ✅ You like running a one-person company with a full AI team, and you want it to actually feel that way — not like managing a chatbot farm
+- ✅ You want agents that push back on your ideas before building, not agents that say yes and ship the wrong thing
 
 ---
 
