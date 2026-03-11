@@ -60,13 +60,11 @@ function toGrayscale(sprite: SpriteData): SpriteData {
   )
 }
 
-// ── Floor Tiles (room-builder.png) ──
+// ── Floor Tiles (extracted from atlas via pre-computed GIDs) ──
 
-const FLOOR_TILE_POSITIONS: Array<[col: number, row: number]> = [
-  [11, 10], [11, 6], [1, 5], [14, 6], [14, 7], [11, 8], [1, 9],
-]
+import { ATLAS_MAP, ATLAS_TILE_SIZE, FLOOR_PATTERN_GIDS } from './generated/atlas-map'
 
-export async function loadFloorAssets(src = '/assets/office/room-builder.png'): Promise<void> {
+export async function loadFloorAssets(src = '/assets/office/atlas.png'): Promise<void> {
   try {
     const img = await loadImage(src)
     const canvas = document.createElement('canvas')
@@ -77,18 +75,20 @@ export async function loadFloorAssets(src = '/assets/office/room-builder.png'): 
     const imageData = ctx.getImageData(0, 0, img.width, img.height)
     const data = imageData.data
 
-    const TILE = 48
     const sprites: SpriteData[] = []
 
-    for (const [col, row] of FLOOR_TILE_POSITIONS) {
-      const sprite = extractSprite(data, img.width, col * TILE, row * TILE, TILE, TILE)
+    for (const gid of FLOOR_PATTERN_GIDS) {
+      const pos = ATLAS_MAP[gid]
+      if (!pos) continue
+      const [col, row] = pos
+      const sprite = extractSprite(data, img.width, col * ATLAS_TILE_SIZE, row * ATLAS_TILE_SIZE, ATLAS_TILE_SIZE, ATLAS_TILE_SIZE)
       sprites.push(toGrayscale(sprite))
     }
 
     setFloorSprites(sprites)
-    console.log(`✓ Loaded ${sprites.length} floor tile patterns from room-builder.png`)
+    console.log(`✓ Loaded ${sprites.length} floor tile patterns from atlas`)
   } catch (e) {
-    console.warn('Floor tileset not found. Using fallback rendering.')
+    console.warn('Floor atlas not found. Using fallback rendering.')
   }
 }
 

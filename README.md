@@ -1,6 +1,6 @@
 <h1 align="center">gruAI</h1>
 
-<h3 align="center">Stop coding with AI. Start running an AI team.</h3>
+<h3 align="center">Stop coding with AI.<br/>Start running an AI team.</h3>
 
 <p align="center">
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-green" alt="MIT License" /></a>
@@ -9,16 +9,26 @@
   <a href="#"><img src="https://img.shields.io/badge/status-alpha-orange" alt="Status: Alpha" /></a>
 </p>
 
-<!-- TODO: CEO — replace with hero GIF showing the pixel-art office with agents walking, typing, and reviewing code in real time. ~10 seconds, 720px wide. -->
 <p align="center">
-  <img src="docs/assets/game-office.png" alt="gruAI pixel-art office with agents working" width="720" />
+  <a href="#what-is-gruai">What Is gruAI?</a> •
+  <a href="#the-pipeline">The Pipeline</a> •
+  <a href="#the-context-tree">Context Tree</a> •
+  <a href="#why-is-the-output-better">Why It Works</a> •
+  <a href="#your-team">Your Team</a> •
+  <a href="#quickstart">Quickstart</a>
+</p>
+
+<p align="center">
+  <video src="docs/assets/demo.mp4" width="720" autoplay loop muted playsinline>
+    <img src="docs/assets/game-office.png" alt="gruAI pixel-art office with agents working" width="720" />
+  </video>
 </p>
 
 ---
 
 ## What Is gruAI?
 
-### Most AI tools help you code faster, gruAI lets you stop coding entirely.
+### Most AI tools help you code faster. gruAI lets you stop coding entirely.
 
 You run your AI team just like a CEO, and the agents handle the rest: engineering, marketing, operations, and more. You hand down a directive ("add dark mode to the dashboard"). Your agents brainstorm the approach, challenge your assumptions, build, review each other's work, and ship — you approve the result.
 
@@ -26,28 +36,22 @@ The system is designed for **depth, not speed.** Agents accumulate institutional
 
 **You make decisions. Agents make software.** Every directive flows through a 15-step pipeline — triage, audit, brainstorm, plan, build, review, and ship — grounded in published research from Anthropic and OpenAI on what actually makes AI output reliable.
 
+**gruAI is right for you if:**
+
+✅ You want to give direction, not instructions — be the CEO, not the prompt engineer
+✅ You're tired of the prompt-review-reprompt loop and want agents that get it right the first time
+✅ You want agents that brainstorm, challenge your assumptions, and debate before writing a single line of code
+✅ You want mandatory code review and mechanical verification, not optional "looks good to me"
+✅ You want institutional memory — agents that learn from mistakes and carry lessons across every task
+✅ You want a structured pipeline backed by context engineering research, not ad-hoc prompting
+✅ You coordinate specialized roles (CTO, COO, CPO, CMO, engineers) not generic "AI assistants"
+✅ You want to watch your autonomous company run from a pixel-art office dashboard
+
 ---
 
 ## The Pipeline
 
-```
- INTAKE            ANALYSIS          PLANNING          EXECUTION           VERIFICATION
- ─────────         ────────          ────────          ─────────           ────────────
-
- Triage             Context           Clarify           Project             Review
-   │                  │               ◆ CEO               Brainstorm         Gate
-   v                  v                 │                  │                  │
- Checkpoint         Audit               v                Setup              Wrapup
-   │                  │               Plan                 │                  │
-   v                  v                 │                   v                  v
- Read              Brainstorm          v               Execute           ◆ Completion
-                   (heavy only)     ◆ Approve          (build +             CEO
-                                      CEO              review loop)
-
- ◆ = CEO decision gate
-```
-
-> **Running example:** You say *"add dark mode to the dashboard."* The pipeline takes it from here.
+You say *"add a payment system."* The pipeline takes it from here — 15 steps across 5 phases.
 
 | Icon | Meaning |
 |:----:|---------|
@@ -59,7 +63,7 @@ The system is designed for **depth, not speed.** Agents accumulate institutional
 
 | # | Step | Who | What Happens |
 |:-:|------|:---:|-------------|
-| 1 | :gear: **Triage** | System | Classifies your directive by weight: lightweight, medium, heavyweight, or strategic. *"Add dark mode"* touches theming, components, and preferences — classified **medium**. [Start simple, add complexity only when needed.](https://www.anthropic.com/research/building-effective-agents) |
+| 1 | :gear: **Triage** | System | Classifies your directive by weight: lightweight, medium, heavyweight, or strategic. *"Add a payment system"* spans API, database, and UI — classified **heavyweight**. [Start simple, add complexity only when needed.](https://www.anthropic.com/research/building-effective-agents) |
 | 2 | :gear: **Checkpoint** | System | Checks for prior progress. If a session died mid-execution, it reads `directive.json` and [resumes from the last completed step](https://www.anthropic.com/engineering/building-c-compiler) — no work is lost. |
 | 3 | :gear: **Read** | System | Parses your directive brief, creates structured metadata, and extracts your Definition of Done. |
 
@@ -68,16 +72,16 @@ The system is designed for **depth, not speed.** Agents accumulate institutional
 | # | Step | Who | What Happens |
 |:-:|------|:---:|-------------|
 | 4 | :gear: **Context** | System | Loads lessons, design docs, and intel — [scoped to what this directive needs](https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents), not a 200K-token dump. |
-| 5 | :busts_in_silhouette: **Audit** | QA Engineer, then CTO | Two-agent sequential audit. QA scans the codebase (pure facts: which files, what state, what breaks). Then the CTO recommends approaches. For dark mode: identifies 14 component files using hardcoded colors, flags the theme provider as the integration point. |
-| 6 | :busts_in_silhouette: **Brainstorm** | CTO + CPO + CMO | *(Heavyweight/strategic only — skipped for medium.)* C-suite agents independently propose approaches, then [deliberate and argue](https://www.anthropic.com/engineering/multi-agent-research-system). For dark mode, the audit already provides enough grounding. |
+| 5 | :busts_in_silhouette: **Audit** | QA Engineer, then CTO | Two-agent sequential audit. QA scans the codebase (pure facts: which files, what state, what breaks). Then the CTO recommends approaches. Identifies existing API patterns, database schema, and security considerations. |
+| 6 | :busts_in_silhouette: **Brainstorm** | CTO + CPO + CMO | C-suite agents independently propose approaches, then [deliberate and argue](https://www.anthropic.com/engineering/multi-agent-research-system). CTO pushes for Stripe, CPO argues for simpler in-house billing, CMO flags pricing page implications. They surface 3 questions for you. |
 
 ### Phase 3: Planning
 
 | # | Step | Who | What Happens |
 |:-:|------|:---:|-------------|
-| 7 | :diamond_shape_with_a_dot_inside: **Clarification** | System → **CEO confirms** | Synthesizes intent from your brief, audit findings, and brainstorm. Surfaces conflicts and gaps. For heavyweight/strategic, the CEO confirms before planning — catching misalignment here costs one interaction instead of a full reopen. *(Auto for medium.)* |
-| 8 | :busts_in_silhouette: **Plan** | COO | Decomposes the directive into projects, assigns agents and reviewers. Dark mode → one project: a Frontend Engineer builds, the CPO reviews. |
-| 9 | :diamond_shape_with_a_dot_inside: **Approve** | **CEO reviews plan** | CEO reviews the plan before any code is written. [Human review at trust boundaries only](https://www.anthropic.com/engineering/building-c-compiler) — you gate the plan and the result, not every step in between. *(Auto for lightweight/medium.)* |
+| 7 | :diamond_shape_with_a_dot_inside: **Clarification** | System → **CEO confirms** | Synthesizes intent from your brief, audit findings, and brainstorm. Surfaces conflicts and gaps. **You answer the 3 questions** — catching misalignment here costs one interaction instead of a full reopen. |
+| 8 | :busts_in_silhouette: **Plan** | COO | Decomposes the directive into projects, assigns agents and reviewers. Payment system → 2 projects: backend engineer builds API + database, frontend engineer builds UI. CTO reviews both. |
+| 9 | :diamond_shape_with_a_dot_inside: **Approve** | **CEO reviews plan** | **You review the plan** before any code is written. [Human review at trust boundaries only](https://www.anthropic.com/engineering/building-c-compiler) — you gate the plan and the result, not every step in between. |
 
 ### Phase 4: Execution
 
@@ -187,46 +191,28 @@ C-suite agents have **institutional memory** — lessons and corrections persist
 
 ---
 
-## gruAI vs Agent Frameworks
-
-| Feature | gruAI | CrewAI | LangGraph | Google ADK | AutoGen | OpenAI SDK | Devin | Manus |
-|---------|-------|--------|-----------|------------|---------|------------|-------|-------|
-| **License** | MIT | MIT | MIT | Apache 2.0 | MIT | MIT | Proprietary | Proprietary |
-| **Cost** | Free | Free / $25+ | Free / $39+ | Free | Free | Free | $20-500+/mo | $39-199/mo |
-| **Open Source** | Yes | Yes | Yes | Yes | Yes | Yes | No | No |
-| **Built-in Pipeline** | 15-step, weight-adaptive | No | No | No | No | No | Internal (closed) | Internal (closed) |
-| **Code Review** | 3-layer + mechanical gate | None | None | None | None | None | Internal | None |
-| **Institutional Memory** | Lessons, design docs, corrections | No | No | No | No | No | Limited | No |
-| **Agent Personalities** | 11 named agents | Role descriptions | None | None | None | None | Single agent | Single agent |
-| **Visual Dashboard** | Session kanban + pixel-art office | None | LangSmith (paid) | None | AutoGen Studio | Traces API | Web IDE | Web IDE |
-| **Runs Locally** | Yes | Yes | Yes | Yes | Yes | Yes | No (cloud) | No (cloud) |
-
----
-
-## The Office
-
-<!-- TODO: CEO — capture screenshot of the full dashboard showing the pixel-art office with HUD panels open. 1200px wide. -->
-<p align="center">
-  <img src="docs/assets/dashboard-full.png" alt="gruAI pixel-art office dashboard" width="720" />
-</p>
-
-The dashboard is an interactive pixel-art office. Click agents to see their sessions. Click furniture (whiteboard, bookshelf, mailbox) to see brainstorms, knowledge base, and notifications. Four HUD tabs — Team, Tasks, Status, Log — show real-time directive progress, DOD tracking, and pipeline state. Every animation is tied to real session state: agents walk to desks when building, gather at the whiteboard when brainstorming, stand up when waiting for approval.
-
----
-
 ## Quickstart
 
+In your project folder:
+
 ```bash
-git clone https://github.com/andrew-yangy/gruai.git
-cd gruai && npm install
-npm run dev
+npx gru-ai init       # Scaffolds .context/, agents, and pipeline
+npx gru-ai start      # Launches dashboard on localhost:4444
 ```
 
-Open [http://localhost:5173](http://localhost:5173). Then scaffold your AI team in Claude Code: `/gruai-agents`
+Then in Claude Code, run `/directive` to start your first directive.
 
-Or: `npm install gru-ai && npx gru-ai`
+### Platform Support
 
-gruAI currently works with **Claude Code**. Adapters for Codex CLI, Gemini CLI, and Aider are planned — the pipeline and dashboard are engine-agnostic by design.
+| Platform | Pipeline | Dashboard | Session Monitoring | Status |
+|----------|:--------:|:---------:|:------------------:|--------|
+| **Claude Code** | :white_check_mark: | :white_check_mark: | :white_check_mark: | **Production** — fully tested |
+| **Codex CLI** | :construction: | :x: | :x: | Spawn adapter built, not yet integrated |
+| **Gemini CLI** | :construction: | :x: | :x: | Spawn adapter built, experimental |
+| **Aider** | :construction: | :x: | :x: | Spawn adapter built, experimental |
+| **Cursor / Cline** | :x: | :x: | :x: | Planned |
+
+The pipeline and dashboard are engine-agnostic by design — platform adapters handle the differences.
 
 ---
 

@@ -146,7 +146,7 @@ export default function GamePage() {
   const [selected, setSelected] = useState<SelectedItem | null>(null);
   const isMobile = useIsMobile();
   const [sheetOpen, setSheetOpen] = useState(false);
-  const [drawerWidth, setDrawerWidth] = useState(320);
+  const [drawerWidth, setDrawerWidth] = useState(400);
 
   // Derive agent interactions from directive pipeline state
   // Uses semantic relationships (builder↔reviewer, planners in meeting) instead of session parent/child
@@ -298,7 +298,7 @@ export default function GamePage() {
           if (KNOWN_AGENTS.has(n)) meetingAgents.add(n);
         }
         // Build meeting group — put all agents as children under the first one
-        // The engine checks subIds.length >= MEETING_SUBAGENT_THRESHOLD (3),
+        // The engine checks subIds.length >= MEETING_SUBAGENT_THRESHOLD (2),
         // so we include the host in the children array too (the engine dedupes via Set)
         const agents = Array.from(meetingAgents);
         if (agents.length >= 2) {
@@ -368,8 +368,42 @@ export default function GamePage() {
       }
     }
 
+    // ── Session-based meeting detection ──────────────────────────
+    // When agents are spawned as raw subagents (not through a directive),
+    // detect concurrent working sessions sharing a parent and group them.
+    const sessionsByParent = new Map<string, string[]>();
+    for (const s of sessions) {
+      if (!s.parentSessionId || !s.agentName || !KNOWN_AGENTS.has(s.agentName)) continue;
+      const status = toAgentStatus(s.status);
+      if (status !== 'working') continue;
+      const existing = sessionsByParent.get(s.parentSessionId) ?? [];
+      if (!existing.includes(s.agentName)) existing.push(s.agentName);
+      sessionsByParent.set(s.parentSessionId, existing);
+    }
+    for (const [, agentNames] of sessionsByParent) {
+      if (agentNames.length < 2) continue;
+      // Skip if these agents are already grouped by a directive
+      const alreadyGrouped = agentNames.every(n =>
+        Array.from(byParent.values()).some(group => group.includes(n))
+      );
+      if (alreadyGrouped) continue;
+      // Use the first agent as the host
+      const host = agentNames[0];
+      byParent.set(host, agentNames);
+      // Also create interaction pairs
+      for (let i = 0; i < agentNames.length; i++) {
+        for (let j = i + 1; j < agentNames.length; j++) {
+          const key = [agentNames[i], agentNames[j]].sort().join(':');
+          if (!seen.has(key)) {
+            seen.add(key);
+            pairs.push([agentNames[i], agentNames[j], 'brainstorming']);
+          }
+        }
+      }
+    }
+
     return { agentInteractions: pairs, subagentsByParent: byParent };
-  }, [activeDirectives]);
+  }, [activeDirectives, sessions]);
 
   // Derive review interactions from directive state
   // Maps reviewer → builder for "walk to builder's desk" behavior
